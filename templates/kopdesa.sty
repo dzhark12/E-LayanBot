@@ -1,0 +1,73 @@
+% desa.sty - gaya bersama surat Kantor Desa Sabah Balau
+% (kertas Legal 8,5x14 in, font sans seperti Arial, kop surat, watermark lambang daerah)
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{desa}[2026/10/27 Gaya surat Desa Sabah Balau]
+
+\RequirePackage[T1]{fontenc}
+\RequirePackage[utf8]{inputenc}
+\RequirePackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+\RequirePackage[paperwidth=8.5in,paperheight=14in,
+  top=0.9in,bottom=1in,left=1in,right=1in]{geometry}
+\RequirePackage{graphicx}
+\RequirePackage{eso-pic}
+\RequirePackage{xcolor}
+\RequirePackage{setspace}
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+\setstretch{1.45}
+\sloppy
+\raggedbottom
+
+% Lokasi aset (logo & watermark) relatif terhadap berkas .tex yang dikompilasi.
+\newcommand{\asetdir}{assets}
+
+% Watermark lambang daerah di tengah halaman
+\AddToShipoutPictureBG*{%
+  \put(\LenToUnit{0.5\paperwidth},\LenToUnit{0.58\paperheight}){%
+    \makebox(0,0){\includegraphics[width=3.7in]{\asetdir/watermark.jpg}}}}
+
+% Kop surat: logo kiri, tiga baris judul, alamat miring, garis tebal.
+% Pemakaian: \kopsurat{Alamat kantor desa}
+\newcommand{\kopsurat}[1]{%
+  \noindent
+  \begin{minipage}[c]{0.9in}\includegraphics[width=0.81in]{\asetdir/logo.jpg}\end{minipage}%
+  \begin{minipage}[c]{\dimexpr\textwidth-0.9in\relax}\centering
+    {\setstretch{1.15}%
+    {\bfseries\large PEMERINTAH KABUPATEN LAMPUNG SELATAN\par}
+    {\bfseries\large KECAMATAN TANJUNG BINTANG\par}
+    {\bfseries\LARGE KANTOR DESA SABAH BALAU\par}}
+  \end{minipage}\par
+  \vspace{2pt}
+  {\centering\itshape\small #1\par}
+  \vspace{1pt}
+  \noindent\rule{\textwidth}{3.2pt}\par
+  \vspace{8pt}}
+
+% Judul surat + nomor. \judulsurat{JUDUL}{Nomor lengkap}
+\newcommand{\judulsurat}[2]{%
+  {\centering{\bfseries\large\underline{#1}}\par
+   \vspace{-2pt}\small #2\par}
+  \vspace{12pt}}
+
+% Satu baris data berlabel: \baris{Label}{Isi} (label panjang boleh dipecah dengan \\)
+\newcommand{\baris}[2]{%
+  \par\noindent\hangindent=5.4cm\hangafter=1
+  \hspace*{1cm}\parbox[t]{3.9cm}{\raggedright #1}\makebox[0.5cm][l]{:}#2\par}
+
+% Paragraf badan dengan indentasi awal
+\newcommand{\badan}[1]{\par\noindent\hspace*{1cm}#1\par}
+
+% Blok tanda tangan: teks kiri (mis. Pemohon/PELAPOR) dan blok kanan.
+% \ttdblok{teks kiri}{baris-baris kanan, pisahkan dengan \par}{Nama penanda tangan}
+\newcommand{\ttdblok}[3]{%
+  \par\noindent
+  \begin{minipage}[t]{0.35\textwidth}\setstretch{1.15}\hspace*{1cm}#1\end{minipage}%
+  \hfill
+  \begin{minipage}[t]{7.2cm}\centering\setstretch{1.15}
+    #2\par\vspace{2.6cm}
+    {\bfseries\underline{#3}}\par
+  \end{minipage}\par}
+\endinput
