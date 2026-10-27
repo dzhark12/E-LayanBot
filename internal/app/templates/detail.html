@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{.Request.Kode}} · E-LAYAN Desa Sabah Balau</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="/" aria-label="E-LAYAN Desa Sabah Balau"><span class="brand-mark" aria-hidden="true">E</span><span><strong>E-LAYAN</strong><small>DESA SABAH BALAU</small></span></a>
+      <p class="nav-label">MENU UTAMA</p><nav aria-label="Menu utama"><a class="nav-link active" href="/" aria-current="page"><span aria-hidden="true">▤</span> Permohonan</a><a class="nav-link" href="/settings"><span aria-hidden="true">⚙</span> Data layanan</a></nav>
+      <div class="sidebar-bottom"><div class="help-card"><span class="help-icon" aria-hidden="true">i</span><div><strong>Butuh bantuan?</strong><small>Hubungi koordinator sistem desa.</small></div></div><div class="account-row"><span class="avatar" aria-hidden="true">{{printf "%.1s" .User.Username}}</span><span class="account-name"><strong>{{.User.Username}}</strong><small>{{.User.Role}}</small></span><form method="post" action="/logout"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="icon-button" type="submit" aria-label="Keluar">↗</button></form></div></div>
+    </aside>
+
+    <main class="main-content">
+      <div class="breadcrumb"><a href="/">← Kembali ke permohonan</a><span>/</span><span>{{.Request.Kode}}</span></div>
+      <header class="detail-header"><div><p class="eyebrow">{{.Request.JenisKode}} · {{.Request.JenisNama}}</p><h1>{{.Request.Kode}}</h1><p class="muted">Dikirim {{date .Request.DibuatPada}}</p></div><span class="status-pill {{statusClass (printf "%s" .Request.Status)}}"><span class="status-dot" aria-hidden="true"></span>{{.Request.Status}}</span></header>
+      {{if eq .Notice "identity-saved"}}<p class="notice" role="status">Data identitas tersimpan.</p>{{else if eq .Notice "identity-error"}}<p class="form-error" role="alert">Periksa kembali format tanggal lahir, jenis kelamin, dan NIK.</p>{{else if eq .Notice "identity-required"}}<p class="form-error" role="alert">Lengkapi tujuh field identitas sebelum memulai pengerjaan.</p>{{else if eq .Notice "status-saved"}}<p class="notice" role="status">Status permohonan diperbarui.</p>{{else if eq .Notice "status-error"}}<p class="form-error" role="alert">Perubahan status tidak valid untuk tahap permohonan ini.</p>{{end}}
+
+      <div class="detail-grid">
+        <section class="panel attachment-panel" aria-labelledby="attachment-title">
+          <div class="panel-heading"><div><h2 id="attachment-title">Foto persyaratan</h2><p class="muted">{{len .Request.Lampiran}} lampiran · hanya dapat dilihat setelah masuk</p></div></div>
+          {{if .Request.Lampiran}}
+          <div class="attachment-grid">
+            {{range .Request.Lampiran}}<figure class="attachment-card"><a href="/attachments/{{.ID}}" target="_blank" rel="noopener"><img src="/attachments/{{.ID}}" alt="Lampiran {{.Jenis}}" loading="lazy"></a><figcaption><span>{{.Jenis}}</span><small>{{printf "%.1f" (divFloat .Ukuran 1048576)}} MB</small></figcaption></figure>{{end}}
+          </div>
+          {{else}}<div class="empty-state compact"><span class="empty-icon" aria-hidden="true">▧</span><h3>Foto belum tersedia</h3></div>{{end}}
+          <div class="summary-box"><span class="eyebrow">CATATAN PEMOHON</span><p>{{.Request.Ringkasan}}</p></div>
+        </section>
+
+        <div class="detail-side">
+          <section class="panel identity-panel" aria-labelledby="identity-title">
+            <div class="panel-heading"><div><h2 id="identity-title">Data identitas</h2><p class="muted">Salin dan verifikasi dari foto persyaratan.</p></div></div>
+            <form method="post" action="/requests/{{.Request.ID}}/identity" class="identity-form">
+              <input type="hidden" name="csrf" value="{{.CSRF}}">
+              <label for="nama">Nama lengkap</label><input id="nama" name="nama" value="{{.Request.Identitas.Nama}}" maxlength="120" autocomplete="off">
+              <div class="form-row"><div><label for="tempatLahir">Tempat lahir</label><input id="tempatLahir" name="tempatLahir" value="{{.Request.Identitas.TempatLahir}}" maxlength="80"></div><div><label for="tanggalLahir">Tanggal lahir</label><input id="tanggalLahir" name="tanggalLahir" type="date" value="{{.Request.Identitas.TanggalLahir}}"></div></div>
+              <div class="form-row"><div><label for="jenisKelamin">Jenis kelamin</label><select id="jenisKelamin" name="jenisKelamin"><option value="">Pilih</option><option value="Laki-laki" {{if eq .Request.Identitas.JenisKelamin "Laki-laki"}}selected{{end}}>Laki-laki</option><option value="Perempuan" {{if eq .Request.Identitas.JenisKelamin "Perempuan"}}selected{{end}}>Perempuan</option></select></div><div><label for="agama">Agama</label><input id="agama" name="agama" value="{{.Request.Identitas.Agama}}" maxlength="40"></div></div>
+              <label for="nik">NIK <small>16 digit</small></label><input id="nik" name="nik" inputmode="numeric" autocomplete="off" value="{{.Request.Identitas.NIK}}" maxlength="16">
+              <label for="pekerjaan">Pekerjaan</label><input id="pekerjaan" name="pekerjaan" value="{{.Request.Identitas.Pekerjaan}}" maxlength="80">
+              <label for="alamat">Alamat</label><textarea id="alamat" name="alamat" rows="3" maxlength="300">{{.Request.Identitas.Alamat}}</textarea>
+              <button class="button button-primary button-wide" type="submit">Simpan data identitas</button>
+            </form>
+          </section>
+
+          <section class="panel status-panel" aria-labelledby="status-title">
+            <div class="panel-heading"><div><h2 id="status-title">Perbarui status</h2><p class="muted">Setiap perubahan tercatat di riwayat.</p></div></div>
+            <form method="post" action="/requests/{{.Request.ID}}/status" class="stack-form">
+              <input type="hidden" name="csrf" value="{{.CSRF}}">
+              <label for="status">Status baru</label><select id="status" name="status">{{range .Statuses}}<option value="{{.}}" {{if eq . $.Request.Status}}selected{{end}}>{{.}}</option>{{end}}</select>
+              <label for="catatan">Catatan <small>opsional</small></label><textarea id="catatan" name="catatan" rows="2" maxlength="500" placeholder="Misalnya: foto KTP perlu dikirim ulang"></textarea>
+              <button class="button button-secondary button-wide" type="submit">Simpan perubahan</button>
+            </form>
+          </section>
+        </div>
+      </div>
+
+      <section class="panel history-panel" aria-labelledby="history-title"><div class="panel-heading"><div><h2 id="history-title">Riwayat status</h2><p class="muted">Jejak pengerjaan permohonan ini.</p></div></div>
+        {{if .Request.Riwayat}}<ol class="history-list">{{range .Request.Riwayat}}<li><span class="history-marker" aria-hidden="true"></span><div><strong>{{.StatusLama}} <span aria-hidden="true">→</span> {{.StatusBaru}}</strong><p>{{date .Waktu}} · {{.Admin}}{{if .Catatan}} · {{.Catatan}}{{end}}</p></div></li>{{end}}</ol>{{else}}<p class="muted history-empty">Belum ada perubahan status yang dicatat.</p>{{end}}
+      </section>
+      <p class="template-note">Draf PDF mengikuti template resmi desa setelah template tiap jenis surat tersedia.</p>
+      <footer class="page-footer">E-LAYAN Desa Sabah Balau <span>•</span> Layanan administrasi warga</footer>
+    </main>
+  </div>
+</body>
+</html>

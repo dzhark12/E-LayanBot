@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Masuk · E-LAYAN Desa Sabah Balau</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body class="login-page">
+  <main class="login-card">
+    <a class="brand brand-login" href="/login" aria-label="E-LAYAN Desa Sabah Balau">
+      <span class="brand-mark" aria-hidden="true">E</span>
+      <span><strong>E-LAYAN</strong><small>DESA SABAH BALAU</small></span>
+    </a>
+    <p class="eyebrow">RUANG PERANGKAT DESA</p>
+    <h1>Selamat datang</h1>
+    <p class="muted">Masuk untuk mengelola permohonan surat warga.</p>
+    {{if .Error}}<p class="form-error" role="alert">{{.Error}}</p>{{end}}
+    <form method="post" action="/login" class="stack-form">
+      <label for="username">Nama pengguna</label>
+      <input id="username" name="username" autocomplete="username" required maxlength="80" autofocus>
+      <label for="password">Kata sandi</label>
+      <input id="password" type="password" name="password" autocomplete="current-password" required maxlength="256">
+      <button class="button button-primary button-wide" type="submit">Masuk ke dashboard <span aria-hidden="true">→</span></button>
+    </form>
+    <p class="login-footnote">Akses hanya untuk perangkat desa yang terdaftar.</p>
+  </main>
+</body>
+</html>

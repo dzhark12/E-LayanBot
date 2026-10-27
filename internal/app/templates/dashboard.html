@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Permohonan · E-LAYAN Desa Sabah Balau</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="/" aria-label="E-LAYAN Desa Sabah Balau">
+        <span class="brand-mark" aria-hidden="true">E</span>
+        <span><strong>E-LAYAN</strong><small>DESA SABAH BALAU</small></span>
+      </a>
+      <p class="nav-label">MENU UTAMA</p>
+      <nav aria-label="Menu utama">
+        <a class="nav-link active" href="/" aria-current="page"><span aria-hidden="true">▤</span> Permohonan</a>
+        <a class="nav-link" href="/settings"><span aria-hidden="true">⚙</span> Data layanan</a>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="help-card"><span class="help-icon" aria-hidden="true">i</span><div><strong>Butuh bantuan?</strong><small>Hubungi koordinator sistem desa.</small></div></div>
+        <div class="account-row"><span class="avatar" aria-hidden="true">{{printf "%.1s" .User.Username}}</span><span class="account-name"><strong>{{.User.Username}}</strong><small>{{.User.Role}}</small></span>
+          <form method="post" action="/logout"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="icon-button" type="submit" aria-label="Keluar">↗</button></form>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="page-header">
+        <div><p class="eyebrow">RUANG LAYANAN DESA</p><h1>Permohonan surat</h1><p class="muted">Pantau dan proses permohonan yang dikirim warga melalui WhatsApp.</p></div>
+        <span class="today"><span class="live-dot" aria-hidden="true"></span> Sistem aktif</span>
+      </header>
+
+      <section class="stats-grid" aria-label="Ringkasan permohonan">
+        <article class="stat-card"><span class="stat-icon stat-wait" aria-hidden="true">◷</span><div><p>Menunggu</p><strong>{{.Menunggu}}</strong><small>Perlu ditinjau</small></div></article>
+        <article class="stat-card"><span class="stat-icon stat-work" aria-hidden="true">↗</span><div><p>Dikerjakan</p><strong>{{.Dikerjakan}}</strong><small>Sedang diproses</small></div></article>
+        <article class="stat-card"><span class="stat-icon stat-done" aria-hidden="true">✓</span><div><p>Selesai</p><strong>{{.Selesai}}</strong><small>Sudah ditangani</small></div></article>
+      </section>
+
+      <section class="panel request-panel" aria-labelledby="request-list-title">
+        <div class="panel-heading"><div><h2 id="request-list-title">Daftar permohonan</h2><p class="muted">{{.Total}} permohonan ditemukan</p></div>
+          <form class="search-form" method="get" action="/">
+            <label class="sr-only" for="search">Cari kode, jenis surat, atau ringkasan</label>
+            <span aria-hidden="true">⌕</span><input id="search" type="search" name="q" value="{{.Query}}" placeholder="Cari permohonan…">
+            {{if .Status}}<input type="hidden" name="status" value="{{.Status}}">{{end}}
+            <button class="button button-secondary" type="submit">Cari</button>
+          </form>
+        </div>
+
+        <nav class="filter-tabs" aria-label="Filter status">
+          <a href="/?q={{urlquery .Query}}" {{if not .Status}}aria-current="page" class="selected"{{end}}>Semua</a>
+          <a href="/?status=Menunggu&amp;q={{urlquery .Query}}" {{if eq .Status "Menunggu"}}aria-current="page" class="selected"{{end}}>Menunggu</a>
+          <a href="/?status=Dikerjakan&amp;q={{urlquery .Query}}" {{if eq .Status "Dikerjakan"}}aria-current="page" class="selected"{{end}}>Dikerjakan</a>
+          <a href="/?status=Selesai&amp;q={{urlquery .Query}}" {{if eq .Status "Selesai"}}aria-current="page" class="selected"{{end}}>Selesai</a>
+          <a href="/?status=Perlu%20Perbaikan&amp;q={{urlquery .Query}}" {{if eq .Status "Perlu Perbaikan"}}aria-current="page" class="selected"{{end}}>Perlu perbaikan</a>
+          <a href="/?status=Ditolak&amp;q={{urlquery .Query}}" {{if eq .Status "Ditolak"}}aria-current="page" class="selected"{{end}}>Ditolak</a>
+        </nav>
+
+        {{if .Requests}}
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th scope="col">KODE &amp; WAKTU</th><th scope="col">JENIS SURAT</th><th scope="col">RINGKASAN</th><th scope="col">STATUS</th><th scope="col"><span class="sr-only">Tindakan</span></th></tr></thead>
+            <tbody>
+              {{range .Requests}}
+              <tr>
+                <td><a class="request-code" href="/requests/{{.ID}}">{{.Kode}}</a><small>{{date .DibuatPada}}</small></td>
+                <td><span class="letter-code">{{.JenisKode}}</span> {{.JenisNama}}</td>
+                <td class="summary-cell">{{.Ringkasan}}</td>
+                <td><span class="status-pill {{statusClass (printf "%s" .Status)}}"><span class="status-dot" aria-hidden="true"></span>{{.Status}}</span></td>
+                <td><a class="row-action" href="/requests/{{.ID}}" aria-label="Buka permohonan {{.Kode}}">Buka <span aria-hidden="true">→</span></a></td>
+              </tr>
+              {{end}}
+            </tbody>
+          </table>
+        </div>
+        {{else}}
+        <div class="empty-state"><span class="empty-icon" aria-hidden="true">▤</span><h3>Belum ada permohonan</h3><p>{{if .Query}}Coba kata kunci lain atau hapus filter.{{else}}Permohonan baru dari warga akan muncul di sini.{{end}}</p></div>
+        {{end}}
+
+        {{if gt .Pages 1}}
+        <nav class="pagination" aria-label="Navigasi halaman">
+          {{if gt .Page 1}}<a href="/?status={{urlquery .Status}}&amp;q={{urlquery .Query}}&amp;page={{sub .Page 1}}">← Sebelumnya</a>{{else}}<span></span>{{end}}
+          <span>Halaman {{.Page}} dari {{.Pages}}</span>
+          {{if lt .Page .Pages}}<a href="/?status={{urlquery .Status}}&amp;q={{urlquery .Query}}&amp;page={{add .Page 1}}">Berikutnya →</a>{{else}}<span></span>{{end}}
+        </nav>
+        {{end}}
+      </section>
+      <footer class="page-footer">E-LAYAN Desa Sabah Balau <span>•</span> Layanan administrasi warga</footer>
+    </main>
+  </div>
+</body>
+</html>

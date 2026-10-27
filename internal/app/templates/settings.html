@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Data layanan · E-LAYAN Desa Sabah Balau</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <link rel="stylesheet" href="/static/settings.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="/" aria-label="E-LAYAN Desa Sabah Balau"><span class="brand-mark" aria-hidden="true">E</span><span><strong>E-LAYAN</strong><small>DESA SABAH BALAU</small></span></a>
+      <p class="nav-label">MENU UTAMA</p>
+      <nav aria-label="Menu utama"><a class="nav-link" href="/">▤ &nbsp; Permohonan</a><a class="nav-link active" href="/settings" aria-current="page">⚙ &nbsp; Data layanan</a></nav>
+      <div class="sidebar-bottom"><div class="account-row"><span class="avatar" aria-hidden="true">{{printf "%.1s" .User.Username}}</span><span class="account-name"><strong>{{.User.Username}}</strong><small>{{.User.Role}}</small></span><form method="post" action="/logout"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="icon-button" type="submit" aria-label="Keluar">↗</button></form></div></div>
+    </aside>
+
+    <main class="main-content">
+      <header class="page-header"><div><p class="eyebrow">PENGELOLAAN INFORMASI</p><h1>Data layanan</h1><p class="muted">Atur jenis surat, persyaratan, dan jawaban FAQ yang dipakai bot WhatsApp.</p></div></header>
+      {{if eq .Notice "saved"}}<p class="notice" role="status">Perubahan berhasil disimpan.</p>{{else if eq .Notice "invalid-letter"}}<p class="form-error" role="alert">Kode, nama, atau daftar persyaratan jenis surat tidak valid.</p>{{else if eq .Notice "invalid-faq"}}<p class="form-error" role="alert">Periksa pertanyaan, kata kunci, kategori, dan jawaban FAQ.</p>{{end}}
+
+      <section class="settings-section" aria-labelledby="letters-title"><div class="section-title"><div><h2 id="letters-title">Jenis surat</h2><p class="muted">Kode jenis tidak berubah setelah dipakai pada permohonan.</p></div></div>
+        <div class="settings-grid">
+          {{range .Letters}}
+          <article class="panel settings-card"><h3>{{.Code}} · {{.Name}}</h3><form method="post" action="/settings/letter" class="stack-form">
+            <input type="hidden" name="csrf" value="{{$.CSRF}}"><input type="hidden" name="code" value="{{.Code}}">
+            <label for="name-{{.Code}}">Nama surat</label><input id="name-{{.Code}}" name="name" value="{{.Name}}" maxlength="120" required>
+            <label for="requirements-{{.Code}}">Persyaratan <small>satu per baris</small></label><textarea id="requirements-{{.Code}}" name="requirements" rows="4" maxlength="4000" placeholder="Contoh: KTP pemohon">{{joinLines .Requirements}}</textarea>
+            <label class="checkbox-label"><input type="checkbox" name="aktif" {{if .Active}}checked{{end}}> Tampilkan pada bot</label>
+            <button class="button button-secondary" type="submit">Simpan jenis surat</button>
+          </form></article>
+          {{end}}
+          <article class="panel settings-card"><h3>Tambah jenis surat</h3><form method="post" action="/settings/letter" class="stack-form">
+            <input type="hidden" name="csrf" value="{{.CSRF}}">
+            <label for="new-code">Kode <small>2 huruf</small></label><input id="new-code" name="code" maxlength="2" pattern="[A-Za-z]{2}" required>
+            <label for="new-name">Nama surat</label><input id="new-name" name="name" maxlength="120" required>
+            <label for="new-requirements">Persyaratan <small>satu per baris</small></label><textarea id="new-requirements" name="requirements" rows="4" maxlength="4000"></textarea>
+            <label class="checkbox-label"><input type="checkbox" name="aktif" checked> Tampilkan pada bot</label>
+            <button class="button button-primary" type="submit">Tambah jenis surat</button>
+          </form></article>
+        </div>
+      </section>
+
+      <section class="settings-section" aria-labelledby="faq-title"><div class="section-title"><div><h2 id="faq-title">FAQ bot</h2><p class="muted">Bot hanya menjawab jika kata kunci pertanyaan cocok dengan FAQ aktif.</p></div></div>
+        <div class="settings-grid">
+          {{range .FAQs}}
+          <article class="panel settings-card"><h3>{{.Question}}</h3><form method="post" action="/settings/faq" class="stack-form">
+            <input type="hidden" name="csrf" value="{{$.CSRF}}"><input type="hidden" name="id" value="{{.ID}}">
+            <label for="question-{{.ID}}">Pertanyaan</label><input id="question-{{.ID}}" name="question" value="{{.Question}}" maxlength="300" required>
+            <label for="keywords-{{.ID}}">Kata kunci <small>satu per baris</small></label><textarea id="keywords-{{.ID}}" name="keywords" rows="3" maxlength="1400" required>{{joinLines .Keywords}}</textarea>
+            <label for="answer-{{.ID}}">Jawaban</label><textarea id="answer-{{.ID}}" name="answer" rows="4" maxlength="2000" required>{{.Answer}}</textarea>
+            <label for="category-{{.ID}}">Kategori</label><input id="category-{{.ID}}" name="category" value="{{.Category}}" maxlength="80">
+            <label class="checkbox-label"><input type="checkbox" name="aktif" {{if .Active}}checked{{end}}> Aktif</label>
+            <button class="button button-secondary" type="submit">Simpan FAQ</button>
+          </form></article>
+          {{end}}
+          <article class="panel settings-card"><h3>Tambah FAQ</h3><form method="post" action="/settings/faq" class="stack-form">
+            <input type="hidden" name="csrf" value="{{.CSRF}}">
+            <label for="new-question">Pertanyaan</label><input id="new-question" name="question" maxlength="300" required>
+            <label for="new-keywords">Kata kunci <small>satu per baris</small></label><textarea id="new-keywords" name="keywords" rows="3" maxlength="1400" required></textarea>
+            <label for="new-answer">Jawaban</label><textarea id="new-answer" name="answer" rows="4" maxlength="2000" required></textarea>
+            <label for="new-category">Kategori</label><input id="new-category" name="category" maxlength="80">
+            <label class="checkbox-label"><input type="checkbox" name="aktif" checked> Aktif</label>
+            <button class="button button-primary" type="submit">Tambah FAQ</button>
+          </form></article>
+        </div>
+      </section>
+      <footer class="page-footer">E-LAYAN Desa Sabah Balau <span>•</span> Layanan administrasi warga</footer>
+    </main>
+  </div>
+</body>
+</html>
