@@ -1,0 +1,66 @@
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    image: elayan-desa-app
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      HTTP_ADDR: :8080
+      DATABASE_URL: ${DATABASE_URL:?set DATABASE_URL in .env}
+      STORAGE_DIR: /var/lib/elayan/private
+      BOT_API_TOKEN: ${BOT_API_TOKEN:?set BOT_API_TOKEN in .env}
+      WA_HASH_KEY: ${WA_HASH_KEY:?set WA_HASH_KEY in .env}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:?set ADMIN_USERNAME in .env}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD in .env}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
+      ATTACHMENT_RETENTION_DAYS: ${ATTACHMENT_RETENTION_DAYS:?set retention after approval by the village}
+    ports:
+      - "127.0.0.1:${HTTP_PORT:-8080}:8080"
+    volumes:
+      - private_uploads:/var/lib/elayan/private
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/healthz || exit 1"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+  bot:
+    image: elayan-desa-app
+    build: .
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    entrypoint: ["/app/elayandesa-bot"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?set DATABASE_URL in .env}
+      STORAGE_DIR: /var/lib/elayan/private
+      BOT_API_URL: http://app:8080
+      BOT_API_TOKEN: ${BOT_API_TOKEN:?set BOT_API_TOKEN in .env}
+      WA_HASH_KEY: ${WA_HASH_KEY:?set WA_HASH_KEY in .env}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:?set ADMIN_USERNAME in .env}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD in .env}
+      ATTACHMENT_RETENTION_DAYS: ${ATTACHMENT_RETENTION_DAYS:?set retention after approval by the village}
+    volumes:
+      - private_uploads:/var/lib/elayan/private
+
+volumes:
+  postgres_data:
+  private_uploads:
