@@ -2,6 +2,74 @@
 
 MVP pengajuan surat warga lewat WhatsApp. Warga memilih jenis surat, menjelaskan keperluan, menyetujui pemrosesan data, lalu mengirim foto persyaratan. Perangkat desa bekerja dari dashboard web: melihat foto privat, mengisi identitas secara manual, dan memperbarui status.
 
+## Struktur folder
+
+```
+E-LayanBot/
+├── cmd/
+│   ├── bot/main.go               # Entry point service bot WhatsApp (whatsmeow, QR pairing)
+│   └── server/main.go            # Entry point server API + dashboard web
+├── config/
+│   └── config.go                 # Pembacaan konfigurasi dari environment
+├── docs/
+│   └── flowchart_bot.png         # Flowchart alur bot
+├── internal/
+│   ├── app/                      # Server HTTP: dashboard, API bot, autentikasi, pengaturan
+│   │   ├── assets.go             # Embed template HTML dan file statis
+│   │   ├── auth.go               # Login admin dan autentikasi token bot
+│   │   ├── bot.go                # (placeholder, masih kosong)
+│   │   ├── bot_api.go            # Endpoint bot: daftar jenis surat dan FAQ
+│   │   ├── dashboard.go          # Daftar dan detail pengajuan, viewer lampiran, input identitas, ubah status
+│   │   ├── retention.go          # Hapus lampiran setelah masa retensi dan bersihkan sesi admin kedaluwarsa
+│   │   ├── server.go             # Inisialisasi dan routing server
+│   │   ├── settings.go           # Pengelolaan FAQ dan jenis surat (/settings)
+│   │   ├── submissions.go        # Endpoint bot: buat pengajuan beserta lampiran dan cek status
+│   │   ├── static/               # app.css, settings.css
+│   │   └── templates/            # dashboard.html, detail.html, login.html, settings.html
+│   ├── client/
+│   │   ├── backend_client.go     # Klien HTTP bot ke API (BOT_API_TOKEN)
+│   │   └── storage_client.go     # (placeholder, masih kosong)
+│   ├── domain/                   # Model: faq, lampiran, permohonan (status, identitas, log), sesi bot
+│   ├── handler/
+│   │   ├── router.go             # Router pesan dan seluruh alur percakapan bot
+│   │   │                         # (jenis surat, foto, ringkasan, FAQ, cek status, sesi kedaluwarsa)
+│   │   ├── menu_handler.go       # (placeholder, masih kosong)
+│   │   ├── surat_handler.go      # (placeholder, masih kosong)
+│   │   ├── faq_handler.go        # (placeholder, masih kosong)
+│   │   └── status_handler.go     # (placeholder, masih kosong)
+│   ├── id/
+│   │   └── uuid.go               # Pembuat UUID (idempotensi pengajuan)
+│   ├── messenger/
+│   │   ├── messenger.go          # Interface Messenger (abstraksi WhatsApp)
+│   │   ├── whatsmeow/adapter.go  # Adapter whatsmeow (pilot)
+│   │   └── cloudapi/adapter.go   # Adapter WhatsApp Cloud API (placeholder, masih kosong)
+│   ├── repository/
+│   │   ├── postgres.go           # Koneksi PostgreSQL, migrasi, dan data awal (seed)
+│   │   ├── sesi_repository.go    # Penyimpanan sesi bot
+│   │   └── migrations/           # 001_initial, 002_bot_sessions,
+│   │                             # 003_submission_idempotency, 004_notifications (.sql)
+│   ├── security/
+│   │   └── password.go           # Hash dan verifikasi password admin
+│   ├── service/
+│   │   ├── notifier_service.go   # Notifikasi otomatis saat status berubah
+│   │   ├── surat_service.go      # (placeholder, masih kosong)
+│   │   ├── faq_service.go        # (placeholder, masih kosong)
+│   │   └── status_service.go     # (placeholder, masih kosong)
+│   └── storage/
+│       └── local.go              # Penyimpanan file privat di disk (volume Docker)
+├── pkg/
+│   ├── utils/parser.go           # Pengurai kode permohonan dari teks warga
+│   └── validator/
+│       └── media_validator.go    # Validasi tipe dan ukuran foto (JPEG/PNG)
+├── Dockerfile                    # Membangun dua binary: server dan bot
+├── docker-compose.yml            # Service db (PostgreSQL), app (server), dan bot (WhatsApp)
+├── go.mod
+├── go.sum
+├── .dockerignore
+├── .gitignore
+└── README.md
+```
+
 ## Menjalankan pilot lokal
 
 1. Salin `.env.example` menjadi `.env`.
