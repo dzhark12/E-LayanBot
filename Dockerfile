@@ -7,7 +7,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/elayand
 RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/elayandesa-bot ./cmd/bot
 
 FROM alpine:3.22
-RUN apk add --no-cache ca-certificates && mkdir -p /var/lib/elayan/private && chown -R 10001:10001 /var/lib/elayan
+RUN apk add --no-cache ca-certificates texlive texmf-dist-latexextra texmf-dist-fontsrecommended && mkdir -p /var/lib/elayan/private && chown -R 10001:10001 /var/lib/elayan
 WORKDIR /app
 COPY --from=build /out/elayandesa /app/elayandesa
 COPY --from=build /out/elayandesa-bot /app/elayandesa-bot

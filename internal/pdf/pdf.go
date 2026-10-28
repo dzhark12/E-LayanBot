@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-//go:embed templates
+//go:embed templates/*.tex templates/*.sty templates/assets/*
 var templates embed.FS
 
 var ErrNoTemplate = errors.New("belum ada template untuk jenis surat ini")

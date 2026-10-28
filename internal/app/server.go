@@ -70,6 +70,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /login", s.login)
 	mux.Handle("POST /logout", s.requireAdmin(http.HandlerFunc(s.logout)))
 	mux.Handle("GET /", s.requireAdmin(http.HandlerFunc(s.dashboard)))
+	mux.Handle("GET /admin/requests/version", s.requireAdmin(http.HandlerFunc(s.requestVersion)))
 	mux.Handle("GET /settings", s.requireAdmin(http.HandlerFunc(s.settings)))
 	mux.Handle("POST /settings/letter", s.requireAdmin(http.HandlerFunc(s.saveLetterType)))
 	mux.Handle("POST /settings/faq", s.requireAdmin(http.HandlerFunc(s.saveFAQ)))
