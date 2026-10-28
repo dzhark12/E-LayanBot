@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/<modul-anda>/internal/domain" // sesuaikan dengan nama modul di go.mod
-	"github.com/<modul-anda>/internal/pdf"
+	"elayan.local/desa/internal/domain"
+	"elayan.local/desa/internal/pdf"
 )
 
 var wib = time.FixedZone("WIB", 7*3600)

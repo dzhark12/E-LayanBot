@@ -88,17 +88,21 @@ func Seed(ctx context.Context, db *sql.DB, username, password string) error {
 	if _, err := db.ExecContext(ctx, `INSERT INTO admin_user(username, password_hash, role) VALUES ($1, $2, 'admin') ON CONFLICT (username) DO NOTHING`, username, passwordHash); err != nil {
 		return err
 	}
-	for _, letter := range []struct{ code, name string }{
-	{"DM", "Surat Keterangan Domisili", []string{"KTP pemohon", "KK", "Surat pengantar RT"}},
-	{"SU", "Surat Keterangan Usaha", []string{"KTP pemohon", "KK", "Surat pengantar RT"}},
-	{"TM", "Surat Keterangan Tidak Mampu", []string{"KTP pemohon", "KK", "Surat pengantar RT"}},
-	{"PK", "Surat Pengantar KTP/KK", []string{"KTP pemohon", "KK"}},
-	{"KM", "Surat Keterangan Kematian", []string{"KTP almarhum", "KK almarhum", "Surat pengantar RT", "KTP pelapor"}},
+	for _, letter := range []struct {
+		code, name   string
+		requirements []string
+	}{
+		{"DM", "Surat Keterangan Domisili", []string{"KTP pemohon", "KK", "Surat pengantar RT"}},
+		{"SU", "Surat Keterangan Usaha", []string{"KTP pemohon", "KK", "Surat pengantar RT"}},
+		{"TM", "Surat Keterangan Tidak Mampu", []string{"KTP pemohon", "KK", "Surat pengantar RT"}},
+		{"PK", "Surat Pengantar KTP/KK", []string{"KTP pemohon", "KK"}},
+		{"KM", "Surat Keterangan Kematian", []string{"KTP almarhum", "KK almarhum", "Surat pengantar RT", "KTP pelapor"}},
 	} {
 		if _, err := db.ExecContext(ctx,
 			`INSERT INTO jenis_surat(kode, nama, syarat) VALUES ($1, $2, $3) ON CONFLICT (kode) DO NOTHING`,
 			letter.code, letter.name, letter.requirements); err != nil {
 			return err
+		}
 	}
 	return nil
 }
