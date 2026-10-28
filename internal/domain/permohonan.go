@@ -23,6 +23,7 @@ type Identitas struct {
 	NIK          string `json:"nik"`
 	Pekerjaan    string `json:"pekerjaan"`
 	Alamat       string `json:"alamat"`
+	Tambahan map[string]string `json:"tambahan,omitempty"`
 }
 
 type StatusLog struct {

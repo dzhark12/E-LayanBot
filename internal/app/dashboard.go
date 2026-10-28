@@ -19,6 +19,17 @@ import (
 var uuidPattern = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
 var nikPattern = regexp.MustCompile(`^[0-9]{16}$`)
 
+// daftar kolom tambahan yang diizinkan per kode jenis surat
+var extraFields = map[string][]string{
+	"DM": {"NoUrut", "StatusPerkawinan", "Kecamatan", "AlamatDomisili"},
+	"SU": {"NoUrut", "StatusPerkawinan", "Kecamatan", "JenisUsaha", "LokasiUsaha"},
+	"TM": {"NoUrut", "Kecamatan", "Keperluan", "AnakNama", "AnakJenisKelamin",
+		"AnakTempatTanggalLahir", "AnakNik", "AnakAgama", "AnakPekerjaan",
+		"AnakAlamat", "AnakKecamatan"},
+	"KM": {"NoUrut", "Kecamatan", "HariMeninggal", "TanggalMeninggal", "Penyebab",
+		"PelaporNama", "PelaporNik", "PelaporHubungan"},
+}
+
 type dashboardPage struct {
 	User       adminUser
 	CSRF       string
@@ -223,6 +234,25 @@ func (s *Server) updateIdentity(w http.ResponseWriter, r *http.Request) {
 		Pekerjaan:    strings.TrimSpace(r.FormValue("pekerjaan")),
 		Alamat:       strings.TrimSpace(r.FormValue("alamat")),
 	}
+	
+	var kode string
+	if err := s.db.QueryRowContext(r.Context(),
+		`SELECT j.kode FROM permohonan p JOIN jenis_surat j ON j.id=p.jenis_id WHERE p.id=$1`,
+		r.PathValue("id")).Scan(&kode); err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	identity.Tambahan = map[string]string{}
+	for _, key := range extraFields[kode] {
+		if v := strings.TrimSpace(r.FormValue("t_" + key)); v != "" {
+			if utf8.RuneCountInString(v) > 300 {
+				http.Redirect(w, r, "/requests/"+r.PathValue("id")+"?notice=identity-error", http.StatusSeeOther)
+				return
+			}
+			identity.Tambahan[key] = v
+		}
+	}
+	
 	if err := validateIdentity(identity); err != nil {
 		http.Redirect(w, r, "/requests/"+r.PathValue("id")+"?notice=identity-error", http.StatusSeeOther)
 		return
