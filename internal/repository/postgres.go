@@ -95,7 +95,6 @@ func Seed(ctx context.Context, db *sql.DB, username, password string) error {
 		{"DM", "Surat Keterangan Domisili", []string{"KTP pemohon", "KK", "Surat pengantar RT"}},
 		{"SU", "Surat Keterangan Usaha", []string{"KTP pemohon", "KK", "Surat pengantar RT"}},
 		{"TM", "Surat Keterangan Tidak Mampu", []string{"KTP pemohon", "KK", "Surat pengantar RT"}},
-		{"PK", "Surat Pengantar KTP/KK", []string{"KTP pemohon", "KK"}},
 		{"KM", "Surat Keterangan Kematian", []string{"KTP almarhum", "KK almarhum", "Surat pengantar RT", "KTP pelapor"}},
 	} {
 		if _, err := db.ExecContext(ctx,

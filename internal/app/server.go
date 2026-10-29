@@ -78,6 +78,7 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("POST /requests/{id}/status", s.requireAdmin(http.HandlerFunc(s.updateStatus)))
 	mux.Handle("POST /requests/{id}/identity", s.requireAdmin(http.HandlerFunc(s.updateIdentity)))
 	mux.Handle("GET /requests/{id}/letter.pdf", s.requireAdmin(http.HandlerFunc(s.letterPDF)))
+	mux.Handle("POST /requests/{id}/letter.pdf", s.requireAdmin(http.HandlerFunc(s.regenerateLetterPDF)))
 	mux.Handle("GET /attachments/{id}", s.requireAdmin(http.HandlerFunc(s.attachment)))
 	mux.HandleFunc("POST /api/v1/submissions", s.botAuth(s.createSubmission))
 	mux.HandleFunc("POST /api/v1/status", s.botAuth(s.lookupStatus))

@@ -60,14 +60,17 @@
 % Paragraf badan dengan indentasi awal
 \newcommand{\badan}[1]{\par\noindent\hspace*{1cm}#1\par}
 
-% Blok tanda tangan: teks kiri (mis. Pemohon/PELAPOR) dan blok kanan.
-% \ttdblok{teks kiri}{baris-baris kanan, pisahkan dengan \par}{Nama penanda tangan}
-\newcommand{\ttdblok}[3]{%
+% Blok tanda tangan dua kolom: kiri (pemohon/pelapor) dan kanan (pejabat).
+% \ttdblok{label kiri}{baris-baris kanan, pisahkan dengan \par}{nama pejabat}{nama pemohon/pelapor}
+% Nama pemohon/pelapor sejajar dengan nama pejabat; kosongkan argumen ke-4 bila tidak perlu.
+\newcommand{\namattd}[1]{\def\ttdtmp{#1}\ifx\ttdtmp\empty\else{\bfseries\underline{#1}}\fi}
+\newcommand{\ttdblok}[4]{%
   \par\noindent
-  \begin{minipage}[t]{0.35\textwidth}\setstretch{1.15}\hspace*{1cm}#1\end{minipage}%
+  \begin{minipage}[t][4.2cm][t]{0.35\textwidth}\centering\setstretch{1.15}#1\end{minipage}%
   \hfill
-  \begin{minipage}[t]{7.2cm}\centering\setstretch{1.15}
-    #2\par\vspace{2.6cm}
-    {\bfseries\underline{#3}}\par
-  \end{minipage}\par}
+  \begin{minipage}[t][4.2cm][t]{7.2cm}\centering\setstretch{1.15}#2\end{minipage}\par
+  \noindent
+  \begin{minipage}[t]{0.35\textwidth}\centering\setstretch{1.15}\namattd{#4}\end{minipage}%
+  \hfill
+  \begin{minipage}[t]{7.2cm}\centering\setstretch{1.15}\namattd{#3}\end{minipage}\par}
 \endinput

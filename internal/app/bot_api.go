@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 	"unicode/utf8"
+
+	"elayan.local/desa/internal/pdf"
 )
 
 type letterTypeResponse struct {
@@ -32,6 +34,9 @@ func (s *Server) listLetterTypes(w http.ResponseWriter, r *http.Request) {
 		if err := rows.Scan(&item.Code, &item.Name, &requirements); err != nil || json.Unmarshal(requirements, &item.Requirements) != nil {
 			writeAPIError(w, http.StatusServiceUnavailable, "UNAVAILABLE", "jenis surat belum dapat dimuat")
 			return
+		}
+		if !pdf.Has(item.Code) {
+			continue
 		}
 		result = append(result, item)
 	}

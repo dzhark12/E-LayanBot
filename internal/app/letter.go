@@ -93,3 +93,12 @@ func (s *Server) letterPDF(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "private, no-store")
 	_, _ = w.Write(out)
 }
+
+func (s *Server) regenerateLetterPDF(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, 1<<10)
+	if err := r.ParseForm(); err != nil || !s.validCSRF(r, currentAdmin(r).CSRF) {
+		http.Error(w, "Permintaan tidak valid.", http.StatusForbidden)
+		return
+	}
+	s.letterPDF(w, r)
+}
