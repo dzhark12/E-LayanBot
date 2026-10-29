@@ -6,6 +6,7 @@
   <title>{{.Request.Kode}} · E-LAYAN Desa Sabah Balau</title>
   <link rel="stylesheet" href="/static/app.css">
 </head>
+     <script defer src="/static/lightbox.js"></script>
 <body>
   <div class="app-shell">
     <aside class="sidebar">
@@ -24,7 +25,7 @@
           <div class="panel-heading"><div><h2 id="attachment-title">Foto persyaratan</h2><p class="muted">{{len .Request.Lampiran}} lampiran · hanya dapat dilihat setelah masuk</p></div></div>
           {{if .Request.Lampiran}}
           <div class="attachment-grid">
-            {{range .Request.Lampiran}}<figure class="attachment-card"><a href="/attachments/{{.ID}}" target="_blank" rel="noopener"><img src="/attachments/{{.ID}}" alt="Lampiran {{.Jenis}}" loading="lazy"></a><figcaption><span>{{.Jenis}}</span><small>{{printf "%.1f" (divFloat .Ukuran 1048576)}} MB</small></figcaption></figure>{{end}}
+            {{range .Request.Lampiran}}<figure class="attachment-card"><a href="/attachments/{{.ID}}" target="_blank" rel="noopener" data-lightbox data-caption="{{.Jenis}} · {{printf "%.1f" (divFloat .Ukuran 1048576)}} MB"><img src="/attachments/{{.ID}}" alt="Lampiran {{.Jenis}}" loading="lazy"></a><figcaption><span>{{.Jenis}}</span><small>{{printf "%.1f" (divFloat .Ukuran 1048576)}} MB</small></figcaption></figure>{{end}}
           </div>
           {{else}}<div class="empty-state compact"><span class="empty-icon" aria-hidden="true">▧</span><h3>Foto belum tersedia</h3></div>{{end}}
           <div class="summary-box"><span class="eyebrow">CATATAN PEMOHON</span><p>{{.Request.Ringkasan}}</p></div>
