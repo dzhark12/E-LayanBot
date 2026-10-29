@@ -128,11 +128,11 @@ func (r *Router) showLetterTypes(ctx context.Context, jid string) {
 		return
 	}
 	var menu strings.Builder
-	menu.WriteString("Pilih jenis surat dengan mengetik kodenya:\n")
-	for _, item := range types {
-		fmt.Fprintf(&menu, "• %s — %s", item.Code, item.Name)
+	menu.WriteString("Pilih jenis surat dengan mengetik nomor atau kodenya. Contoh: ketik 1 atau DM untuk memilih Surat Keterangan Domisili.\n\n")
+	for i, item := range types {
+		fmt.Fprintf(&menu, "*%d. %s (%s)*\n", i+1, item.Name, item.Code)
 		if len(item.Requirements) > 0 {
-			fmt.Fprintf(&menu, " (syarat: %s)", strings.Join(item.Requirements, ", "))
+			fmt.Fprintf(&menu, "   Syarat: %s\n", strings.Join(item.Requirements, ", "))
 		}
 		menu.WriteByte('\n')
 	}
