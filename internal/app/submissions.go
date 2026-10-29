@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"elayan.local/desa/internal/id"
+	"elayan.local/desa/internal/pdf"
 	"elayan.local/desa/pkg/validator"
 )
 
@@ -63,6 +64,10 @@ func (s *Server) createSubmission(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != sql.ErrNoRows {
 		writeAPIError(w, http.StatusServiceUnavailable, "UNAVAILABLE", "permohonan belum dapat disimpan")
+		return
+	}
+	if !pdf.Has(letterCode) {
+		writeAPIError(w, http.StatusUnprocessableEntity, "UNKNOWN_LETTER_TYPE", "jenis surat tidak tersedia")
 		return
 	}
 	files := r.MultipartForm.File["attachments"]
