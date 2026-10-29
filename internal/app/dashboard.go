@@ -14,35 +14,73 @@ import (
 	"unicode/utf8"
 
 	"elayan.local/desa/internal/domain"
+	"elayan.local/desa/internal/pdf"
 )
 
 var uuidPattern = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
 var nikPattern = regexp.MustCompile(`^[0-9]{16}$`)
 
-// daftar kolom tambahan yang diizinkan per kode jenis surat
-var extraFields = map[string][]string{
-	"DM": {"NoUrut", "StatusPerkawinan", "Kecamatan", "AlamatDomisili"},
-	"SU": {"NoUrut", "StatusPerkawinan", "Kecamatan", "JenisUsaha", "LokasiUsaha"},
-	"TM": {"NoUrut", "Kecamatan", "Keperluan", "AnakNama", "AnakJenisKelamin",
-		"AnakTempatTanggalLahir", "AnakNik", "AnakAgama", "AnakPekerjaan",
-		"AnakAlamat", "AnakKecamatan"},
-	"KM": {"NoUrut", "Kecamatan", "HariMeninggal", "TanggalMeninggal", "Penyebab",
-		"PelaporNama", "PelaporNik", "PelaporHubungan"},
+type letterField struct {
+	Key, Label, Type, Value string
+}
+
+var letterFields = map[string][]letterField{
+	"DM": {
+		{"NoUrut", "Nomor surat", "text", ""}, {"Nama", "Nama lengkap", "text", ""},
+		{"JenisKelamin", "Jenis kelamin", "gender", ""}, {"TempatLahir", "Tempat lahir", "text", ""},
+		{"TanggalLahir", "Tanggal lahir", "date", ""}, {"Nik", "NIK", "nik", ""},
+		{"Agama", "Agama", "text", ""}, {"StatusPerkawinan", "Status perkawinan", "text", ""},
+		{"Pekerjaan", "Pekerjaan", "text", ""}, {"Alamat", "Alamat", "textarea", ""},
+		{"Kecamatan", "Kecamatan", "text", "Tanjung Bintang"}, {"AlamatDomisili", "Alamat domisili", "textarea", ""},
+	},
+	"SU": {
+		{"NoUrut", "Nomor surat", "text", ""}, {"Nama", "Nama lengkap", "text", ""},
+		{"JenisKelamin", "Jenis kelamin", "gender", ""}, {"TempatLahir", "Tempat lahir", "text", ""},
+		{"TanggalLahir", "Tanggal lahir", "date", ""}, {"Nik", "NIK", "nik", ""},
+		{"Agama", "Agama", "text", ""}, {"StatusPerkawinan", "Status perkawinan", "text", ""},
+		{"Pekerjaan", "Pekerjaan", "text", ""}, {"Alamat", "Alamat", "textarea", ""},
+		{"Kecamatan", "Kecamatan", "text", "Tanjung Bintang"}, {"JenisUsaha", "Jenis usaha", "text", ""},
+		{"LokasiUsaha", "Lokasi usaha", "textarea", ""},
+	},
+	"TM": {
+		{"NoUrut", "Nomor surat", "text", ""}, {"Nama", "Nama lengkap", "text", ""},
+		{"JenisKelamin", "Jenis kelamin", "gender", ""}, {"TempatLahir", "Tempat lahir", "text", ""},
+		{"TanggalLahir", "Tanggal lahir", "date", ""}, {"Nik", "NIK", "nik", ""},
+		{"Agama", "Agama", "text", ""}, {"Pekerjaan", "Pekerjaan", "text", ""},
+		{"Alamat", "Alamat", "textarea", ""}, {"Kecamatan", "Kecamatan", "text", "Tanjung Bintang"},
+		{"Keperluan", "Keperluan", "text", ""}, {"AnakNama", "Nama anak", "text", ""},
+		{"AnakJenisKelamin", "Jenis kelamin anak", "gender", ""},
+		{"AnakTempatTanggalLahir", "Tempat dan tanggal lahir anak", "text", ""},
+		{"AnakNik", "NIK anak", "nik", ""}, {"AnakAgama", "Agama anak", "text", ""},
+		{"AnakPekerjaan", "Pekerjaan anak", "text", ""}, {"AnakAlamat", "Alamat anak", "textarea", ""},
+		{"AnakKecamatan", "Kecamatan anak", "text", ""},
+	},
+	"KM": {
+		{"NoUrut", "Nomor surat", "text", ""}, {"Nama", "Nama almarhum/almarhumah", "text", ""},
+		{"Nik", "NIK almarhum/almarhumah", "nik", ""}, {"TempatLahir", "Tempat lahir", "text", ""},
+		{"TanggalLahir", "Tanggal lahir", "date", ""}, {"JenisKelamin", "Jenis kelamin", "gender", ""},
+		{"Alamat", "Alamat", "textarea", ""}, {"Kecamatan", "Kecamatan", "text", "Tanjung Bintang"},
+		{"HariMeninggal", "Hari meninggal", "text", ""}, {"TanggalMeninggal", "Tanggal meninggal", "date", ""},
+		{"Penyebab", "Penyebab kematian", "text", ""},
+		{"PelaporNama", "Nama pelapor", "text", ""}, {"PelaporNik", "NIK pelapor", "nik", ""},
+		{"PelaporHubungan", "Hubungan dengan almarhum/almarhumah", "text", ""},
+	},
 }
 
 type dashboardPage struct {
-	User       adminUser
-	CSRF       string
-	Requests   []domain.Permohonan
-	Status     string
-	Query      string
-	Page       int
-	Pages      int
-	Total      int
-	Menunggu   int
-	Dikerjakan int
-	Selesai    int
-	Notice     string
+	User         adminUser
+	CSRF         string
+	Requests     []domain.Permohonan
+	Status       string
+	Query        string
+	Page         int
+	Pages        int
+	Total        int
+	Menunggu     int
+	Dikerjakan   int
+	Selesai      int
+	RequestCount int64
+	Notice       string
 }
 
 type detailPage struct {
@@ -50,7 +88,55 @@ type detailPage struct {
 	CSRF     string
 	Request  domain.Permohonan
 	Statuses []domain.Status
+	Fields   []letterField
+	HasPDF   bool
 	Notice   string
+}
+
+func formFields(code string, identity domain.Identitas) []letterField {
+	fields := append([]letterField(nil), letterFields[code]...)
+	if len(fields) == 0 {
+		fields = []letterField{
+			{"Nama", "Nama lengkap", "text", ""}, {"TempatLahir", "Tempat lahir", "text", ""},
+			{"TanggalLahir", "Tanggal lahir", "date", ""}, {"JenisKelamin", "Jenis kelamin", "gender", ""},
+			{"Agama", "Agama", "text", ""}, {"Nik", "NIK", "nik", ""},
+			{"Pekerjaan", "Pekerjaan", "text", ""}, {"Alamat", "Alamat", "textarea", ""},
+		}
+	}
+	for i := range fields {
+		if value := identityValue(identity, fields[i].Key); value != "" {
+			fields[i].Value = value
+		}
+	}
+	return fields
+}
+
+func identityValue(identity domain.Identitas, key string) string {
+	switch key {
+	case "Nama":
+		return identity.Nama
+	case "JenisKelamin":
+		return identity.JenisKelamin
+	case "TempatLahir":
+		return identity.TempatLahir
+	case "TanggalLahir":
+		return identity.TanggalLahir
+	case "Nik":
+		return identity.NIK
+	case "Agama":
+		return identity.Agama
+	case "Pekerjaan":
+		return identity.Pekerjaan
+	case "Alamat":
+		return identity.Alamat
+	case "Kecamatan":
+		if value := identity.Tambahan[key]; value != "" {
+			return value
+		}
+		return "Tanjung Bintang"
+	default:
+		return identity.Tambahan[key]
+	}
 }
 
 func (s *Server) dashboard(w http.ResponseWriter, r *http.Request) {
@@ -69,6 +155,10 @@ func (s *Server) dashboard(w http.ResponseWriter, r *http.Request) {
 	}
 	page.Page = pageInt(r.URL.Query().Get("page"))
 	page.Notice = r.URL.Query().Get("notice")
+	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM permohonan`).Scan(&page.RequestCount); err != nil {
+		http.Error(w, "Data permohonan belum dapat dimuat.", http.StatusServiceUnavailable)
+		return
+	}
 	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM permohonan WHERE status='Menunggu'`).Scan(&page.Menunggu); err != nil {
 		http.Error(w, "Data permohonan belum dapat dimuat.", http.StatusServiceUnavailable)
 		return
@@ -118,6 +208,19 @@ func (s *Server) dashboard(w http.ResponseWriter, r *http.Request) {
 	s.render(w, "dashboard.html", page)
 }
 
+func (s *Server) requestVersion(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+	defer cancel()
+	var count int64
+	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM permohonan`).Scan(&count); err != nil {
+		http.Error(w, "Data permohonan belum dapat dimuat.", http.StatusServiceUnavailable)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-store")
+	_ = json.NewEncoder(w).Encode(map[string]int64{"version": count})
+}
+
 func (s *Server) requestDetail(w http.ResponseWriter, r *http.Request) {
 	if !uuidPattern.MatchString(r.PathValue("id")) {
 		http.NotFound(w, r)
@@ -140,6 +243,8 @@ func (s *Server) requestDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	page.Request.Status = domain.Status(status)
+	page.Fields = formFields(page.Request.JenisKode, page.Request.Identitas)
+	page.HasPDF = pdf.Has(page.Request.JenisKode)
 	attachments, err := s.db.QueryContext(ctx, `SELECT id::text, jenis, mime, ukuran, dibuat_pada FROM lampiran WHERE permohonan_id=$1 ORDER BY dibuat_pada`, page.Request.ID)
 	if err != nil {
 		http.Error(w, "Lampiran belum dapat dimuat.", http.StatusServiceUnavailable)
@@ -224,17 +329,6 @@ func (s *Server) updateIdentity(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Permintaan tidak valid.", http.StatusForbidden)
 		return
 	}
-	identity := domain.Identitas{
-		Nama:         strings.TrimSpace(r.FormValue("nama")),
-		TempatLahir:  strings.TrimSpace(r.FormValue("tempatLahir")),
-		TanggalLahir: strings.TrimSpace(r.FormValue("tanggalLahir")),
-		JenisKelamin: strings.TrimSpace(r.FormValue("jenisKelamin")),
-		Agama:        strings.TrimSpace(r.FormValue("agama")),
-		NIK:          strings.TrimSpace(r.FormValue("nik")),
-		Pekerjaan:    strings.TrimSpace(r.FormValue("pekerjaan")),
-		Alamat:       strings.TrimSpace(r.FormValue("alamat")),
-	}
-	
 	var kode string
 	if err := s.db.QueryRowContext(r.Context(),
 		`SELECT j.kode FROM permohonan p JOIN jenis_surat j ON j.id=p.jenis_id WHERE p.id=$1`,
@@ -242,17 +336,15 @@ func (s *Server) updateIdentity(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	identity.Tambahan = map[string]string{}
-	for _, key := range extraFields[kode] {
-		if v := strings.TrimSpace(r.FormValue("t_" + key)); v != "" {
-			if utf8.RuneCountInString(v) > 300 {
-				http.Redirect(w, r, "/requests/"+r.PathValue("id")+"?notice=identity-error", http.StatusSeeOther)
-				return
-			}
-			identity.Tambahan[key] = v
+	identity := domain.Identitas{Tambahan: map[string]string{}}
+	for _, field := range formFields(kode, identity) {
+		value := strings.TrimSpace(r.FormValue("field-" + field.Key))
+		if utf8.RuneCountInString(value) > 300 {
+			http.Redirect(w, r, "/requests/"+r.PathValue("id")+"?notice=identity-error", http.StatusSeeOther)
+			return
 		}
+		setIdentityValue(&identity, field.Key, value)
 	}
-	
 	if err := validateIdentity(identity); err != nil {
 		http.Redirect(w, r, "/requests/"+r.PathValue("id")+"?notice=identity-error", http.StatusSeeOther)
 		return
@@ -274,6 +366,29 @@ func (s *Server) updateIdentity(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	http.Redirect(w, r, "/requests/"+r.PathValue("id")+"?notice=identity-saved", http.StatusSeeOther)
+}
+
+func setIdentityValue(identity *domain.Identitas, key, value string) {
+	switch key {
+	case "Nama":
+		identity.Nama = value
+	case "JenisKelamin":
+		identity.JenisKelamin = value
+	case "TempatLahir":
+		identity.TempatLahir = value
+	case "TanggalLahir":
+		identity.TanggalLahir = value
+	case "Nik":
+		identity.NIK = value
+	case "Agama":
+		identity.Agama = value
+	case "Pekerjaan":
+		identity.Pekerjaan = value
+	case "Alamat":
+		identity.Alamat = value
+	default:
+		identity.Tambahan[key] = value
+	}
 }
 
 func (s *Server) updateStatus(w http.ResponseWriter, r *http.Request) {
@@ -300,9 +415,9 @@ func (s *Server) updateStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer tx.Rollback()
-	var oldStatus string
+	var oldStatus, kode string
 	var identityRaw []byte
-	err = tx.QueryRowContext(ctx, `SELECT status, data_identitas FROM permohonan WHERE id=$1 FOR UPDATE`, r.PathValue("id")).Scan(&oldStatus, &identityRaw)
+	err = tx.QueryRowContext(ctx, `SELECT p.status, p.data_identitas, j.kode FROM permohonan p JOIN jenis_surat j ON j.id=p.jenis_id WHERE p.id=$1 FOR UPDATE OF p`, r.PathValue("id")).Scan(&oldStatus, &identityRaw, &kode)
 	if errors.Is(err, sql.ErrNoRows) {
 		http.NotFound(w, r)
 		return
@@ -317,8 +432,15 @@ func (s *Server) updateStatus(w http.ResponseWriter, r *http.Request) {
 	}
 	if newStatus == domain.Dikerjakan {
 		var identity domain.Identitas
-		if json.Unmarshal(identityRaw, &identity) != nil || !identityComplete(identity) {
+		if json.Unmarshal(identityRaw, &identity) != nil || !identityComplete(kode, identity) {
 			http.Redirect(w, r, "/requests/"+r.PathValue("id")+"?notice=identity-required", http.StatusSeeOther)
+			return
+		}
+	}
+	if newStatus == domain.Selesai {
+		var identity domain.Identitas
+		if json.Unmarshal(identityRaw, &identity) != nil || !letterFieldsComplete(kode, identity) {
+			http.Redirect(w, r, "/requests/"+r.PathValue("id")+"?notice=letter-fields-required", http.StatusSeeOther)
 			return
 		}
 	}
@@ -387,9 +509,16 @@ func validateIdentity(identity domain.Identitas) error {
 	if identity.NIK != "" && !nikPattern.MatchString(identity.NIK) {
 		return errors.New("NIK must contain 16 digits")
 	}
-	if identity.TanggalLahir != "" {
-		if _, err := time.Parse("2006-01-02", identity.TanggalLahir); err != nil {
-			return errors.New("invalid date")
+	for key, value := range identity.Tambahan {
+		if strings.HasSuffix(key, "Nik") && value != "" && !nikPattern.MatchString(value) {
+			return errors.New("invalid NIK")
+		}
+	}
+	for _, date := range []string{identity.TanggalLahir, identity.Tambahan["TanggalMeninggal"]} {
+		if date != "" {
+			if _, err := time.Parse("2006-01-02", date); err != nil {
+				return errors.New("invalid date")
+			}
 		}
 	}
 	if identity.JenisKelamin != "" && identity.JenisKelamin != "Laki-laki" && identity.JenisKelamin != "Perempuan" {
@@ -398,8 +527,31 @@ func validateIdentity(identity domain.Identitas) error {
 	return nil
 }
 
-func identityComplete(identity domain.Identitas) bool {
-	return identity.Nama != "" && identity.TempatLahir != "" && identity.TanggalLahir != "" &&
-		identity.JenisKelamin != "" && identity.Agama != "" && identity.NIK != "" &&
-		identity.Pekerjaan != "" && identity.Alamat != ""
+func identityComplete(code string, identity domain.Identitas) bool {
+	fields := letterFields[code]
+	if len(fields) == 0 {
+		fields = formFields(code, identity)
+	}
+	for _, field := range fields {
+		switch field.Key {
+		case "Nama", "JenisKelamin", "TempatLahir", "TanggalLahir", "Nik", "Agama", "Pekerjaan", "Alamat":
+			if strings.TrimSpace(identityValue(identity, field.Key)) == "" {
+				return false
+			}
+		}
+	}
+	return len(fields) > 0
+}
+
+func letterFieldsComplete(code string, identity domain.Identitas) bool {
+	fields := letterFields[code]
+	if len(fields) == 0 || validateIdentity(identity) != nil {
+		return false
+	}
+	for _, field := range fields {
+		if strings.TrimSpace(identityValue(identity, field.Key)) == "" {
+			return false
+		}
+	}
+	return true
 }

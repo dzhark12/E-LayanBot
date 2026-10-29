@@ -48,7 +48,7 @@ func main() {
 	waClient := wa.NewClient(device, nil)
 	adapter := whatsmeow.New(waClient)
 	var qr <-chan wa.QRChannelItem
-	if !waClient.IsLoggedIn() {
+	if device.ID == nil {
 		qr, err = waClient.GetQRChannel(ctx)
 		if err != nil {
 			logger.Fatalf("WhatsApp pairing could not start: %v", err)

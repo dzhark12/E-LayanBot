@@ -17,7 +17,7 @@
     <main class="main-content">
       <div class="breadcrumb"><a href="/">← Kembali ke permohonan</a><span>/</span><span>{{.Request.Kode}}</span></div>
       <header class="detail-header"><div><p class="eyebrow">{{.Request.JenisKode}} · {{.Request.JenisNama}}</p><h1>{{.Request.Kode}}</h1><p class="muted">Dikirim {{date .Request.DibuatPada}}</p></div><span class="status-pill {{statusClass (printf "%s" .Request.Status)}}"><span class="status-dot" aria-hidden="true"></span>{{.Request.Status}}</span></header>
-      {{if eq .Notice "identity-saved"}}<p class="notice" role="status">Data identitas tersimpan.</p>{{else if eq .Notice "identity-error"}}<p class="form-error" role="alert">Periksa kembali format tanggal lahir, jenis kelamin, dan NIK.</p>{{else if eq .Notice "identity-required"}}<p class="form-error" role="alert">Lengkapi tujuh field identitas sebelum memulai pengerjaan.</p>{{else if eq .Notice "status-saved"}}<p class="notice" role="status">Status permohonan diperbarui.</p>{{else if eq .Notice "status-error"}}<p class="form-error" role="alert">Perubahan status tidak valid untuk tahap permohonan ini.</p>{{end}}
+      {{if eq .Notice "identity-saved"}}<p class="notice" role="status">Data surat tersimpan.</p>{{else if eq .Notice "identity-error"}}<p class="form-error" role="alert">Periksa kembali format data, tanggal, dan NIK (16 digit).</p>{{else if eq .Notice "identity-required"}}<p class="form-error" role="alert">Lengkapi identitas pemohon sebelum memulai pengerjaan.</p>{{else if eq .Notice "letter-fields-required"}}<p class="form-error" role="alert">Lengkapi semua data yang diperlukan pada formulir surat sebelum menetapkan status Selesai.</p>{{else if eq .Notice "status-saved"}}<p class="notice" role="status">Status permohonan diperbarui.</p>{{else if eq .Notice "status-error"}}<p class="form-error" role="alert">Perubahan status tidak valid untuk tahap permohonan ini.</p>{{end}}
 
       <div class="detail-grid">
         <section class="panel attachment-panel" aria-labelledby="attachment-title">
@@ -32,17 +32,26 @@
 
         <div class="detail-side">
           <section class="panel identity-panel" aria-labelledby="identity-title">
-            <div class="panel-heading"><div><h2 id="identity-title">Data identitas</h2><p class="muted">Salin dan verifikasi dari foto persyaratan.</p></div></div>
+            {{if eq (printf "%s" .Request.Status) "Selesai"}}
+            <div class="panel-heading"><div><h2 id="identity-title">Surat selesai</h2><p class="muted">Status permohonan sudah selesai.</p></div></div>
+            <div class="identity-form">
+              {{if .HasPDF}}<a class="button button-primary button-wide" href="/requests/{{.Request.ID}}/letter.pdf">Unduh PDF surat</a>{{else}}<p class="muted">Template PDF belum tersedia untuk jenis surat ini.</p>{{end}}
+            </div>
+            {{else}}
+            <div class="panel-heading"><div><h2 id="identity-title">Data surat</h2><p class="muted">Isi dan verifikasi sesuai foto persyaratan. Semua field harus lengkap sebelum status Selesai.</p></div></div>
             <form method="post" action="/requests/{{.Request.ID}}/identity" class="identity-form">
               <input type="hidden" name="csrf" value="{{.CSRF}}">
-              <label for="nama">Nama lengkap</label><input id="nama" name="nama" value="{{.Request.Identitas.Nama}}" maxlength="120" autocomplete="off">
-              <div class="form-row"><div><label for="tempatLahir">Tempat lahir</label><input id="tempatLahir" name="tempatLahir" value="{{.Request.Identitas.TempatLahir}}" maxlength="80"></div><div><label for="tanggalLahir">Tanggal lahir</label><input id="tanggalLahir" name="tanggalLahir" type="date" value="{{.Request.Identitas.TanggalLahir}}"></div></div>
-              <div class="form-row"><div><label for="jenisKelamin">Jenis kelamin</label><select id="jenisKelamin" name="jenisKelamin"><option value="">Pilih</option><option value="Laki-laki" {{if eq .Request.Identitas.JenisKelamin "Laki-laki"}}selected{{end}}>Laki-laki</option><option value="Perempuan" {{if eq .Request.Identitas.JenisKelamin "Perempuan"}}selected{{end}}>Perempuan</option></select></div><div><label for="agama">Agama</label><input id="agama" name="agama" value="{{.Request.Identitas.Agama}}" maxlength="40"></div></div>
-              <label for="nik">NIK <small>16 digit</small></label><input id="nik" name="nik" inputmode="numeric" autocomplete="off" value="{{.Request.Identitas.NIK}}" maxlength="16">
-              <label for="pekerjaan">Pekerjaan</label><input id="pekerjaan" name="pekerjaan" value="{{.Request.Identitas.Pekerjaan}}" maxlength="80">
-              <label for="alamat">Alamat</label><textarea id="alamat" name="alamat" rows="3" maxlength="300">{{.Request.Identitas.Alamat}}</textarea>
-              <button class="button button-primary button-wide" type="submit">Simpan data identitas</button>
+              {{range .Fields}}
+              <label for="field-{{.Key}}">{{.Label}}{{if eq .Type "nik"}} <small>16 digit</small>{{end}}</label>
+              {{if eq .Type "gender"}}<select id="field-{{.Key}}" name="field-{{.Key}}"><option value="">Pilih</option><option value="Laki-laki" {{if eq .Value "Laki-laki"}}selected{{end}}>Laki-laki</option><option value="Perempuan" {{if eq .Value "Perempuan"}}selected{{end}}>Perempuan</option></select>
+              {{else if eq .Type "textarea"}}<textarea id="field-{{.Key}}" name="field-{{.Key}}" rows="3" maxlength="300">{{.Value}}</textarea>
+              {{else if eq .Type "nik"}}<input id="field-{{.Key}}" name="field-{{.Key}}" inputmode="numeric" autocomplete="off" value="{{.Value}}" maxlength="16">
+              {{else}}<input id="field-{{.Key}}" name="field-{{.Key}}" type="{{.Type}}" value="{{.Value}}" maxlength="300">
+              {{end}}
+              {{end}}
+              <button class="button button-primary button-wide" type="submit">Simpan data surat</button>
             </form>
+            {{end}}
           </section>
 
           <section class="panel status-panel" aria-labelledby="status-title">
@@ -60,7 +69,7 @@
       <section class="panel history-panel" aria-labelledby="history-title"><div class="panel-heading"><div><h2 id="history-title">Riwayat status</h2><p class="muted">Jejak pengerjaan permohonan ini.</p></div></div>
         {{if .Request.Riwayat}}<ol class="history-list">{{range .Request.Riwayat}}<li><span class="history-marker" aria-hidden="true"></span><div><strong>{{.StatusLama}} <span aria-hidden="true">→</span> {{.StatusBaru}}</strong><p>{{date .Waktu}} · {{.Admin}}{{if .Catatan}} · {{.Catatan}}{{end}}</p></div></li>{{end}}</ol>{{else}}<p class="muted history-empty">Belum ada perubahan status yang dicatat.</p>{{end}}
       </section>
-      <p class="template-note">Draf PDF mengikuti template resmi desa setelah template tiap jenis surat tersedia.</p>
+      {{if not .HasPDF}}<p class="template-note">Template PDF belum tersedia untuk jenis surat ini.</p>{{end}}
       <footer class="page-footer">E-LAYAN Desa Sabah Balau <span>•</span> Layanan administrasi warga</footer>
     </main>
   </div>

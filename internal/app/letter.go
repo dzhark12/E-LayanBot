@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/<modul-anda>/internal/domain" // sesuaikan dengan nama modul di go.mod
-	"github.com/<modul-anda>/internal/pdf"
+	"elayan.local/desa/internal/domain"
+	"elayan.local/desa/internal/pdf"
 )
 
 var wib = time.FixedZone("WIB", 7*3600)
@@ -40,6 +40,9 @@ func letterData(i domain.Identitas, now time.Time) map[string]string {
 	for k, v := range i.Tambahan {
 		d[k] = v
 	}
+	if t, err := time.Parse("2006-01-02", d["TanggalMeninggal"]); err == nil {
+		d["TanggalMeninggal"] = tanggalID(t)
+	}
 	return d
 }
 
@@ -52,20 +55,28 @@ func (s *Server) letterPDF(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 45*time.Second)
 	defer cancel()
 
-	var kode string
+	var kode, requestCode, status string
 	var raw []byte
-	err := s.db.QueryRowContext(ctx, `SELECT j.kode, p.data_identitas FROM permohonan p JOIN jenis_surat j ON j.id=p.jenis_id WHERE p.id=$1`, id).Scan(&kode, &raw)
+	err := s.db.QueryRowContext(ctx, `SELECT j.kode, p.kode_unik, p.status, p.data_identitas FROM permohonan p JOIN jenis_surat j ON j.id=p.jenis_id WHERE p.id=$1`, id).Scan(&kode, &requestCode, &status, &raw)
 	if errors.Is(err, sql.ErrNoRows) {
 		http.NotFound(w, r)
 		return
 	}
-	var ident domain.Identitas
-	if err != nil || json.Unmarshal(raw, &ident) != nil {
+	if err != nil {
 		http.Error(w, "Permohonan belum dapat dimuat.", http.StatusServiceUnavailable)
 		return
 	}
-	if !identityComplete(ident) {
-		http.Error(w, "Lengkapi data identitas terlebih dahulu.", http.StatusUnprocessableEntity)
+	if status != string(domain.Selesai) {
+		http.Error(w, "PDF hanya tersedia setelah status permohonan selesai.", http.StatusConflict)
+		return
+	}
+	var ident domain.Identitas
+	if json.Unmarshal(raw, &ident) != nil {
+		http.Error(w, "Permohonan belum dapat dimuat.", http.StatusServiceUnavailable)
+		return
+	}
+	if !letterFieldsComplete(kode, ident) {
+		http.Error(w, "Lengkapi data surat terlebih dahulu.", http.StatusUnprocessableEntity)
 		return
 	}
 	out, err := pdf.Render(ctx, kode, letterData(ident, time.Now()))
@@ -78,7 +89,7 @@ func (s *Server) letterPDF(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/pdf")
-	w.Header().Set("Content-Disposition", `inline; filename="surat.pdf"`)
+	w.Header().Set("Content-Disposition", `attachment; filename="surat-`+requestCode+`.pdf"`)
 	w.Header().Set("Cache-Control", "private, no-store")
 	_, _ = w.Write(out)
 }
