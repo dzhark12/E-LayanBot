@@ -35,7 +35,7 @@
             {{if eq (printf "%s" .Request.Status) "Selesai"}}
             <div class="panel-heading"><div><h2 id="identity-title">Surat selesai</h2><p class="muted">Status permohonan sudah selesai.</p></div></div>
             <div class="identity-form">
-              {{if .HasPDF}}<a class="button button-primary button-wide" href="/requests/{{.Request.ID}}/letter.pdf">Unduh PDF surat</a>{{else}}<p class="muted">Template PDF belum tersedia untuk jenis surat ini.</p>{{end}}
+              {{if .HasPDF}}<a class="button button-primary button-wide" href="/requests/{{.Request.ID}}/letter.pdf">Unduh PDF surat</a><form method="post" action="/requests/{{.Request.ID}}/letter.pdf"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="button button-secondary button-wide" type="submit">Generate ulang PDF</button></form>{{else}}<p class="muted">Template PDF belum tersedia untuk jenis surat ini.</p>{{end}}
             </div>
             {{else}}
             <div class="panel-heading"><div><h2 id="identity-title">Data surat</h2><p class="muted">Isi dan verifikasi sesuai foto persyaratan. Semua field harus lengkap sebelum status Selesai.</p></div></div>
