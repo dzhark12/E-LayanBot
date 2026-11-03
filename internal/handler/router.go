@@ -14,6 +14,7 @@ import (
 
 	"elayan.local/desa/internal/client"
 	"elayan.local/desa/internal/domain"
+	"elayan.local/desa/internal/gemini"
 	"elayan.local/desa/internal/id"
 	"elayan.local/desa/internal/messenger"
 	"elayan.local/desa/internal/repository"
@@ -29,6 +30,7 @@ type Router struct {
 	files         *storage.Local
 	retentionDays int
 	logger        *log.Logger
+	ai            *gemini.Assistant // nil/nonaktif = hanya FAQ kata kunci
 	mu            sync.Mutex
 }
 
@@ -39,8 +41,8 @@ type conversation struct {
 	Attachments []client.Attachment `json:"attachments"`
 }
 
-func NewRouter(db *sql.DB, wa messenger.Messenger, api *client.Backend, files *storage.Local, retentionDays int, logger *log.Logger) *Router {
-	return &Router{db: db, wa: wa, api: api, files: files, retentionDays: retentionDays, logger: logger}
+func NewRouter(db *sql.DB, wa messenger.Messenger, api *client.Backend, files *storage.Local, retentionDays int, logger *log.Logger, ai *gemini.Assistant) *Router {
+	return &Router{db: db, wa: wa, api: api, files: files, retentionDays: retentionDays, logger: logger, ai: ai}
 }
 
 func (r *Router) Start(ctx context.Context) {
@@ -57,7 +59,12 @@ func (r *Router) Handle(parent context.Context, message messenger.Message) {
 	ctx, cancel := context.WithTimeout(parent, 60*time.Second)
 	defer cancel()
 	r.mu.Lock()
-	defer r.mu.Unlock()
+	locked := true
+	defer func() {
+		if locked {
+			r.mu.Unlock()
+		}
+	}()
 	if ctx.Err() != nil {
 		return
 	}
@@ -117,6 +124,10 @@ func (r *Router) Handle(parent context.Context, message messenger.Message) {
 		r.handleLetterFlow(ctx, message, session, state, text)
 		return
 	}
+	// Jawaban FAQ/AI tidak mengubah sesi, jadi lepas kunci global agar
+	// panggilan Gemini (bisa belasan detik) tidak memblokir warga lain.
+	r.mu.Unlock()
+	locked = false
 	r.answerFAQ(ctx, message.JID, strings.TrimPrefix(text, "INFO "))
 }
 
@@ -283,16 +294,32 @@ func (r *Router) answerFAQ(ctx context.Context, jid, query string) {
 		r.reply(ctx, jid, "Kirim pertanyaan tentang jam layanan, persyaratan, alur pengurusan, atau kontak desa.")
 		return
 	}
+	// 1) FAQ kata kunci tetap yang utama: murah, instan, dan resmi.
 	answer, err := r.api.FAQ(ctx, query)
-	if errors.Is(err, client.ErrNotFound) {
-		r.reply(ctx, jid, "Informasi itu belum tersedia di layanan ini. Bot hanya menjawab informasi desa yang sudah disiapkan perangkat desa.")
+	if err == nil {
+		r.reply(ctx, jid, answer)
 		return
 	}
-	if err != nil {
+	if !errors.Is(err, client.ErrNotFound) {
 		r.reply(ctx, jid, "Informasi belum dapat dimuat. Coba lagi sebentar.")
 		return
 	}
-	r.reply(ctx, jid, answer)
+	// 2) Tidak ada kecocokan kata kunci: tanya Gemini, dibatasi pada FAQ aktif.
+	if !r.ai.Enabled() {
+		r.reply(ctx, jid, "Informasi itu belum tersedia di layanan ini. Bot hanya menjawab informasi desa yang sudah disiapkan perangkat desa.")
+		return
+	}
+	entries, err := repository.ListActiveFAQ(ctx, r.db, 100)
+	if err != nil {
+		r.logger.Printf("faq load for ai failed: %v", err)
+		r.reply(ctx, jid, "Informasi belum dapat dimuat. Coba lagi sebentar.")
+		return
+	}
+	facts := make([]gemini.Fact, len(entries))
+	for i, e := range entries {
+		facts[i] = gemini.Fact{Question: e.Question, Answer: e.Answer}
+	}
+	r.reply(ctx, jid, r.ai.Answer(ctx, jid, query, facts))
 }
 
 func (r *Router) save(ctx context.Context, session domain.SesiBot, state conversation) error {
