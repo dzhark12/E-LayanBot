@@ -38,6 +38,9 @@ func Load() (Config, error) {
 		AdminUsername: strings.TrimSpace(os.Getenv("ADMIN_USERNAME")),
 		AdminPassword: os.Getenv("ADMIN_PASSWORD"),
 		MaxAttachment: 10 << 20,
+		GeminiAPIKey:  strings.TrimSpace(os.Getenv("GEMINI_API_KEY")),
+		GeminiModel:   value("GEMINI_MODEL", "gemini-3.5-flash-lite"),
+		VillageName:   value("VILLAGE_NAME", "Sabah Balau"),
 	}
 
 	for name, got := range map[string]string{

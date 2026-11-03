@@ -84,7 +84,7 @@ func main() {
 	if assistant.Enabled() {
 		logger.Printf("Gemini assistant enabled (model %s, %d questions/hour/resident)", cfg.GeminiModel, cfg.GeminiPerHour)
 	}
-	router := handler.NewRouter(db, adapter, backend, files, cfg.RetentionDays, logger)
+	router := handler.NewRouter(db, adapter, backend, files, cfg.RetentionDays, logger, assistant)
 	router.Start(ctx)
 	go service.RunNotifications(ctx, db, adapter, logger)
 	logger.Println("WhatsApp bot connected and waiting for resident messages")

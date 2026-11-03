@@ -14,4 +14,3 @@ COPY --from=build /out/elayandesa-bot /app/elayandesa-bot
 EXPOSE 8080
 USER 10001:10001
 ENTRYPOINT ["/app/elayandesa"]
-1
