@@ -4,26 +4,236 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Masuk · E-LAYAN Desa Sabah Balau</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/app.css">
 </head>
 <body class="login-page">
-  <main class="login-card">
-    <a class="brand brand-login" href="/login" aria-label="E-LAYAN Desa Sabah Balau">
-      <span class="brand-mark" aria-hidden="true">E</span>
-      <span><strong>E-LAYAN</strong><small>DESA SABAH BALAU</small></span>
-    </a>
-    <p class="eyebrow">RUANG PERANGKAT DESA</p>
-    <h1>Selamat datang</h1>
-    <p class="muted">Masuk untuk mengelola permohonan surat warga.</p>
-    {{if .Error}}<p class="form-error" role="alert">{{.Error}}</p>{{end}}
-    <form method="post" action="/login" class="stack-form">
-      <label for="username">Nama pengguna</label>
-      <input id="username" name="username" autocomplete="username" required maxlength="80" autofocus>
-      <label for="password">Kata sandi</label>
-      <input id="password" type="password" name="password" autocomplete="current-password" required maxlength="256">
-      <button class="button button-primary button-wide" type="submit">Masuk ke dashboard <span aria-hidden="true">→</span></button>
-    </form>
-    <p class="login-footnote">Akses hanya untuk perangkat desa yang terdaftar.</p>
+  <!-- Kumpulan ikon SVG (tidak butuh internet / font Google). Dipakai lewat <use href="#i-..."> -->
+  <svg class="icon-sprite" aria-hidden="true" focusable="false">
+    <symbol id="i-landmark" viewBox="0 0 24 24"><line x1="3" x2="21" y1="22" y2="22"/><line x1="6" x2="6" y1="18" y2="11"/><line x1="10" x2="10" y1="18" y2="11"/><line x1="14" x2="14" y1="18" y2="11"/><line x1="18" x2="18" y1="18" y2="11"/><polygon points="12 2 20 7 4 7"/></symbol>
+    <symbol id="i-badge-check" viewBox="0 0 24 24"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-message" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></symbol>
+    <symbol id="i-printer" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></symbol>
+    <symbol id="i-folder-user" viewBox="0 0 24 24"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/><circle cx="12" cy="12.5" r="1.8"/><path d="M8.8 17.6c.5-1.4 1.8-2.1 3.2-2.1s2.7.7 3.2 2.1"/></symbol>
+    <symbol id="i-map-pin" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></symbol>
+    <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></symbol>
+  </svg>
+
+  <main class="login-split">
+    <!-- LEFT COLUMN: Brand Identity (Desktop only) -->
+    <div class="login-brand" aria-hidden="true">
+      <div class="login-brand-bg"></div>
+      <div class="login-brand-glow"></div>
+
+      <div class="login-brand-content">
+        <!-- Brand Header -->
+        <div class="login-brand-header">
+          <div class="brand-mark-large">
+            <svg class="icon"><use href="#i-landmark"/></svg>
+          </div>
+          <div>
+            <div class="brand-name-row">
+              <span class="brand-name">E-LAYAN</span>
+              <span class="brand-badge">Official</span>
+            </div>
+            <p class="brand-subtitle">Desa Sabah Balau</p>
+          </div>
+        </div>
+
+        <!-- Headline & Description -->
+        <div class="login-brand-body">
+          <div class="brand-tag">
+            <svg class="icon" aria-hidden="true"><use href="#i-badge-check"/></svg>
+            <span>Portal Administrasi & Surat Menyurat</span>
+          </div>
+          <h1 class="brand-headline">Layanan surat desa, lebih cepat dan tertata.</h1>
+          <p class="brand-description">Platform pelayanan publik terintegrasi untuk melayani kebutuhan administrasi kependudukan warga Sabah Balau secara transparan dan responsif.</p>
+
+          <!-- Value Props -->
+          <div class="brand-features">
+            <div class="brand-feature">
+              <div class="brand-feature-icon" aria-hidden="true">
+                <svg class="icon"><use href="#i-message"/></svg>
+              </div>
+              <div>
+                <p class="brand-feature-title">01 Warga mengajukan</p>
+                <p class="brand-feature-desc">Permohonan dan persyaratan dikirim melalui bot Whatsapp</p>
+              </div>
+            </div>
+            <div class="brand-feature">
+              <div class="brand-feature-icon" aria-hidden="true">
+                <svg class="icon"><use href="#i-printer"/></svg>
+              </div>
+              <div>
+                <p class="brand-feature-title">02 Operator memverifikasi</p>
+                <p class="brand-feature-desc">Perangkat desa memeriksa data dan kelengkapan berkas</p>
+              </div>
+            </div>
+            <div class="brand-feature">
+              <div class="brand-feature-icon" aria-hidden="true">
+                <svg class="icon"><use href="#i-folder-user"/></svg>
+              </div>
+              <div>
+                <p class="brand-feature-title">03 Surat diproses</p>
+                <p class="brand-feature-desc">Surat disiapkan sesuai hasil verifikasi permohonan</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="login-brand-footer">
+          <div class="brand-footer-info">
+            <svg class="icon" aria-hidden="true"><use href="#i-map-pin"/></svg>
+            <span>Pemerintah Desa Sabah Balau &middot; Kec. Tanjung Bintang, Kab. Lampung Selatan</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN: Login Card -->
+    <div class="login-card-wrapper">
+      <!-- System Status Bar (Desktop) -->
+      <div class="login-status-bar">
+        <div class="status-badge">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span>Sistem Aktif</span>
+        </div>
+      </div>
+
+      <div class="login-card">
+        <!-- Card Header -->
+        <div class="login-card-header">
+          <h2>Masuk ke E-LAYAN</h2>
+          <p class="muted">Silakan masuk untuk mengelola permohonan surat warga.</p>
+        </div>
+
+        <!-- Error Alert -->
+        {{if .Error}}
+        <div class="form-error-alert" role="alert">
+          <svg class="icon" aria-hidden="true"><use href="#i-alert"/></svg>
+          <div>
+            <p class="form-error-title">Kredensial Tidak Sesuai</p>
+            <p class="form-error-desc">{{.Error}}</p>
+          </div>
+          <button type="button" class="form-error-close" aria-label="Tutup pesan error">
+            <svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>
+          </button>
+        </div>
+        {{end}}
+
+        <!-- Login Form -->
+        <form method="post" action="/login" class="login-form" id="login-form">
+          <!-- Username Field -->
+          <div class="form-field">
+            <label for="username" class="form-label">Username atau Email</label>
+            <div class="form-input-wrapper">
+              <span class="form-input-icon" aria-hidden="true">
+                <svg class="icon"><use href="#i-user"/></svg>
+              </span>
+              <input
+                id="username"
+                name="username"
+                type="text"
+                autocomplete="username"
+                required
+                maxlength="80"
+                autofocus
+                placeholder="contoh: admin@sabahbalau.desa.id"
+                class="form-input"
+              >
+            </div>
+          </div>
+
+          <!-- Password Field -->
+          <div class="form-field">
+            <div class="form-label-row">
+              <label for="password" class="form-label">Kata Sandi</label>
+            </div>
+            <div class="form-input-wrapper">
+              <span class="form-input-icon" aria-hidden="true">
+                <svg class="icon"><use href="#i-lock"/></svg>
+              </span>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autocomplete="current-password"
+                required
+                maxlength="256"
+                placeholder="Masukkan kata sandi akun Anda"
+                class="form-input has-toggle"
+              >
+              <button
+                type="button"
+                class="form-input-toggle"
+                aria-label="Tampilkan atau sembunyikan kata sandi"
+                aria-pressed="false"
+              >
+                <svg class="icon icon-eye" aria-hidden="true"><use href="#i-eye"/></svg>
+                <svg class="icon icon-eye-off hidden" aria-hidden="true"><use href="#i-eye-off"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Options Row -->
+          <div class="form-options">
+            <label class="checkbox-label">
+              <input type="checkbox" name="remember" id="remember-me" class="checkbox-input">
+              <span class="checkbox-check" aria-hidden="true">
+                <svg class="icon"><use href="#i-check"/></svg>
+              </span>
+              <span>Ingat saya di perangkat ini</span>
+            </label>
+            <a href="#" class="forgot-link">
+              Lupa kata sandi?
+            </a>
+          </div>
+
+          <!-- Submit Button -->
+          <button type="submit" class="login-submit" id="submit-button">
+            <svg class="login-spinner" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" fill="currentColor"></path>
+            </svg>
+            <span class="login-btn-text">Masuk ke Sistem</span>
+            <svg class="icon login-btn-icon" aria-hidden="true"><use href="#i-arrow-right"/></svg>
+          </button>
+        </form>
+
+        <!-- Help Shortcut -->
+        <div class="login-help">
+          <div class="login-help-info">
+            <svg class="icon login-help-icon" aria-hidden="true"><use href="#i-help"/></svg>
+            <div>
+              <p class="login-help-title">Butuh bantuan teknis aparatur?</p>
+              <p class="login-help-desc">Hubungi Tim IT Kominfo Desa</p>
+            </div>
+          </div>
+          <a href="https://wa.me/6288286086844" target="_blank" rel="noopener noreferrer" class="login-help-link">
+            WhatsApp
+          </a>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="login-footer">
+        <p>E-LAYAN Desa Sabah Balau &middot; Layanan administrasi warga</p>
+        <p class="login-footer-copyright">Terintegrasi Database Kependudukan &copy; 2026. Dilindungi hak cipta.</p>
+      </div>
+    </div>
   </main>
+
+  <script src="/static/login.js"></script>
 </body>
 </html>
