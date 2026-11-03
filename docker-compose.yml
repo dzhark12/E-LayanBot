@@ -55,6 +55,10 @@ services:
       DATABASE_URL: ${DATABASE_URL:?set DATABASE_URL in .env}
       STORAGE_DIR: /var/lib/elayan/private
       BOT_API_URL: http://app:8080
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.5-flash-lite}
+      GEMINI_MAX_PER_HOUR: ${GEMINI_MAX_PER_HOUR:-10}
+      VILLAGE_NAME: ${VILLAGE_NAME:-Sabah Balau}
       BOT_API_TOKEN: ${BOT_API_TOKEN:?set BOT_API_TOKEN in .env}
       WA_HASH_KEY: ${WA_HASH_KEY:?set WA_HASH_KEY in .env}
       ADMIN_USERNAME: ${ADMIN_USERNAME:?set ADMIN_USERNAME in .env}
