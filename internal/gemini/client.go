@@ -1,5 +1,3 @@
-// Package gemini membungkus Gemini API untuk menjawab pertanyaan warga
-// dengan batasan ketat: hanya berdasarkan pengetahuan desa yang diberikan.
 package gemini
 
 import (
