@@ -10,6 +10,7 @@ import (
 
 	"elayan.local/desa/config"
 	"elayan.local/desa/internal/client"
+	"elayan.local/desa/internal/gemini"
 	"elayan.local/desa/internal/handler"
 	"elayan.local/desa/internal/messenger/whatsmeow"
 	"elayan.local/desa/internal/repository"
@@ -78,6 +79,10 @@ func main() {
 	backend, err := client.NewBackend(cfg.BotAPIURL, cfg.BotAPIToken, files)
 	if err != nil {
 		logger.Fatalf("bot API setup failed: %v", err)
+	}
+	assistant := gemini.NewAssistant(gemini.NewClient(cfg.GeminiAPIKey, cfg.GeminiModel), cfg.VillageName, cfg.GeminiPerHour, logger)
+	if assistant.Enabled() {
+		logger.Printf("Gemini assistant enabled (model %s, %d questions/hour/resident)", cfg.GeminiModel, cfg.GeminiPerHour)
 	}
 	router := handler.NewRouter(db, adapter, backend, files, cfg.RetentionDays, logger)
 	router.Start(ctx)
