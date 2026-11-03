@@ -20,6 +20,11 @@ type Config struct {
 	CookieSecure  bool
 	RetentionDays int
 	MaxAttachment int64
+
+	GeminiAPIKey  string
+	GeminiModel   string
+	GeminiPerHour int
+	VillageName   string
 }
 
 func Load() (Config, error) {
@@ -65,6 +70,13 @@ func Load() (Config, error) {
 	cfg.RetentionDays, err = strconv.Atoi(strings.TrimSpace(os.Getenv("ATTACHMENT_RETENTION_DAYS")))
 	if err != nil || cfg.RetentionDays < 1 || cfg.RetentionDays > 3650 {
 		return Config{}, errors.New("ATTACHMENT_RETENTION_DAYS must be between 1 and 3650 and approved by the village")
+	}
+	cfg.GeminiPerHour = 10
+	if raw := strings.TrimSpace(os.Getenv("GEMINI_MAX_PER_HOUR")); raw != "" {
+		cfg.GeminiPerHour, err = strconv.Atoi(raw)
+		if err != nil || cfg.GeminiPerHour < 1 || cfg.GeminiPerHour > 200 {
+			return Config{}, errors.New("GEMINI_MAX_PER_HOUR must be between 1 and 200")
+		}
 	}
 	return cfg, nil
 }
