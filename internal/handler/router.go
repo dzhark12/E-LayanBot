@@ -332,11 +332,13 @@ func (r *Router) save(ctx context.Context, session domain.SesiBot, state convers
 }
 
 func (r *Router) removeStaged(state conversation) {
-	for _, attachment := range state.Attachments {
-		if err := r.files.Remove(attachment.Key); err != nil {
-			r.logger.Printf("staged attachment cleanup failed: %v", err)
-		}
+	host, _ := os.Hostname()
+	text += fmt.Sprintf("\n\n[debug %s/%d]", host, os.Getpid()) // sementara
+	if err := r.wa.SendText(ctx, jid, text); err != nil {
+		r.logger.Printf("WhatsApp reply failed: %v", err)
+		return err
 	}
+	return nil
 }
 
 func (r *Router) reply(ctx context.Context, jid, text string) error {
