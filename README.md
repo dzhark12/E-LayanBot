@@ -2,9 +2,14 @@
 
 **Sistem Pengajuan Surat Administrasi Desa Berbasis WhatsApp**
 
-E-LAYAN merupakan aplikasi MVP untuk mempermudah warga Desa Sabah Balau dalam mengajukan surat administrasi melalui WhatsApp. Warga dapat memilih jenis surat, menjelaskan keperluan, menyetujui pemrosesan data, dan mengirimkan foto dokumen persyaratan tanpa harus memulai proses melalui formulir web.
+![Go](https://img.shields.io/badge/Go-1.27-00ADD8?style=flat&logo=go&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?style=flat&logo=postgresql&logoColor=white)
+![Docker Compose](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat&logo=docker&logoColor=white)
+![WhatsApp](https://img.shields.io/badge/WhatsApp-whatsmeow-25D366?style=flat&logo=whatsapp&logoColor=white)
+![Gemini](https://img.shields.io/badge/Google-Gemini-8E75B2?style=flat&logo=googlegemini&logoColor=white)
+![Status](https://img.shields.io/badge/Status-MVP-orange?style=flat)
 
-Perangkat desa mengelola permohonan melalui dashboard web yang menyediakan fitur pemantauan pengajuan, peninjauan lampiran secara privat, pengisian identitas warga secara manual, pembaruan status, dan pengelolaan informasi layanan.
+E-LAYAN merupakan aplikasi MVP digitalisasi pelayanan administrasi Desa Sabah Balau. Warga mengajukan surat melalui bot WhatsApp tanpa perlu mengisi formulir web, sedangkan perangkat desa memproses permohonan melalui dashboard web.
 
 ## Daftar Isi
 
@@ -23,29 +28,21 @@ Perangkat desa mengelola permohonan melalui dashboard web yang menyediakan fitur
 
 ### 1. Bot WhatsApp
 - Menampilkan menu layanan administrasi desa.
-- Memungkinkan warga memilih jenis surat dan menjelaskan keperluan.
-- Meminta persetujuan pemrosesan data sebelum pengiriman dokumen.
+- Memandu warga memilih jenis surat, menjelaskan keperluan, dan menyetujui pemrosesan data.
 - Menerima foto persyaratan dengan kategori `KTP`, `KK`, `RT`, atau `LAINNYA`.
 - Menyediakan konfirmasi pengajuan dan pembatalan sesi.
 - Memungkinkan warga memeriksa status pengajuan melalui kode permohonan.
 - Mengirimkan notifikasi otomatis ketika status permohonan berubah menjadi `Selesai`.
-- Menjawab pertanyaan umum berdasarkan FAQ yang dikelola administrator.
+- Menjawab pertanyaan umum berdasarkan FAQ, dengan dukungan asisten AI Google Gemini (opsional).
 
 ### 2. Dashboard Web
-- Menampilkan daftar dan detail pengajuan surat.
-- Menampilkan lampiran secara privat setelah administrator berhasil login.
+- Menampilkan daftar dan detail pengajuan beserta lampirannya.
 - Memungkinkan petugas mengisi identitas warga secara manual.
 - Memungkinkan petugas memperbarui status dan melihat riwayat perubahan.
+- Membuat surat dalam format PDF berdasarkan template LaTeX.
 - Menyediakan pengaturan FAQ, jenis surat, dan persyaratan melalui halaman `/settings`.
 
-### 3. Keamanan dan Pengelolaan Data
-- Autentikasi administrator pada dashboard.
-- Autentikasi token untuk komunikasi internal antara bot dan server.
-- Penyimpanan foto pada direktori privat.
-- Validasi tipe dan ukuran file lampiran.
-- Pencegahan pengajuan duplikat menggunakan UUID idempotensi.
-- Pembatasan permintaan pengecekan status.
-- Penghapusan lampiran berdasarkan masa retensi yang telah disetujui.
+Fitur keamanan dan pengelolaan data dijelaskan pada bagian [Penyimpanan dan Keamanan Data](#penyimpanan-dan-keamanan-data).
 
 ## Alur Sistem
 
@@ -72,6 +69,8 @@ flowchart TD
 |---|---|
 | Bahasa pemrograman | Go |
 | Komunikasi WhatsApp | `whatsmeow` |
+| Asisten AI | Google Gemini API (opsional) |
+| Pembuatan PDF | LaTeX (`pdflatex`, TeX Live) |
 | Backend | HTTP API berbasis Go |
 | Dashboard | HTML, CSS, dan template Go |
 | Database | PostgreSQL |
@@ -100,6 +99,7 @@ E-LayanBot/
 │   │   ├── bot.go
 │   │   ├── bot_api.go
 │   │   ├── dashboard.go
+│   │   ├── letter.go
 │   │   ├── retention.go
 │   │   ├── server.go
 │   │   ├── settings.go
@@ -110,6 +110,9 @@ E-LayanBot/
 │   │   ├── backend_client.go
 │   │   └── storage_client.go
 │   ├── domain/
+│   ├── gemini/
+│   │   ├── assistant.go
+│   │   └── client.go
 │   ├── handler/
 │   │   ├── router.go
 │   │   ├── menu_handler.go
@@ -124,6 +127,9 @@ E-LayanBot/
 │   │   │   └── adapter.go
 │   │   └── cloudapi/
 │   │       └── adapter.go
+│   ├── pdf/
+│   │   ├── pdf.go
+│   │   └── templates/
 │   ├── repository/
 │   │   ├── postgres.go
 │   │   ├── sesi_repository.go
@@ -144,6 +150,7 @@ E-LayanBot/
 │       └── media_validator.go
 ├── Dockerfile
 ├── docker-compose.yml
+├── .env.example
 ├── go.mod
 ├── go.sum
 ├── .dockerignore
@@ -161,24 +168,30 @@ E-LayanBot/
 | `internal/app/` | Routing HTTP, API, autentikasi, dashboard, dan pengaturan. |
 | `internal/client/` | Klien komunikasi bot dengan backend dan layanan penyimpanan. |
 | `internal/domain/` | Model data FAQ, lampiran, permohonan, dan sesi bot. |
+| `internal/gemini/` | Klien Google Gemini dan asisten AI untuk menjawab pertanyaan warga. |
 | `internal/handler/` | Routing pesan dan alur percakapan WhatsApp. |
 | `internal/messenger/` | Abstraksi dan adapter integrasi WhatsApp. |
+| `internal/pdf/` | Pembuatan PDF surat dari template LaTeX (kop desa, logo, dan template per jenis surat). |
 | `internal/repository/` | Akses database, migrasi, dan penyimpanan sesi. |
 | `internal/security/` | Hashing dan verifikasi password administrator. |
 | `internal/service/` | Logika layanan, termasuk notifikasi perubahan status. |
 | `internal/storage/` | Penyimpanan lampiran secara privat. |
 | `pkg/` | Utilitas dan validasi media yang dapat digunakan lintas paket. |
 
-> Catatan: beberapa file handler, client, dan service masih berupa placeholder. Keberadaan file tersebut tidak berarti seluruh modul sudah diimplementasikan.
+> Catatan: beberapa file masih berupa placeholder, yaitu `menu_handler.go`, `surat_handler.go`, `faq_handler.go`, dan `status_handler.go` pada `internal/handler/`, `storage_client.go`, `faq_service.go`, `surat_service.go`, `status_service.go`, serta adapter `cloudapi`. Logika percakapan saat ini berada di `internal/handler/router.go`.
 
 ## Persyaratan
 
-Sebelum menjalankan aplikasi, pastikan perangkat pengembangan telah memiliki:
+Wajib:
 
-- [Go](https://go.dev/dl/) sesuai dengan versi yang dideklarasikan pada `go.mod`.
 - [Docker](https://www.docker.com/) dan Docker Compose.
-- Akun WhatsApp khusus untuk pilot bot.
 - Git untuk mengambil repository.
+- Akun WhatsApp khusus untuk pilot bot.
+
+Opsional:
+
+- API key [Google Gemini](https://aistudio.google.com/) untuk mengaktifkan asisten AI.
+- [Go](https://go.dev/dl/) sesuai versi pada `go.mod`, PostgreSQL, dan TeX Live, hanya apabila aplikasi dijalankan tanpa Docker. Ketiganya sudah tersedia di dalam image Docker.
 
 ## Instalasi dan Menjalankan Aplikasi
 
@@ -205,20 +218,20 @@ Windows PowerShell:
 Copy-Item .env.example .env
 ```
 
-Sesuaikan seluruh variabel berdasarkan `.env.example` dan konfigurasi yang dibaca aplikasi.
-
-**Penting:** jangan menggunakan password contoh atau secret bawaan untuk deployment.
-
 ### 3. Konfigurasikan secret dan retensi
 
-Sebelum menjalankan aplikasi:
+Ganti seluruh nilai contoh pada `.env`. Jangan menggunakan password atau secret bawaan untuk deployment.
 
-- Gunakan password database yang kuat.
-- Isi `BOT_API_TOKEN` dengan token acak yang kuat.
-- Tetapkan `WA_HASH_KEY` dengan secret yang kuat dan stabil.
-- Atur `ADMIN_USERNAME` dan `ADMIN_PASSWORD`.
-- Tentukan `ATTACHMENT_RETENTION_DAYS` berdasarkan keputusan retensi yang disetujui oleh pihak desa.
+- Gunakan password database yang kuat (disarankan hanya huruf dan angka agar `DATABASE_URL` tetap valid).
+- Pastikan host pada `DATABASE_URL` adalah `db` (nama service PostgreSQL di Docker Compose), bukan `localhost`.
+- Isi `BOT_API_TOKEN` dengan token acak minimal 32 karakter.
+- Tetapkan `WA_HASH_KEY` dengan secret acak minimal 32 karakter yang stabil.
+- Atur `ADMIN_USERNAME` dan `ADMIN_PASSWORD` (minimal 12 karakter).
+- Tentukan `ATTACHMENT_RETENTION_DAYS` (1–3650) berdasarkan keputusan retensi yang disetujui oleh pihak desa.
+- Isi `GEMINI_API_KEY` apabila asisten AI ingin diaktifkan. Jika dikosongkan, bot tetap berjalan dan hanya menjawab berdasarkan FAQ.
 - Pastikan konfigurasi cookie sesuai dengan lingkungan deployment.
+
+Aplikasi akan menolak berjalan apabila variabel wajib kosong atau tidak memenuhi panjang minimum di atas.
 
 Jangan mengubah `WA_HASH_KEY` ketika data yang bergantung pada kunci tersebut masih digunakan. Perubahan kunci dapat menyebabkan data yang sebelumnya di-hash tidak lagi dapat dicocokkan.
 
@@ -230,7 +243,7 @@ Dari direktori utama repository, jalankan:
 docker compose up --build
 ```
 
-Perintah tersebut membangun dan menjalankan service yang didefinisikan dalam Docker Compose, yaitu database, server, dan bot WhatsApp.
+Perintah tersebut membangun dan menjalankan tiga service, yaitu `db` (PostgreSQL), `app` (server dan dashboard), dan `bot` (bot WhatsApp). Proses build pertama memerlukan waktu lebih lama karena image memasang TeX Live untuk pembuatan PDF.
 
 ### 5. Hubungkan WhatsApp
 
@@ -240,9 +253,7 @@ Pada penggunaan pertama, buka log service bot:
 docker compose logs -f bot
 ```
 
-Jika QR pairing ditampilkan, pindai melalui WhatsApp pada menu **Perangkat tertaut**.
-
-Jangan membagikan QR pairing kepada pihak yang tidak berwenang karena QR tersebut dapat memberikan akses ke sesi WhatsApp yang ditautkan.
+Pindai QR pairing yang ditampilkan melalui WhatsApp pada menu **Perangkat tertaut**.
 
 ### 6. Buka dashboard
 
@@ -274,8 +285,8 @@ Bot menyediakan alur percakapan dengan perintah berikut:
 | `SURAT` | Memulai alur pengajuan surat. |
 | `BATAL` | Membatalkan sesi pengajuan. |
 | `SELESAI` | Mengonfirmasi penyelesaian pengiriman persyaratan. |
-
-Warga memilih jenis surat, memasukkan ringkasan keperluan, memberikan persetujuan pemrosesan data, lalu mengirimkan foto persyaratan dengan kategori yang sesuai.
+| `INFO <pertanyaan>` | Mengajukan pertanyaan umum yang dijawab dari FAQ atau asisten AI. |
+| Kode permohonan | Mengirim kode permohonan untuk memeriksa status pengajuan. |
 
 Sesi percakapan dan foto sementara memiliki masa kedaluwarsa 24 jam.
 
@@ -283,32 +294,24 @@ Sesi percakapan dan foto sementara memiliki masa kedaluwarsa 24 jam.
 
 Kode jenis surat awal yang tersedia:
 
-| Kode | Keterangan |
-|---|---|
-| `DM` | Surat Keterangan Domisili |
-| `SU` | Jenis surat sesuai konfigurasi layanan |
-| `TM` | Jenis surat sesuai konfigurasi layanan |
-| `PK` | Jenis surat sesuai konfigurasi layanan |
+| Kode | Keterangan | Persyaratan awal |
+|---|---|---|
+| `DM` | Surat Keterangan Domisili | KTP pemohon, KK, surat pengantar RT |
+| `SU` | Surat Keterangan Usaha | KTP pemohon, KK, surat pengantar RT |
+| `TM` | Surat Keterangan Tidak Mampu | KTP pemohon, KK, surat pengantar RT |
+| `KM` | Surat Keterangan Kematian | KTP almarhum, KK almarhum, surat pengantar RT, KTP pelapor |
 
-Nama resmi, persyaratan, dan informasi setiap jenis surat perlu diverifikasi serta dikelola melalui dashboard. Kode di atas tidak menggantikan penetapan nomenklatur resmi oleh pemerintah desa.
+Nama, persyaratan, dan informasi setiap jenis surat dapat dikelola melalui dashboard. Kode di atas tidak menggantikan penetapan nomenklatur resmi oleh pemerintah desa.
 
 ### 3. Pemrosesan oleh petugas
 
-Petugas dapat:
+Petugas meninjau permohonan dan lampiran melalui dashboard, kemudian mengisi identitas warga secara manual, meliputi nama, tempat dan tanggal lahir, jenis kelamin, agama, NIK, pekerjaan, dan alamat.
 
-1. Membuka daftar pengajuan melalui dashboard.
-2. Memeriksa detail permohonan dan lampiran.
-3. Mengisi identitas warga secara manual, meliputi nama, tempat dan tanggal lahir, jenis kelamin, agama, NIK, pekerjaan, dan alamat.
-4. Memperbarui status pengajuan.
-5. Memeriksa riwayat perubahan status.
-
-Pembuatan dan pratinjau PDF surat resmi belum diaktifkan. Oleh karena itu, pemindahan data ke template resmi masih dilakukan secara manual.
+Setelah identitas lengkap, petugas dapat membuat atau membuat ulang PDF surat melalui halaman detail permohonan. PDF dibuat dari template LaTeX pada `internal/pdf/templates/`.
 
 ## API Internal
 
-API internal digunakan untuk komunikasi antara bot WhatsApp dan server.
-
-Seluruh endpoint bot menggunakan autentikasi Bearer token:
+API internal digunakan untuk komunikasi antara bot WhatsApp dan server. Seluruh endpoint bot menggunakan autentikasi Bearer token:
 
 ```http
 Authorization: Bearer <BOT_API_TOKEN>
@@ -319,21 +322,19 @@ Authorization: Bearer <BOT_API_TOKEN>
 | Endpoint | Fungsi |
 |---|---|
 | `POST /api/v1/submissions` | Membuat permohonan beserta lampiran. |
-| Endpoint daftar jenis surat | Mengambil jenis surat dan persyaratannya. |
-| Endpoint FAQ | Mengambil data FAQ yang tersedia. |
-| Endpoint pemeriksaan status | Memeriksa status permohonan berdasarkan mekanisme verifikasi yang diterapkan. |
+| `GET /api/v1/letter-types` | Mengambil jenis surat dan persyaratannya. |
+| `GET /api/v1/faq` | Mengambil data FAQ yang tersedia. |
+| `POST /api/v1/status` | Memeriksa status permohonan berdasarkan kode dan nomor pemohon. |
 
-Endpoint daftar jenis surat, FAQ, dan pemeriksaan status menggunakan rute yang ditentukan dalam implementasi server.
+Selain itu, server menyediakan `GET /healthz` untuk pemeriksaan kesehatan service.
 
 ### Membuat permohonan
 
 `POST /api/v1/submissions` menerima request dengan format `multipart/form-data`.
 
-Field utama:
-
 | Field | Keterangan |
 |---|---|
-| `request_id` | UUID untuk idempotensi pengajuan. |
+| `request_id` | UUID untuk idempotensi, mencegah pengajuan ganda ketika request dikirim ulang. |
 | `letter_code` | Kode jenis surat. |
 | `wa_jid` | Identitas WhatsApp pemohon untuk komunikasi. |
 | `summary` | Ringkasan keperluan surat. |
@@ -344,12 +345,8 @@ Field utama:
 Ketentuan lampiran:
 
 - Maksimal lima foto dalam satu pengajuan.
-- Format yang diterima adalah JPEG dan PNG.
-- Ukuran maksimal 10 MB per foto.
-- File divalidasi sebelum disimpan.
-- Lampiran disimpan pada storage privat dan hanya dapat diakses melalui dashboard setelah autentikasi.
-
-UUID `request_id` digunakan untuk mencegah pembuatan pengajuan ganda ketika request yang sama dikirim ulang.
+- Format JPEG atau PNG dengan ukuran maksimal 10 MB per foto.
+- Tipe dan ukuran file divalidasi sebelum disimpan.
 
 ## Penyimpanan dan Keamanan Data
 
@@ -357,8 +354,8 @@ Karena aplikasi memproses data identitas warga dan dokumen administrasi, keamana
 
 ### Data dan penyimpanan
 
-- PostgreSQL digunakan untuk menyimpan data aplikasi.
-- Lampiran disimpan pada storage lokal privat yang dapat menggunakan volume Docker.
+- Dashboard dilindungi autentikasi administrator, sedangkan komunikasi bot dan server menggunakan Bearer token.
+- Lampiran disimpan pada storage lokal privat (volume Docker) dan hanya dapat diakses melalui dashboard setelah login.
 - JID WhatsApp digunakan untuk kebutuhan komunikasi dan notifikasi.
 - HMAC nomor digunakan untuk pencocokan pada proses pemeriksaan status.
 - Permintaan pemeriksaan status dibatasi hingga sepuluh kali per jam per nomor.
@@ -369,38 +366,28 @@ Karena aplikasi memproses data identitas warga dan dokumen administrasi, keamana
 1. Jangan memasukkan `.env`, password, token, atau secret ke repository publik.
 2. Jangan membuka direktori lampiran secara langsung ke internet.
 3. Batasi akses dashboard kepada petugas yang berwenang.
-4. Gunakan HTTPS melalui reverse proxy ketika aplikasi diakses dari jaringan publik.
-5. Atur `SESSION_COOKIE_SECURE=true` ketika aplikasi sudah berjalan melalui HTTPS.
-6. Jangan memublikasikan QR pairing atau log yang mengandung data sensitif.
-7. Siapkan mekanisme backup dan uji pemulihan data secara berkala.
-
-Untuk penggunaan di server, dashboard sebaiknya hanya dapat diakses melalui domain dan reverse proxy HTTPS yang dikonfigurasi dengan benar. Konfigurasi lokal Docker tidak dengan sendirinya menjamin keamanan deployment publik.
+4. Untuk penggunaan di server, akses dashboard hanya melalui domain dengan reverse proxy HTTPS dan atur `SESSION_COOKIE_SECURE=true`. Konfigurasi lokal Docker tidak dengan sendirinya menjamin keamanan deployment publik.
+5. Jangan membagikan QR pairing atau log yang mengandung data sensitif, karena QR dapat memberikan akses ke sesi WhatsApp yang ditautkan.
+6. Siapkan mekanisme backup dan uji pemulihan data secara berkala.
 
 ## Batasan MVP dan Pengembangan Selanjutnya
 
-E-LAYAN masih merupakan MVP yang memerlukan penyelesaian beberapa aspek sebelum digunakan secara luas oleh warga.
+Fokus tahap awal E-LAYAN adalah mempermudah pengajuan melalui WhatsApp, membantu petugas mengelola permohonan melalui dashboard, dan menjaga dokumen warga tetap privat. Penggunaan operasional secara luas perlu menunggu verifikasi fitur, konfigurasi keamanan, penetapan prosedur desa, serta pengujian sistem secara menyeluruh.
 
 ### Batasan saat ini
 
-- Template resmi dan persyaratan final untuk setiap jenis surat masih perlu ditetapkan oleh desa.
-- Pembuatan dan pratinjau PDF belum tersedia.
+- Nama, persyaratan, dan template PDF setiap jenis surat masih perlu diverifikasi dan disahkan oleh pemerintah desa.
 - Pengisian identitas warga masih dilakukan secara manual oleh petugas.
+- Jawaban asisten AI bergantung pada kualitas data FAQ dan perlu dipantau agar tetap akurat.
 - Integrasi WhatsApp menggunakan `whatsmeow` untuk kebutuhan pilot dan memerlukan pemantauan stabilitas sesi.
 - Backup terjadwal dan statistik evaluasi SDGs belum dikonfigurasi.
-- Beberapa file handler, client, dan service masih berupa placeholder.
+- Beberapa modul masih berupa placeholder (lihat [Struktur Folder](#struktur-folder)).
 
 ### Pengembangan selanjutnya
 
-- Menyelesaikan dan memverifikasi template serta persyaratan surat resmi.
-- Mengembangkan pembuatan dokumen PDF berdasarkan template yang disahkan.
+- Menyesuaikan persyaratan dan template PDF dengan format surat yang telah disahkan.
 - Menyelesaikan modul yang masih berupa placeholder jika diperlukan.
 - Menambahkan backup otomatis dan pengujian pemulihan data.
 - Menyiapkan domain, HTTPS, hosting, dan monitoring operasional.
 - Menetapkan akun petugas, kebijakan retensi, serta prosedur pengelolaan data warga.
 - Menambahkan statistik layanan dan indikator evaluasi yang relevan dengan SDGs.
-
-## Status Proyek
-
-E-LAYAN dikembangkan sebagai MVP digitalisasi pelayanan administrasi Desa Sabah Balau. Fokus tahap awal adalah mempermudah pengajuan melalui WhatsApp, membantu petugas mengelola permohonan melalui dashboard, dan menjaga dokumen warga tetap privat.
-
-Penggunaan operasional secara luas perlu menunggu verifikasi fitur, konfigurasi keamanan, penetapan prosedur desa, serta pengujian sistem secara menyeluruh.
