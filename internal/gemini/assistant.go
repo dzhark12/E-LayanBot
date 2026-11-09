@@ -23,7 +23,7 @@ const (
 	maxQuestionRunes = 400
 	maxAnswerRunes   = 350 // batas panjang balasan WhatsApp yang nyaman
 	maxOutputTokens  = 400
-	maxFactsRunes    = 12000 // batas konteks agar biaya & latensi terkendali
+	maxFactsRunes    = 18000 // batas konteks agar biaya & latensi terkendali (~5–6 ribu token)
 
 	// Penanda wajib dari model bila jawaban tidak ada di konteks. Kode
 	// (bukan model) yang memutuskan teks penolakan ke warga.
@@ -110,6 +110,8 @@ func (a *Assistant) systemPrompt(facts []Fact) string {
 		line := fmt.Sprintf("[%d] T: %s\n    J: %s\n", i+1, f.Question, f.Answer)
 		used += utf8.RuneCountInString(line)
 		if used > maxFactsRunes {
+			// Hanya angka yang dicatat, bukan isi FAQ atau pesan warga.
+			a.logger.Printf("faq context truncated: %d of %d entries sent to AI; shorten FAQ answers", i, len(facts))
 			break
 		}
 		kb.WriteString(line)
