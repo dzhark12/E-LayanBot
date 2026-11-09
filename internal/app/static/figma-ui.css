@@ -1,0 +1,317 @@
+/* E-LAYAN - implementasi visual Figma FinalDesain, November 2026.
+   File ini hanya mengubah presentasi. Route, nama field, CSRF, dan JS lama tetap dipakai.
+   Referensi: Figma node 70:754, 70:225, 70:290, 70:2, 70:583. */
+:root{--figma-bg:#fcf9f8;--figma-green:#1f5c45;--figma-green-deep:#1e5b3a;--figma-border:#e5e7eb;--figma-ink:#111827;--figma-muted:#6b7280;--figma-soft:#e8f3ee}
+[hidden]{display:none!important}
+.ui-icon{display:inline-block;width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle}
+.admin-page{font-family:"Plus Jakarta Sans",Inter,Arial,sans-serif;font-size:13px;background:var(--figma-bg);color:var(--figma-ink);line-height:1.5}
+.admin-page .app-shell{background:var(--figma-bg)}
+.admin-page .sidebar{width:256px;background:#fff;padding:0 24px 24px;z-index:20;border-right:1px solid #e5e7eb}
+.admin-page .brand{min-height:96px;margin:0;padding:29px 24px 20px;border-bottom:1px solid #e5e7eb;display:flex;align-items:flex-start;color:#111827}
+.admin-page .brand-mark{display:none}
+.admin-page .brand strong{font-size:18px;line-height:23px;letter-spacing:-.4px;font-weight:750;color:#111827}
+.admin-page .brand small{margin-top:4px;font-size:10px;letter-spacing:.015em;font-weight:500;color:#667085}
+.admin-page .nav-label{font-size:11px;letter-spacing:.035em;font-weight:700;color:#98a2b3;margin:29px 24px 8px}
+.admin-page .sidebar nav{display:flex;flex-direction:column;gap:4px;margin:0 0 0 0;padding:0 16px}
+.admin-page .nav-link{min-height:40px;gap:12px;padding:9px 12px;border-radius:8px;color:#4b5563;font-size:14px;font-weight:500;white-space:nowrap}
+.admin-page .nav-link .ui-icon{width:18px;height:18px}
+.admin-page .nav-link:hover,.admin-page .nav-link.active{background:var(--figma-soft);color:#17563c}
+.admin-page .nav-link.active{font-weight:650}
+.admin-page .sidebar-bottom{margin-top:auto}
+.admin-page .help-card{display:none}
+.admin-page .account-row{border-top:1px solid var(--figma-border);margin-top:12px;padding:17px 0 0;gap:12px}
+.admin-page .avatar{position:relative;width:36px;height:36px;background:var(--figma-green);color:#fff;font-weight:700;font-size:12px}
+.admin-page .avatar:after{content:"";position:absolute;right:0;bottom:0;width:8px;height:8px;border:2px solid #fff;border-radius:50%;background:#10b981}
+.admin-page .account-name strong{font-size:13px;line-height:18px;font-weight:600;color:#111827}
+.admin-page .account-name small{font-size:11px;line-height:16px;margin:0;color:#667085;text-transform:none}
+.admin-page .icon-button{display:grid;place-items:center;padding:6px;color:#94a3b8;border-radius:6px;transition:color .2s,background .2s}
+.admin-page .icon-button:hover{background:var(--figma-soft);color:var(--figma-green)}
+.admin-page .main-content{margin-left:256px;max-width:none;min-height:100vh;padding:32px 40px 40px;background:var(--figma-bg)}
+.admin-page .page-header{display:flex;align-items:flex-start;gap:16px;margin:0 0 32px}
+.admin-page .page-header h1{font-size:26px;letter-spacing:-.8px;line-height:1.22;margin:4px 0 5px;font-weight:750;color:#111827}
+.admin-page .page-header .eyebrow{font-size:11px;letter-spacing:.02em;font-weight:700;color:#1e5b3a}
+.admin-page .page-header .muted{font-size:13px;line-height:20px;color:#667085;margin:0;max-width:900px}
+.admin-page .panel{background:#fff;border:1px solid var(--figma-border);border-radius:12px;box-shadow:0 1px 2px rgba(17,24,39,.055)}
+.admin-page .panel-heading{padding:24px;gap:18px;min-height:92px;align-items:center}
+.admin-page .panel-heading h2{font-size:17px;line-height:24px;font-weight:730;letter-spacing:-.35px;color:#111827}
+.admin-page .panel-heading p{margin:3px 0 0;color:#667085;font-size:12px;line-height:18px}
+.admin-page .muted{color:#667085}
+.admin-page .button{min-height:40px;padding:9px 16px;font-family:inherit;font-size:12px;font-weight:650;border-radius:8px;line-height:19px;box-shadow:0 1px 2px rgba(0,0,0,.035)}
+.admin-page .button-primary{background:var(--figma-green);color:#fff}
+.admin-page .button-primary:hover{background:#194a39}
+.admin-page .button-secondary{background:#fff;color:#17563c;border:1px solid var(--figma-border)}
+.admin-page .button-secondary:hover{background:#f4faf6;border-color:#bfd4c6}
+.admin-page a:focus-visible,.admin-page button:focus-visible,.admin-page input:focus-visible,.admin-page select:focus-visible,.admin-page textarea:focus-visible{outline:2px solid #278156;outline-offset:2px}
+.admin-page .page-footer{padding:30px 2px 0;color:#929aa7;font-size:10px}
+
+/* Daftar permohonan */
+.dashboard-page .request-panel{overflow:hidden;border-radius:16px}
+.dashboard-page .request-panel .panel-heading{min-height:94px;justify-content:space-between;align-items:center}
+.dashboard-page .search-form{display:flex;position:relative;align-items:center;gap:8px;width:min(390px,47%);padding:0;border:none;box-shadow:none;background:none;color:#98a2b3;flex:none}
+.dashboard-page .search-form>.ui-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);z-index:1;width:17px;height:17px;pointer-events:none}
+.dashboard-page .search-form input[type=search]{min-height:40px;flex:1;width:100%;min-width:0;padding:9px 11px 9px 40px;border:1px solid var(--figma-border);border-radius:8px;background:#fcf9f8;color:#111827;font:inherit;font-size:12px;outline:0;box-shadow:none}
+.dashboard-page .search-form input::placeholder{color:#98a2b3}
+.dashboard-page .search-form input:focus{border-color:#2c7354;box-shadow:0 0 0 3px rgba(31,92,69,.12)}
+.dashboard-page .search-form .button{flex:none;min-width:62px}
+.dashboard-page .filter-tabs{display:flex;gap:24px;min-height:50px;align-items:stretch;overflow-x:auto;padding:0 24px;background:#fff;border-top:1px solid var(--figma-border);border-bottom:1px solid var(--figma-border);scrollbar-width:thin}
+.dashboard-page .filter-tabs a{display:inline-flex;align-items:center;gap:8px;padding:13px 0 12px;font-size:12px;line-height:20px;font-weight:500;color:#4b5563}
+.dashboard-page .filter-tabs a.selected,.dashboard-page .filter-tabs a:hover{color:#1e5b3a;font-weight:700}
+.dashboard-page .filter-tabs a.selected:after{height:2px;background:#1e5b3a}
+.admin-page .tab-count{display:inline-grid;min-width:20px;height:20px;padding:0 5px;place-items:center;border-radius:999px;background:#f3f4f6;color:#667085;font-size:11px;font-weight:650}
+.admin-page .selected>.tab-count{background:#e8f3ee;color:#176442}
+.admin-page .table-wrap{width:100%;overflow-x:auto}
+.admin-page .admin-table{width:100%;border-collapse:collapse;table-layout:fixed;background:#fff;text-align:left;font-size:12px}
+.admin-page .admin-table th{height:46px;padding:13px 16px;background:#f9fafb;color:#263143;font-size:11px;line-height:17px;letter-spacing:.015em;font-weight:680;border-bottom:1px solid var(--figma-border);border-right:1px solid var(--figma-border);white-space:nowrap}
+.admin-page .admin-table td{padding:16px;border-top:1px solid var(--figma-border);border-right:1px solid var(--figma-border);font-size:12px;line-height:18px;vertical-align:middle;color:#333e39}
+.admin-page .admin-table th:last-child,.admin-page .admin-table td:last-child{border-right:0}
+.admin-page .admin-table th:first-child,.admin-page .admin-table td:first-child{padding-left:24px}
+.admin-page .admin-table tbody tr:hover{background:#fcfdfb}
+.admin-page .admin-table td small{font-family:inherit;font-size:10px;line-height:16px;color:#6b7280;margin:3px 0 0}
+.dashboard-page .request-table{min-width:805px}
+.dashboard-page .request-table th:nth-child(1){width:17%}
+.dashboard-page .request-table th:nth-child(2){width:25%}
+.dashboard-page .request-table th:nth-child(3){width:31%}
+.dashboard-page .request-table th:nth-child(4){width:15%}
+.dashboard-page .request-table th:nth-child(5){width:12%;text-align:center}
+.dashboard-page .request-table tbody tr{height:78px}
+.dashboard-page .request-table td:nth-child(5){text-align:center}
+.dashboard-page .request-code{font-size:13px;color:#176442;letter-spacing:0;font-weight:750}
+.dashboard-page .request-table td:first-child small{white-space:nowrap;font-size:10px}
+.dashboard-page .letter-cell{display:flex;align-items:center;gap:10px;min-width:0}
+.dashboard-page .letter-code{display:inline-grid;place-items:center;flex:none;min-width:32px;width:32px;height:32px;margin:0;background:#dbece2;color:#1f5c45;border-radius:8px;font-weight:700;font-size:11px}
+.dashboard-page .letter-name{min-width:0;overflow:hidden}
+.dashboard-page .letter-name strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;line-height:19px;font-weight:700;color:#18241c}
+.dashboard-page .summary-cell{max-width:none;white-space:normal;overflow:visible;text-overflow:clip}
+.dashboard-page .summary-text{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:17px;max-height:35px}
+.admin-page .status-pill{padding:4px 10px;gap:5px;border-radius:999px;white-space:normal;line-height:14px;text-align:center;font-size:10px;font-weight:700;justify-content:center}
+.admin-page .status-pill.waiting{background:#dbece2;color:#40554b}
+.admin-page .status-pill.working{background:#e0f2e7;color:#345e48}
+.admin-page .status-pill.done{background:#dff8ec;color:#165e43}
+.admin-page .status-pill.revision{background:#d8e9de;color:#485d51}
+.admin-page .status-pill.rejected{background:#fee2e2;color:#b91c1c}
+.admin-page .status-dot{background:currentColor;width:6px;height:6px;flex:none}
+.dashboard-page .row-action{display:inline-flex;align-items:center;justify-content:center;gap:4px;min-height:30px;padding:6px 11px;background:#1f5c45;border-radius:8px;color:#fff;font-size:11px;line-height:17px;text-decoration:none;font-weight:650;white-space:nowrap}
+.dashboard-page .row-action:hover{color:#fff;text-decoration:none;background:#164936}
+.dashboard-page .row-action .ui-icon{width:12px;height:12px}
+.admin-page .table-footer{display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:52px;padding:14px 24px;border-top:1px solid var(--figma-border);color:#667085;font-size:11px;line-height:18px}
+.admin-page .table-footer>span:first-child{display:flex;align-items:center;gap:4px}
+.admin-page .table-footer .ui-icon{width:17px;height:17px;color:#1e5b3a;margin-right:5px}
+.admin-page .table-footer strong{color:#1f2937}
+.admin-page .pagination{display:flex;align-items:center;gap:12px;border:0;padding:0;font-size:11px}
+.dashboard-page .stats-disclosure{margin:0;position:relative;top:-16px;text-align:right;color:#1e5b3a;font-size:11px}
+.dashboard-page .stats-disclosure summary{display:inline-block;padding:2px 6px;cursor:pointer;list-style:none;color:#667085}
+.dashboard-page .stats-disclosure summary:hover{color:#1e5b3a}
+.dashboard-page .stats-disclosure summary::-webkit-details-marker{display:none}
+.dashboard-page .stats-disclosure .stats-grid{text-align:left;margin:12px 0 20px;gap:12px}
+.dashboard-page .stats-disclosure .stat-card{min-height:75px;padding:12px 16px;border-radius:12px}
+.dashboard-page .stats-disclosure .stat-card strong{font-size:18px}
+
+/* Data layanan dan FAQ - dua tampilan berdasarkan URL #letters atau #faq */
+.settings-page .management-panel{margin:0;overflow:hidden}
+.settings-page .list-toolbar{min-height:86px;padding:24px;display:flex;justify-content:space-between;align-items:center;gap:14px}
+.settings-page .inline-tabs{flex:none;display:flex;align-items:center;gap:32px;padding:0;border:0;min-height:38px;overflow-x:auto;white-space:nowrap}
+.settings-page .inline-tabs button{position:relative;display:inline-flex;align-items:center;gap:8px;min-height:38px;padding:0 0 10px;border:0;background:none;color:#667085;cursor:pointer;font:inherit;font-size:12px}
+.settings-page .inline-tabs button.selected{color:#176442;font-weight:750}
+.settings-page .inline-tabs button.selected:after{position:absolute;left:0;bottom:0;width:100%;height:2px;content:"";background:#176442}
+.settings-page .toolbar-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;min-width:0}
+.settings-page .table-search{position:relative;display:flex;align-items:center;min-width:0;width:290px;max-width:100%;color:#98a2b3}
+.settings-page .table-search .ui-icon{position:absolute;left:13px;width:17px;height:17px;pointer-events:none}
+.settings-page .table-search input{width:100%;min-height:40px;padding:9px 12px 9px 37px;border:1px solid var(--figma-border);border-radius:8px;background:#fcf9f8;color:#111827;font:inherit;font-size:12px}
+.settings-page .table-search input::placeholder{color:#98a2b3}
+.settings-page .new-service{white-space:nowrap}
+.settings-page .new-service .ui-icon,.settings-page .add-faq .ui-icon{width:14px;height:14px}
+.settings-page .services-table{min-width:750px}
+.settings-page .services-table th:nth-child(1){width:13.5%}
+.settings-page .services-table th:nth-child(2){width:26.5%}
+.settings-page .services-table th:nth-child(3){width:35.5%}
+.settings-page .services-table th:nth-child(4){width:12%}
+.settings-page .services-table th:nth-child(5){width:12.5%;text-align:center}
+.settings-page .services-table td:nth-child(5){text-align:center}
+.settings-page .services-table tbody tr{min-height:85px}
+.settings-page .services-table td{height:85px;padding:14px 24px}
+.settings-page .services-table .service-code{color:#176442;font-size:13px;font-weight:750;white-space:nowrap}
+.settings-page .admin-table td strong{font-weight:700;color:#111827;font-size:12px}
+.settings-page .admin-table td small{display:block}
+.settings-page .tag-list{display:flex;flex-wrap:wrap;gap:5px;align-items:flex-start}
+.settings-page .data-tag{display:inline-block;max-width:100%;overflow-wrap:anywhere;padding:3px 10px;border:1px solid #e0e4e9;border-radius:5px;background:#f3f4f6;color:#405164;font-size:10px;line-height:15px}
+.settings-page .active-status,.settings-page .inactive-status{display:inline-flex;align-items:center;padding:2px 9px;border-radius:999px;border:1px solid #a7f3d0;color:#047857;background:#ecfdf5;font-size:11px;font-weight:600;line-height:17px;white-space:nowrap}
+.settings-page .inactive-status{border-color:#e5e7eb;color:#64748b;background:#f1f5f9}
+.settings-page .actions-cell{white-space:nowrap}
+.settings-page .table-icon-button{display:inline-grid;place-items:center;width:29px;height:30px;padding:5px;border:0;background:transparent;color:#667085;border-radius:6px;cursor:pointer}
+.settings-page .table-icon-button:hover{background:#e8f3ee;color:#17563c}
+.settings-page .table-icon-button .ui-icon{width:16px;height:16px}
+.settings-page .faq-table{min-width:720px}
+.settings-page .faq-table th:nth-child(1){width:60.5%}
+.settings-page .faq-table th:nth-child(2){width:27%}
+.settings-page .faq-table th:nth-child(3){width:12.5%;text-align:center}
+.settings-page .faq-table td:nth-child(3){text-align:center}
+.settings-page .faq-table td{height:96px;padding:16px 24px;vertical-align:top}
+.settings-page .faq-table td:last-child{padding-top:20px}
+.settings-page .faq-table .faq-question{display:block;font-size:13px!important;line-height:20px}
+.settings-page .faq-table .faq-answer{margin:5px 0 0;font-size:11px;line-height:18px;color:#667085;white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.settings-page .faq-table .data-tag{color:#176442}
+.settings-page .faq-table .inactive-status{margin-top:7px}
+.settings-page .panel-heading .toolbar-actions{flex:none}
+.settings-page .panel-heading .table-search{width:255px}
+.settings-page .panel-heading .add-faq{color:#17563c;background:#fff;white-space:nowrap}
+.settings-page .empty-filter{padding:24px;text-align:center;color:#667085}
+.settings-page .workspace-view{scroll-margin-top:24px}
+.settings-page .workspace-view+.workspace-view{margin-top:48px}
+.settings-ui-ready .workspace-view+.workspace-view{margin-top:0}
+
+/* Modal formulir: mempertahankan 100% field/action backend */
+.settings-page .edit-dialog{position:fixed;inset:0;margin:auto;width:min(520px,calc(100vw - 30px));max-width:520px;max-height:min(88vh,850px);overflow-y:auto;padding:0;border:1px solid #e5e7eb;border-radius:16px;background:#fff;color:#111827;box-shadow:0 24px 65px rgba(18,31,23,.23)}
+.settings-page .edit-dialog::backdrop{background:rgba(11,28,20,.5);backdrop-filter:blur(2px)}
+.settings-page .dialog-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:23px 26px 17px;border-bottom:1px solid #eef1f4}
+.settings-page .dialog-header .eyebrow{margin:0 0 4px;font-size:10px;letter-spacing:.06em;color:#176442}
+.settings-page .dialog-header h2{margin:0;font-size:18px;letter-spacing:-.3px;color:#111827}
+.settings-page .dialog-close{border:0;background:#f3f4f6;border-radius:7px;color:#667085;width:28px;height:28px;font-size:21px;line-height:24px;cursor:pointer}
+.settings-page .dialog-form{display:flex;flex-direction:column;gap:8px;padding:22px 26px 24px}
+.settings-page .dialog-form>label{display:block;margin:6px 0 0;font-size:12px;font-weight:650;color:#333c4d}
+.settings-page .dialog-form>label small{margin-left:4px;color:#64748b;font-size:10px;font-weight:400}
+.settings-page .dialog-form input:not([type=checkbox]),.settings-page .dialog-form textarea,.settings-page .dialog-form select{display:block;width:100%;padding:10px 12px;min-height:42px;border:1px solid #dbe1e7;border-radius:8px;background:white;color:#111827;font:inherit;font-size:12px}
+.settings-page .dialog-form textarea{resize:vertical;min-height:82px}
+.settings-page .dialog-form .checkbox-label{display:flex;gap:9px;align-items:center;margin:7px 0;color:#475569;font-size:12px;font-weight:500}
+.settings-page .dialog-form .checkbox-label input{accent-color:#1f5c45}
+.settings-page .dialog-footer{display:flex;justify-content:flex-end;align-items:center;gap:9px;padding:16px 0 0;margin-top:12px;border-top:1px solid #eef1f4}
+.settings-page .edit-dialog>.dialog-footer{padding:16px 26px 23px}
+.settings-page .dialog-body{padding:20px 26px;color:#334155;font-size:12px}
+.settings-page .dialog-body p{margin:0 0 12px}
+.settings-page .dialog-body ul{padding-left:18px;margin:0}
+
+/* Detail permohonan: bagian yang tidak ada pada mockup tetap aktif, namun mengikuti sistem visual. */
+.detail-page .breadcrumb{margin:0 0 22px;color:#64748b;font-size:12px}
+.detail-page .detail-header{align-items:center;margin-bottom:22px}
+.detail-page .detail-header h1{font-size:27px;color:#111827}
+.detail-page .detail-header .eyebrow{color:#176442;font-size:11px}
+.detail-page .detail-grid{gap:20px;grid-template-columns:minmax(0,1.08fr) minmax(345px,.92fr)}
+.detail-page .panel-heading{padding:20px 24px;min-height:77px}
+.detail-page .panel-heading h2{font-size:16px}
+.detail-page .attachment-grid{padding:0 24px 24px;gap:12px}
+.detail-page .attachment-card{background:#f9fafb;border-color:#e5e7eb;border-radius:9px}
+.detail-page .attachment-card a{background:#f4f6f5}
+.detail-page .summary-box{margin:0 24px 24px;padding:16px;background:#f8faf9;border-color:#e5e7eb}
+.detail-page .identity-form,.detail-page .status-panel .stack-form{padding:0 24px 24px;gap:9px}
+.detail-page .identity-form label,.detail-page .stack-form label{font-size:12px;font-weight:600;color:#374151}
+.detail-page .identity-form input,.detail-page .identity-form textarea,.detail-page .identity-form select,.detail-page .status-panel .stack-form input,.detail-page .status-panel .stack-form textarea,.detail-page .status-panel .stack-form select{font:inherit;font-size:12px;padding:10px 12px;min-height:40px;border-color:#e5e7eb;border-radius:8px}
+.detail-page .history-panel{margin-top:20px}
+
+/* Login - desktop Figma 1280x1024, mobile Figma 390x884. */
+.login-page{background:#f6f7f4;font-family:"Plus Jakarta Sans",Inter,Arial,sans-serif;color:#171717;font-size:14px;line-height:1.5}
+.login-page .login-split{min-height:100vh;min-height:100dvh;display:flex}
+.login-page .login-brand{display:flex;flex:0 0 45%;background:#1f5c45;border-radius:0;min-width:0;overflow:hidden}
+.login-page .login-brand-bg,.login-page .login-brand-glow,.login-page .login-brand::after,.login-page .brand-mark-large,.login-page .brand-badge,.login-page .brand-tag{display:none}
+.login-page .login-brand-content{width:100%;padding:56px;justify-content:space-between}
+.login-page .login-brand-header{gap:0;align-items:flex-start}
+.login-page .brand-name{font-size:16px;line-height:24px;letter-spacing:.8px;font-weight:750}
+.login-page .brand-subtitle{font-size:14px;line-height:20px;letter-spacing:0;font-weight:400;color:rgba(209,250,229,.75);margin-top:2px}
+.login-page .login-brand-body{max-width:464px;margin:0;flex:1;justify-content:center}
+.login-page .brand-headline{font-size:36px;line-height:40px;letter-spacing:-.9px;font-weight:750;margin:0 0 16px}
+.login-page .brand-description{font-size:16px;line-height:24px;margin:0 0 28px;color:rgba(209,250,229,.9)}
+.login-page .brand-features{gap:20px}
+.login-page .brand-feature{gap:14px;align-items:flex-start}
+.login-page .brand-feature-icon{width:32px;height:32px;margin-top:2px;font-size:16px;background:rgba(255,255,255,.1);color:#a7f3d0}
+.login-page .brand-feature-title{font-size:15px;line-height:24px;font-weight:650;color:#fff}
+.login-page .brand-feature-desc{font-size:13px;line-height:20px;color:rgba(209,250,229,.7)}
+.login-page .login-brand-footer{display:none}
+.login-page .login-card-wrapper{flex:0 0 55%;width:55%;padding:48px;justify-content:space-between;background:#f6f7f4}
+.login-page .login-status-bar{visibility:hidden;width:100%;min-height:16px;max-width:none;margin:0}
+.login-page .login-card{max-width:448px;width:100%;margin:auto 0;padding:36px;border:1px solid #f3f4f6;border-radius:16px;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.login-page .login-card-header{margin-bottom:24px}
+.login-page .login-card-header h2{font-size:24px;line-height:32px;letter-spacing:-.6px;color:#171717}
+.login-page .login-card-header .muted{font-size:14px;line-height:20px;color:#737373;margin-top:6px;max-width:338px}
+.login-page .login-form{gap:16px}
+.login-page .form-label{font-family:inherit;font-size:13px;line-height:20px;font-weight:500;letter-spacing:0;color:#262626}
+.login-page .form-input{min-height:42px;padding:10px 15px 10px 44px;border:1px solid #e5e7eb;border-radius:8px;line-height:20px;font-size:13px;color:#262626}
+.login-page .form-input::placeholder{color:#a3a3a3}
+.login-page .form-input-icon{left:14px;font-size:15px;color:#737373}
+.login-page .form-input-toggle{font-size:17px;color:#737373}
+.login-page .form-options{padding-top:4px;gap:10px}
+.login-page .checkbox-label span:last-child{font-size:13px;color:#525252;white-space:nowrap}
+.login-page .forgot-link{font-size:13px;font-weight:500;white-space:nowrap}
+.login-page .login-submit{min-height:48px;margin-top:8px;border-radius:8px;font-size:14px;line-height:24px;font-weight:600;letter-spacing:0;background:#1f5c45}
+.login-page .login-btn-icon{font-size:16px}
+.login-page .login-footer{padding:16px 0;max-width:448px}
+.login-page .login-footer p:first-child{font-size:11px;line-height:16px;color:#525252;font-weight:600}
+.login-page .login-footer .login-footer-copyright{font-size:10px;line-height:16px;color:#737373;margin-top:2px;letter-spacing:0}
+.login-page .login-support-link{display:inline-block;color:#1f5c45;font-size:10px;text-decoration:none;margin-top:8px}
+.login-page .login-support-link:hover{text-decoration:underline}
+.login-page .login-help{display:none}
+
+/* Responsive: tab tetap dapat dinavigasi dan tabel selalu bisa di-scroll. */
+@media(max-width:1200px){
+  .settings-page .list-toolbar{flex-wrap:wrap}
+  .settings-page .toolbar-actions{flex:1}
+  .settings-page .new-service span{display:none}
+}
+@media(max-width:1023px){
+  .login-page .login-split{flex-direction:column}
+  .login-page .login-brand{flex:none;width:100%;min-height:240px;border-radius:0 0 24px 24px}
+  .login-page .login-brand-content{padding:40px 26px 29px;justify-content:flex-start}
+  .login-page .login-brand-header{margin:0 0 14px}
+  .login-page .brand-name{font-size:18px;line-height:26px;letter-spacing:0}
+  .login-page .brand-subtitle{font-size:11px;line-height:17px;margin-top:0}
+  .login-page .login-brand-body{flex:none;margin:0;max-width:480px}
+  .login-page .brand-headline{font-size:20px;line-height:26px;letter-spacing:-.45px;margin:0 0 7px;max-width:330px}
+  .login-page .brand-description{font-size:12px;line-height:20px;margin:0;max-width:360px}
+  .login-page .brand-features{display:none}
+  .login-page .login-card-wrapper{flex:1;width:100%;min-height:calc(100dvh - 240px);padding:0 18px 0;display:flex}
+  .login-page .login-card{max-width:448px;margin:99px auto auto;padding:21px;border-radius:16px;box-shadow:0 6px 15px rgba(0,0,0,.09)}
+  .login-page .login-card-header{margin-bottom:12px}
+  .login-page .login-form{gap:12px}
+  .login-page .login-submit{margin-top:0}
+  .login-page .login-card-header h2{font-size:18px;line-height:28px;letter-spacing:-.4px}
+  .login-page .login-card-header .muted{font-size:12px;line-height:16px}
+  .login-page .form-input{height:44px;font-size:12px;padding-left:41px}
+  .login-page .form-label{font-size:11px}
+  .login-page .checkbox-label span:last-child{font-size:10px}
+  .login-page .forgot-link{font-size:11px}
+  .login-page .login-submit{font-size:12px}
+  .login-page .login-footer{margin-top:50px;padding:16px 0 9px}
+  .login-page .login-footer p:first-child{font-size:11px}
+  .login-page .login-footer .login-footer-copyright{font-size:10px}
+}
+@media(max-width:800px){
+  .admin-page .sidebar{position:relative;inset:auto;width:100%;height:auto;padding:0 16px 12px;border-right:0;border-bottom:1px solid #e5e7eb}
+  .admin-page .brand{min-height:64px;padding:12px 5px 10px}
+  .admin-page .brand strong{font-size:16px}
+  .admin-page .nav-label{display:none}
+  .admin-page .sidebar nav{display:flex;flex-direction:row;gap:6px;padding:0;margin:8px 0 0;overflow-x:auto}
+  .admin-page .nav-link{flex:none;min-height:37px;padding:7px 9px;font-size:12px}
+  .admin-page .nav-link .ui-icon{width:16px;height:16px}
+  .admin-page .sidebar-bottom{position:absolute;right:16px;top:7px;margin:0}
+  .admin-page .account-row{border:0;padding:0;gap:5px}
+  .admin-page .account-name{display:none}
+  .admin-page .avatar{width:31px;height:31px}
+  .admin-page .main-content{margin-left:0;padding:24px 18px 35px}
+  .admin-page .page-header{margin-bottom:24px}
+  .admin-page .page-header h1{font-size:23px}
+  .admin-page .panel-heading{padding:18px}
+  .admin-page .table-footer{padding:12px 18px;flex-wrap:wrap}
+  .admin-page .filter-tabs{padding:0 18px}
+  .dashboard-page .search-form{width:min(360px,55%)}
+  .settings-page .list-toolbar{padding:18px}
+  .settings-page .panel-heading .toolbar-actions{flex-wrap:wrap}
+}
+@media(max-width:580px){
+  .admin-page .main-content{padding:23px 14px 30px}
+  .admin-page .page-header .muted{font-size:12px;line-height:18px}
+  .dashboard-page .request-panel .panel-heading{align-items:stretch;flex-direction:column}
+  .dashboard-page .search-form{width:100%}
+  .dashboard-page .filter-tabs{gap:17px}
+  .dashboard-page .filter-tabs a{font-size:11px}
+  .admin-page .table-footer>span{font-size:10px}
+  .settings-page .inline-tabs{gap:18px;width:100%}
+  .settings-page .toolbar-actions{flex-wrap:wrap;width:100%;justify-content:flex-start}
+  .settings-page .table-search{flex:1;width:180px}
+  .settings-page .new-service span{display:inline}
+  .settings-page .panel-heading{flex-direction:column;align-items:stretch}
+  .settings-page .panel-heading .table-search{flex:1;width:180px}
+  .settings-page .panel-heading .toolbar-actions{width:100%}
+  .detail-page .detail-grid{grid-template-columns:1fr}
+  .detail-page .detail-side{grid-template-columns:1fr}
+  .detail-page .detail-header{align-items:flex-start}
+  .login-page .login-card-wrapper{padding:0 18px}
+  .login-page .login-card{margin-top:98px}
+}
+@media(max-width:365px){.login-page .form-options{flex-wrap:wrap}.login-page .login-brand-content{padding-left:21px;padding-right:21px}.login-page .login-card-wrapper{padding:0 12px}.admin-page .sidebar{padding:0 9px 12px}}
