@@ -42,7 +42,7 @@
         </div>
       </section>
 
-      <section class="settings-section" aria-labelledby="faq-title"><div class="section-title"><div><h2 id="faq-title">FAQ bot</h2><p class="muted">Bot hanya menjawab jika kata kunci pertanyaan cocok dengan FAQ aktif.</p></div></div>
+      <section class="settings-section" aria-labelledby="faq-title"><div class="section-title"><div><h2 id="faq-title">FAQ bot</h2><p class="muted">FAQ aktif menjadi sumber jawaban. AI dapat memahami variasi bahasa dan maksud pertanyaan; tanpa AI, bot mencocokkan kata kunci. Aktifkan hanya informasi yang sudah dipastikan benar.</p></div></div>
         <div class="settings-grid">
           {{range .FAQs}}
           <article class="panel settings-card"><h3>{{.Question}}</h3><form method="post" action="/settings/faq" class="stack-form">
