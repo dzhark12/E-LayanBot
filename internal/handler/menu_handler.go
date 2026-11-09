@@ -147,7 +147,10 @@ func isGreeting(text string) bool {
 	if next == 0 {
 		return false
 	}
-	return len(withoutPolite(words[next:])) == 0
+	remaining := withoutPolite(words[next:])
+	// Sapaan singkat dengan panggilan/nama seperti "hai Jidan" tetap
+	// ditangani sebagai sapaan, bukan dikirim sebagai pertanyaan FAQ.
+	return len(remaining) == 0 || len(remaining) == 1
 }
 
 // isIdentityQuestion bernilai true bila pesan (boleh diawali sapaan)
