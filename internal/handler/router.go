@@ -96,8 +96,10 @@ func (r *Router) Handle(parent context.Context, message messenger.Message) {
 		r.checkStatus(ctx, message, code)
 		return
 	}
-	if upper == "MENU" || upper == "HALO" || upper == "HAI" {
-		r.reply(ctx, message.JID, "E-LAYAN Desa Sabah Balau\nKetik SURAT untuk mengajukan surat. Kirim pertanyaan tentang layanan desa untuk mencari informasi. Untuk status, kirim kode permohonan, misalnya DM01245. Ketik BATAL untuk membatalkan pengajuan.")
+	// Sapaan ditangani kode biasa (tanpa Gemini): cepat, tidak memakai kuota,
+	// dan tidak mengirim pesan warga ke layanan luar.
+	if message.Media == nil && isGreeting(text) {
+		r.reply(ctx, message.JID, menuText)
 		return
 	}
 	if upper == "SURAT" {
@@ -123,6 +125,16 @@ func (r *Router) Handle(parent context.Context, message messenger.Message) {
 	}
 	if session.Flow == "surat" {
 		r.handleLetterFlow(ctx, message, session, state, text)
+		return
+	}
+	// Di luar alur surat: identitas bot dan ucapan terima kasih dijawab
+	// kode biasa (tanpa AI) agar konsisten, cepat, dan tidak memakai kuota.
+	if isIdentityQuestion(text) {
+		r.reply(ctx, message.JID, identityText)
+		return
+	}
+	if isThanks(text) {
+		r.reply(ctx, message.JID, thanksText)
 		return
 	}
 	// Jawaban FAQ/AI tidak mengubah sesi, jadi lepas kunci global agar
@@ -301,7 +313,9 @@ func (r *Router) submit(ctx context.Context, message messenger.Message, state co
 func (r *Router) checkStatus(ctx context.Context, message messenger.Message, code string) {
 	result, err := r.api.CheckStatus(ctx, code, message.PhoneJID)
 	if errors.Is(err, client.ErrNotFound) {
-		r.reply(ctx, message.JID, "Kode tidak ditemukan.")
+		// Pesan sama untuk "kode tidak ada" dan "kode milik nomor lain",
+		// agar orang luar tidak bisa menebak kode permohonan warga.
+		r.reply(ctx, message.JID, statusNotFoundText)
 		return
 	}
 	if err != nil {
@@ -329,7 +343,7 @@ func (r *Router) answerFAQ(ctx context.Context, jid, query string) {
 	}
 	// 2) Tidak ada kecocokan kata kunci: tanya Gemini, dibatasi pada FAQ aktif.
 	if !r.ai.Enabled() {
-		r.reply(ctx, jid, "Informasi itu belum tersedia di layanan ini. Bot hanya menjawab informasi desa yang sudah disiapkan perangkat desa.")
+		r.reply(ctx, jid, "Informasi itu belum tersedia di layanan ini. Bot hanya menjawab informasi desa yang sudah disiapkan perangkat desa. Ketik MENU untuk melihat layanan.")
 		return
 	}
 	entries, err := repository.ListActiveFAQ(ctx, r.db, 100)
@@ -338,9 +352,11 @@ func (r *Router) answerFAQ(ctx context.Context, jid, query string) {
 		r.reply(ctx, jid, "Informasi belum dapat dimuat. Coba lagi sebentar.")
 		return
 	}
-	facts := make([]gemini.Fact, len(entries))
-	for i, e := range entries {
-		facts[i] = gemini.Fact{Question: e.Question, Answer: e.Answer}
+	// Fakta identitas selalu di urutan pertama agar tidak terpotong batas konteks.
+	facts := make([]gemini.Fact, 0, len(entries)+1)
+	facts = append(facts, identityFact)
+	for _, e := range entries {
+		facts = append(facts, gemini.Fact{Question: e.Question, Answer: e.Answer})
 	}
 	r.reply(ctx, jid, r.ai.Answer(ctx, jid, query, facts))
 }
