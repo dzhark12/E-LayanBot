@@ -1,0 +1,33 @@
+/* Pesan validasi hanya untuk formulir Data Surat pada halaman detail. */
+.detail-page .identity-form .identity-field-error {
+  display: block;
+  margin: -3px 0 5px;
+  color: #b42318;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+.detail-page .identity-form .identity-field-error[hidden] {
+  display: none;
+}
+.detail-page .identity-form input.identity-invalid,
+.detail-page .identity-form select.identity-invalid,
+.detail-page .identity-form textarea.identity-invalid {
+  border-color: #d92d20 !important;
+  background-color: #fff7f6;
+  box-shadow: 0 0 0 2px rgba(217, 45, 32, .09);
+}
+.detail-page .identity-form .identity-invalid:focus {
+  outline: 2px solid rgba(217, 45, 32, .3);
+  outline-offset: 1px;
+}
+.detail-page .identity-form .identity-validation-summary {
+  padding: 11px 13px;
+  margin: 0 0 8px;
+  border: 1px solid #f1b4ae;
+  border-radius: 8px;
+  background: #fff1f0;
+  color: #912018;
+  font-size: 12px;
+  line-height: 1.5;
+}
