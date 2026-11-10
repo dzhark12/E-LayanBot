@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="/static/app.css">
   <link rel="stylesheet" href="/static/settings.css">
   <link rel="stylesheet" href="/static/figma-ui.css">
+  <link rel="stylesheet" href="/static/type-scale.css">
 </head>
 <body class="admin-page settings-page">
   <div class="app-shell">
@@ -22,7 +23,7 @@
     </aside>
 
     <main class="main-content settings-workspace">
-      {{if eq .Notice "saved"}}<p class="notice" role="status">Perubahan berhasil disimpan.</p>{{else if eq .Notice "invalid-letter"}}<p class="form-error" role="alert">Kode, nama, atau daftar persyaratan jenis surat tidak valid.</p>{{else if eq .Notice "invalid-faq"}}<p class="form-error" role="alert">Periksa pertanyaan, kata kunci, kategori, dan jawaban FAQ.</p>{{end}}
+      {{if eq .Notice "saved"}}<p class="notice" role="status">Perubahan berhasil disimpan.</p>{{else if eq .Notice "deleted"}}<p class="notice" role="status">FAQ berhasil dihapus.</p>{{else if eq .Notice "invalid-letter"}}<p class="form-error" role="alert">Kode, nama, atau daftar persyaratan jenis surat tidak valid.</p>{{else if eq .Notice "invalid-faq"}}<p class="form-error" role="alert">Periksa pertanyaan, kata kunci, kategori, dan jawaban FAQ.</p>{{end}}
 
       <div class="workspace-view" data-view="letters" id="letters">
         <header class="page-header"><div><p class="eyebrow">RUANG LAYANAN DESA</p><h1>Data layanan</h1><p class="muted">Kelola jenis surat dan data layanan desa yang tersedia untuk warga melalui WhatsApp bot.</p></div></header>
@@ -72,7 +73,7 @@
             <tr data-record data-active="{{if .Active}}true{{else}}false{{end}}" data-search="{{.Question}} {{.Answer}} {{.Category}} {{joinLines .Keywords}}">
               <td><strong class="faq-question">{{.Question}}</strong><p class="faq-answer">{{.Answer}}</p>{{if not .Active}}<span class="inactive-status">Nonaktif</span>{{end}}</td>
               <td><div class="tag-list">{{range .Keywords}}<span class="data-tag">{{.}}</span>{{end}}</div></td>
-              <td class="actions-cell"><button type="button" class="table-icon-button" data-open-dialog="faq-edit-{{.ID}}" aria-label="Edit FAQ {{.Question}}" title="Edit FAQ"><svg class="ui-icon"><use href="/static/ui-icons.svg#edit"/></svg></button><button type="button" class="table-icon-button" data-deactivate-faq="faq-form-{{.ID}}" aria-label="Nonaktifkan FAQ {{.Question}}" title="Nonaktifkan FAQ (bukan hapus permanen)"><svg class="ui-icon"><use href="/static/ui-icons.svg#trash"/></svg></button>
+              <td class="actions-cell"><button type="button" class="table-icon-button" data-open-dialog="faq-edit-{{.ID}}" aria-label="Edit FAQ {{.Question}}" title="Edit FAQ"><svg class="ui-icon"><use href="/static/ui-icons.svg#edit"/></svg></button><button type="button" class="table-icon-button" data-delete-faq="faq-delete-{{.ID}}" aria-label="Hapus FAQ {{.Question}}" title="Hapus FAQ (permanen)"><svg class="ui-icon"><use href="/static/ui-icons.svg#trash"/></svg></button><form id="faq-delete-{{.ID}}" method="post" action="/settings/faq/delete" hidden><input type="hidden" name="csrf" value="{{$.CSRF}}"><input type="hidden" name="id" value="{{.ID}}"></form>
                 <dialog class="edit-dialog" id="faq-edit-{{.ID}}" aria-labelledby="faq-title-{{.ID}}"><div class="dialog-header"><div><p class="eyebrow">PENGELOLAAN FAQ</p><h2 id="faq-title-{{.ID}}">Edit FAQ bot</h2></div><button class="dialog-close" type="button" data-close-dialog aria-label="Tutup">×</button></div><form id="faq-form-{{.ID}}" method="post" action="/settings/faq" class="stack-form dialog-form"><input type="hidden" name="csrf" value="{{$.CSRF}}"><input type="hidden" name="id" value="{{.ID}}"><label for="question-{{.ID}}">Pertanyaan</label><input id="question-{{.ID}}" name="question" value="{{.Question}}" maxlength="300" required><label for="keywords-{{.ID}}">Kata kunci <small>satu per baris</small></label><textarea id="keywords-{{.ID}}" name="keywords" rows="3" maxlength="1400" required>{{joinLines .Keywords}}</textarea><label for="answer-{{.ID}}">Jawaban</label><textarea id="answer-{{.ID}}" name="answer" rows="5" maxlength="2000" required>{{.Answer}}</textarea><label for="category-{{.ID}}">Kategori</label><input id="category-{{.ID}}" name="category" value="{{.Category}}" maxlength="80"><label class="checkbox-label"><input type="checkbox" name="aktif" {{if .Active}}checked{{end}}> Aktif</label><div class="dialog-footer"><button type="button" class="button button-secondary" data-close-dialog>Batal</button><button class="button button-primary" type="submit">Simpan FAQ</button></div></form></dialog>
               </td>
             </tr>

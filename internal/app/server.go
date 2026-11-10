@@ -75,6 +75,7 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("GET /settings", s.requireAdmin(http.HandlerFunc(s.settings)))
 	mux.Handle("POST /settings/letter", s.requireAdmin(http.HandlerFunc(s.saveLetterType)))
 	mux.Handle("POST /settings/faq", s.requireAdmin(http.HandlerFunc(s.saveFAQ)))
+	mux.Handle("POST /settings/faq/delete", s.requireAdmin(http.HandlerFunc(s.deleteFAQ)))
 	mux.Handle("GET /requests/{id}", s.requireAdmin(http.HandlerFunc(s.requestDetail)))
 	mux.Handle("POST /requests/{id}/status", s.requireAdmin(http.HandlerFunc(s.updateStatus)))
 	mux.Handle("POST /requests/{id}/identity", s.requireAdmin(http.HandlerFunc(s.updateIdentity)))

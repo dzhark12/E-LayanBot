@@ -106,6 +106,34 @@ func (s *Server) saveLetterType(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/settings?notice=saved#letters", http.StatusSeeOther)
 }
 
+// deleteFAQ menghapus satu FAQ secara permanen. Hanya admin yang sudah masuk
+// dan membawa token CSRF yang valid yang dapat memakainya. Menonaktifkan FAQ
+// (tanpa menghapus) tetap dilakukan lewat kotak "Aktif" pada dialog Edit.
+func (s *Server) deleteFAQ(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, 4<<10)
+	if err := r.ParseForm(); err != nil || !s.validCSRF(r, currentAdmin(r).CSRF) {
+		http.Error(w, "Permintaan tidak valid.", http.StatusForbidden)
+		return
+	}
+	id, err := strconv.ParseInt(strings.TrimSpace(r.FormValue("id")), 10, 64)
+	if err != nil || id < 1 {
+		http.Redirect(w, r, "/settings?notice=invalid-faq#faq", http.StatusSeeOther)
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+	result, err := s.db.ExecContext(ctx, `DELETE FROM faq WHERE id=$1`, id)
+	if err != nil {
+		http.Error(w, "FAQ belum dapat dihapus.", http.StatusServiceUnavailable)
+		return
+	}
+	if deleted, _ := result.RowsAffected(); deleted == 0 {
+		http.NotFound(w, r)
+		return
+	}
+	http.Redirect(w, r, "/settings?notice=deleted#faq", http.StatusSeeOther)
+}
+
 func (s *Server) saveFAQ(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, 32<<10)
 	if err := r.ParseForm(); err != nil || !s.validCSRF(r, currentAdmin(r).CSRF) {
