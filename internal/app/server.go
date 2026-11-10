@@ -1,6 +1,7 @@
 package app
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -120,6 +121,21 @@ func (s *Server) render(w http.ResponseWriter, name string, data any) {
 	if err := s.templates.ExecuteTemplate(w, name, data); err != nil {
 		http.Error(w, "Halaman tidak dapat ditampilkan.", http.StatusInternalServerError)
 	}
+}
+
+// renderStatus menampilkan template dengan kode status HTTP tertentu (misalnya
+// 429 atau 503). Template dirender ke buffer dulu agar kode status tidak
+// terkirim sebelum template dipastikan berhasil.
+func (s *Server) renderStatus(w http.ResponseWriter, status int, name string, data any) {
+	var buf bytes.Buffer
+	if err := s.templates.ExecuteTemplate(&buf, name, data); err != nil {
+		http.Error(w, "Halaman tidak dapat ditampilkan.", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-store")
+	w.WriteHeader(status)
+	_, _ = buf.WriteTo(w)
 }
 
 type apiError struct {
