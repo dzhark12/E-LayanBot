@@ -1,0 +1,177 @@
+/* E-LAYAN - skala tipografi standar untuk halaman admin (dashboard, detail, settings).
+   Dimuat PALING AKHIR agar menyeragamkan ukuran dari app.css, settings.css, dan figma-ui.css
+   tanpa mengubah file-file itu. Hanya mengatur ukuran, bobot, dan jarak baris teks.
+   Hapus tautannya dari template untuk kembali ke tampilan sebelumnya.
+
+   Font: judul = Plus Jakarta Sans, isi = Inter (keduanya dilayani dari /static/fonts).
+   Skala (px):
+     merek "E-LAYAN"   22 / 800      judul halaman (h1)   22 / 700
+     judul panel (h2)  16 / 700      isi, tabel, tombol   13-14
+     keterangan kecil  12            tidak ada teks di bawah 12 */
+
+:root {
+  --ts-brand: 22px;
+  --ts-h1: 22px;
+  --ts-h2: 16px;
+  --ts-body: 14px;
+  --ts-text: 13px;
+  --ts-small: 12px;
+  /* Pasangan font: Plus Jakarta Sans untuk judul, Inter untuk isi. */
+  --ts-font-head: "Plus Jakarta Sans", Inter, "Segoe UI", Arial, sans-serif;
+  --ts-font-body: Inter, "Segoe UI", Arial, sans-serif;
+}
+
+/* ---------- Dasar ---------- */
+.admin-page { font-family: var(--ts-font-body); font-size: var(--ts-body); line-height: 1.5; }
+/* Tombol, kolom isian, dan pilihan mengikuti font isi (bukan bawaan browser). */
+.admin-page button, .admin-page input, .admin-page select, .admin-page textarea { font-family: inherit; }
+
+/* ---------- Font judul (Plus Jakarta Sans) ---------- */
+.admin-page .brand strong,
+.admin-page .page-header h1,
+.admin-page .detail-header h1,
+.detail-page .detail-header h1,
+.admin-page .panel-heading h2,
+.detail-page .panel-heading h2,
+.admin-page .section-title h2,
+.admin-page .settings-card h3,
+.admin-page .empty-state h3,
+.settings-page .dialog-header h2,
+.settings-page .faq-table .faq-question,
+.settings-page .services-table .service-code,
+.dashboard-page .request-code,
+.dashboard-page .stats-disclosure .stat-card strong { font-family: var(--ts-font-head); }
+
+/* ---------- Sidebar ---------- */
+.admin-page .brand strong { font-size: var(--ts-brand); font-weight: 800; line-height: 1.15; letter-spacing: -.02em; }
+.admin-page .brand small { font-size: var(--ts-small); font-weight: 600; letter-spacing: .06em; margin-top: 5px; }
+.admin-page .nav-label { font-size: var(--ts-small); font-weight: 700; }
+.admin-page .nav-link { font-size: var(--ts-body); }
+.admin-page .help-card strong { font-size: var(--ts-text); }
+.admin-page .help-card small { font-size: var(--ts-small); }
+.admin-page .help-icon { font-size: var(--ts-small); }
+.admin-page .account-name strong { font-size: var(--ts-body); font-weight: 600; }
+.admin-page .account-name small { font-size: var(--ts-small); }
+.admin-page .avatar { font-size: var(--ts-text); }
+
+/* ---------- Judul halaman ---------- */
+.admin-page .page-header h1,
+.admin-page .detail-header h1,
+.detail-page .detail-header h1 { font-size: var(--ts-h1); font-weight: 700; line-height: 1.25; letter-spacing: -.01em; }
+.admin-page .page-header .eyebrow,
+.admin-page .detail-header .eyebrow,
+.admin-page .eyebrow { font-size: var(--ts-small); font-weight: 700; letter-spacing: .06em; }
+.admin-page .page-header .muted,
+.admin-page .detail-header .muted { font-size: var(--ts-body); line-height: 1.55; }
+.admin-page .breadcrumb { font-size: var(--ts-text); }
+
+/* ---------- Panel ---------- */
+.admin-page .panel-heading h2,
+.detail-page .panel-heading h2,
+.admin-page .section-title h2 { font-size: var(--ts-h2); font-weight: 700; line-height: 1.35; }
+.admin-page .panel-heading p,
+.admin-page .section-title p { font-size: var(--ts-text); }
+.admin-page .settings-card h3 { font-size: var(--ts-body); }
+.admin-page .empty-state h3 { font-size: var(--ts-h2); }
+.admin-page .empty-state p { font-size: var(--ts-text); }
+
+/* ---------- Tombol, tab, pencarian ---------- */
+.admin-page .button { font-size: var(--ts-text); font-weight: 650; }
+.dashboard-page .search-form input[type=search],
+.settings-page .table-search input { font-size: var(--ts-text); }
+.dashboard-page .filter-tabs a,
+.settings-page .inline-tabs button { font-size: var(--ts-text); }
+.admin-page .tab-count { font-size: var(--ts-small); }
+
+/* ---------- Tabel ---------- */
+.admin-page .admin-table,
+.admin-page .admin-table td { font-size: var(--ts-text); }
+.admin-page .admin-table th { font-size: var(--ts-small); font-weight: 700; letter-spacing: .04em; }
+.admin-page .admin-table td small,
+.dashboard-page .request-table td:first-child small { font-size: var(--ts-small); }
+.dashboard-page .request-code { font-size: var(--ts-body); font-weight: 700; }
+.dashboard-page .letter-code,
+.dashboard-page .letter-name strong { font-size: var(--ts-small); }
+.admin-page .status-pill,
+.detail-page .detail-header > .status-pill { font-size: var(--ts-small); font-weight: 700; }
+.dashboard-page .row-action { font-size: var(--ts-text); }
+.admin-page .table-footer,
+.admin-page .pagination { font-size: var(--ts-small); }
+
+/* ---------- Ringkasan status (lipat) ---------- */
+/* Tautan "Ringkasan status" diletakkan normal di bawah panel (tanpa geser -16px)
+   agar tidak menimpa garis panel pada ukuran font standar. */
+.dashboard-page .stats-disclosure { font-size: var(--ts-text); top: 0; margin-top: 10px; }
+.dashboard-page .stats-disclosure .stat-card strong { font-size: 20px; }
+.admin-page .stat-card p { font-size: var(--ts-text); }
+.admin-page .stat-card small { font-size: var(--ts-small); }
+
+/* ---------- Data layanan & FAQ ---------- */
+.settings-page .services-table .service-code { font-size: var(--ts-body); }
+.settings-page .admin-table td strong { font-size: var(--ts-text); }
+.settings-page .faq-table .faq-question { font-size: var(--ts-body); font-weight: 650; }
+.settings-page .faq-table .faq-answer { font-size: var(--ts-text); }
+.settings-page .data-tag { font-size: var(--ts-small); }
+.settings-page .active-status,
+.settings-page .inactive-status { font-size: var(--ts-small); }
+
+/* ---------- Dialog & formulir ---------- */
+.settings-page .dialog-header h2 { font-size: var(--ts-h2); }
+.settings-page .dialog-header .eyebrow { font-size: var(--ts-small); }
+.settings-page .dialog-close { font-size: 22px; }
+.settings-page .dialog-form > label,
+.detail-page .identity-form label,
+.detail-page .stack-form label { font-size: var(--ts-text); }
+.settings-page .dialog-form > label small,
+.admin-page .identity-form label small,
+.admin-page .stack-form label small { font-size: var(--ts-small); }
+.settings-page .dialog-form input:not([type=checkbox]),
+.settings-page .dialog-form textarea,
+.settings-page .dialog-form select,
+.settings-page .settings-card .stack-form input,
+.settings-page .settings-card .stack-form textarea,
+.detail-page .identity-form input,
+.detail-page .identity-form textarea,
+.detail-page .identity-form select,
+.detail-page .stack-form input,
+.detail-page .stack-form select,
+.detail-page .stack-form textarea { font-size: var(--ts-text); }
+.settings-page .dialog-form .checkbox-label,
+.settings-page .dialog-body { font-size: var(--ts-text); }
+
+/* ---------- Detail permohonan ---------- */
+.admin-page .summary-box p { font-size: var(--ts-text); }
+.admin-page .summary-box .eyebrow { font-size: var(--ts-small); }
+.admin-page .attachment-card figcaption { font-size: var(--ts-small); }
+.admin-page .history-list strong { font-size: var(--ts-text); }
+.admin-page .history-list p,
+.admin-page .history-empty { font-size: var(--ts-small); }
+.admin-page .notice,
+.admin-page .form-error { font-size: var(--ts-text); }
+.admin-page .template-note { font-size: var(--ts-small); }
+
+/* ---------- Footer ---------- */
+.admin-page .page-footer { font-size: var(--ts-small); }
+
+/* ---------- Halaman login: judul Plus Jakarta Sans, isi Inter ---------- */
+.login-page { font-family: var(--ts-font-body); }
+.login-page button, .login-page input { font-family: inherit; }
+.login-page .brand-name,
+.login-page .brand-headline,
+.login-page .login-card-header h2,
+.login-page .brand-feature-title { font-family: var(--ts-font-head); }
+
+/* ---------- Layar menengah dan kecil ---------- */
+@media (max-width: 800px) {
+  .admin-page .brand strong { font-size: 20px; }
+  .admin-page .page-header h1,
+  .admin-page .detail-header h1,
+  .detail-page .detail-header h1 { font-size: 20px; }
+  .admin-page .nav-link { font-size: var(--ts-text); }
+}
+@media (max-width: 580px) {
+  .admin-page .page-header .muted,
+  .admin-page .detail-header .muted { font-size: var(--ts-text); }
+  .dashboard-page .filter-tabs a { font-size: var(--ts-small); }
+  .admin-page .table-footer > span { font-size: var(--ts-small); }
+}
