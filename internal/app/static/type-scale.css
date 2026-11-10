@@ -161,8 +161,15 @@
 .login-page .login-card-header h2,
 .login-page .brand-feature-title { font-family: var(--ts-font-head); }
 
+/* ---------- Posisi header halaman settings ---------- */
+/* Tautan #letters dan #faq menggulir halaman ke bagian itu. scroll-margin-top harus sama
+   dengan padding atas konten (32px; 24px dan 23px di layar kecil), kalau tidak header
+   Data layanan/FAQ tergeser lebih tinggi daripada header Permohonan. */
+.settings-page .workspace-view { scroll-margin-top: 32px; }
+
 /* ---------- Layar menengah dan kecil ---------- */
 @media (max-width: 800px) {
+  .settings-page .workspace-view { scroll-margin-top: 24px; }
   .admin-page .brand strong { font-size: 20px; }
   .admin-page .page-header h1,
   .admin-page .detail-header h1,
@@ -170,6 +177,7 @@
   .admin-page .nav-link { font-size: var(--ts-text); }
 }
 @media (max-width: 580px) {
+  .settings-page .workspace-view { scroll-margin-top: 23px; }
   .admin-page .page-header .muted,
   .admin-page .detail-header .muted { font-size: var(--ts-text); }
   .dashboard-page .filter-tabs a { font-size: var(--ts-small); }
