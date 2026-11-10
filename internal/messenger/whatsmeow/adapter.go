@@ -26,6 +26,14 @@ func (a *Adapter) SendText(ctx context.Context, jid, text string) error {
 	return err
 }
 
+func (a *Adapter) Typing(ctx context.Context, jid string) error {
+	chat, err := directJID(jid)
+	if err != nil {
+		return err
+	}
+	return a.client.SendChatPresence(ctx, chat, types.ChatPresenceComposing, types.ChatPresenceMediaText)
+}
+
 func (a *Adapter) SendFile(ctx context.Context, jid, filename, mime string, data []byte) error {
 	chat, err := directJID(jid)
 	if err != nil {
@@ -95,6 +103,7 @@ func (a *Adapter) OnMessage(handler func(messenger.Message)) {
 		handler(result)
 	})
 }
+
 
 func directJID(raw string) (types.JID, error) {
 	jid, err := types.ParseJID(raw)
