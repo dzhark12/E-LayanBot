@@ -48,10 +48,19 @@ func Render(ctx context.Context, code string, data map[string]string) ([]byte, e
 	filled := placeholder.ReplaceAllStringFunc(string(src), func(m string) string {
 		key := placeholder.FindStringSubmatch(m)[1]
 		v, ok := data[key]
+
+		// Nomor surat boleh kosong.
+		// Berikan jarak tetap pada PDF jika tidak diisi.
+		if key == "NoUrut" && (!ok || strings.TrimSpace(v) == "") {
+			return `\hspace*{1.5cm}`
+		}
+
+		// Semua placeholder lainnya tetap wajib diisi.
 		if !ok || strings.TrimSpace(v) == "" {
 			missing = append(missing, key)
 			return ""
 		}
+
 		return latexEscape.Replace(v)
 	})
 	if len(missing) > 0 {

@@ -569,13 +569,22 @@ func identityComplete(code string, identity domain.Identitas) bool {
 
 func letterFieldsComplete(code string, identity domain.Identitas) bool {
 	fields := letterFields[code]
+
 	if len(fields) == 0 || validateIdentity(identity) != nil {
 		return false
 	}
+
 	for _, field := range fields {
+		// NoUrut (Nomor Surat) bersifat opsional
+		if field.Key == "NoUrut" {
+			continue
+		}
+
+		// Field lainnya tetap wajib diisi
 		if strings.TrimSpace(identityValue(identity, field.Key)) == "" {
 			return false
 		}
 	}
+
 	return true
 }
