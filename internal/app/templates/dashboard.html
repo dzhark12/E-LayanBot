@@ -31,18 +31,18 @@
         <div class="panel-heading"><div><h2 id="request-list-title">Daftar Permohonan</h2><p class="muted">Pantau seluruh permohonan masuk dan proses layanan surat warga.</p></div>
           <form class="search-form" method="get" action="/">
             <label class="sr-only" for="search">Cari kode, jenis surat, atau ringkasan</label>
-            <svg class="ui-icon" aria-hidden="true"><use href="/static/ui-icons.svg#search"/></svg><input id="search" type="search" name="q" value="{{.Query}}" placeholder="Cari NIK, pemohon, atau kode...">
+            <svg class="ui-icon" aria-hidden="true"><use href="/static/ui-icons.svg#search"/></svg><input id="search" type="search" name="q" value="{{.Query}}" placeholder="Cari kode, jenis surat, atau ringkasan...">
             {{if .Status}}<input type="hidden" name="status" value="{{.Status}}">{{end}}
             <button class="button button-secondary" type="submit">Cari</button>
           </form>
         </div>
         <nav class="filter-tabs" aria-label="Filter status">
-          <a href="/?q={{urlquery .Query}}" {{if not .Status}}aria-current="page" class="selected"{{end}}>Semua <span class="tab-count">{{.Total}}</span></a>
+          <a href="/?q={{urlquery .Query}}" {{if not .Status}}aria-current="page" class="selected"{{end}}>Semua <span class="tab-count">{{.RequestCount}}</span></a>
           <a href="/?status=Menunggu&amp;q={{urlquery .Query}}" {{if eq .Status "Menunggu"}}aria-current="page" class="selected"{{end}}>Menunggu <span class="tab-count">{{.Menunggu}}</span></a>
           <a href="/?status=Dikerjakan&amp;q={{urlquery .Query}}" {{if eq .Status "Dikerjakan"}}aria-current="page" class="selected"{{end}}>Dikerjakan <span class="tab-count">{{.Dikerjakan}}</span></a>
           <a href="/?status=Selesai&amp;q={{urlquery .Query}}" {{if eq .Status "Selesai"}}aria-current="page" class="selected"{{end}}>Selesai <span class="tab-count">{{.Selesai}}</span></a>
-          <a href="/?status=Perlu%20Perbaikan&amp;q={{urlquery .Query}}" {{if eq .Status "Perlu Perbaikan"}}aria-current="page" class="selected"{{end}}>Perlu perbaikan</a>
-          <a href="/?status=Ditolak&amp;q={{urlquery .Query}}" {{if eq .Status "Ditolak"}}aria-current="page" class="selected"{{end}}>Ditolak</a>
+          <a href="/?status=Perlu%20Perbaikan&amp;q={{urlquery .Query}}" {{if eq .Status "Perlu Perbaikan"}}aria-current="page" class="selected"{{end}}>Perlu perbaikan <span class="tab-count">{{.PerluPerbaikan}}</span></a>
+          <a href="/?status=Ditolak&amp;q={{urlquery .Query}}" {{if eq .Status "Ditolak"}}aria-current="page" class="selected"{{end}}>Ditolak <span class="tab-count">{{.Ditolak}}</span></a>
         </nav>
         {{if .Requests}}
         <div class="table-wrap">
