@@ -5,14 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{.Request.Kode}} · E-LAYAN Desa Sabah Balau</title>
   <link rel="stylesheet" href="/static/app.css">
+  <link rel="stylesheet" href="/static/figma-ui.css">
+  <link rel="stylesheet" href="/static/identity-validation.css">
+  <script defer src="/static/lightbox.js"></script>
+  <script defer src="/static/identity-validation.js"></script>
 </head>
-     <script defer src="/static/lightbox.js"></script>
-<body>
+<body class="admin-page detail-page">
   <div class="app-shell">
     <aside class="sidebar">
-      <a class="brand" href="/" aria-label="E-LAYAN Desa Sabah Balau"><span class="brand-mark" aria-hidden="true">E</span><span><strong>E-LAYAN</strong><small>DESA SABAH BALAU</small></span></a>
-      <p class="nav-label">MENU UTAMA</p><nav aria-label="Menu utama"><a class="nav-link active" href="/" aria-current="page"><span aria-hidden="true">▤</span> Permohonan</a><a class="nav-link" href="/settings"><span aria-hidden="true">⚙</span> Data layanan</a></nav>
-      <div class="sidebar-bottom"><div class="help-card"><span class="help-icon" aria-hidden="true">i</span><div><strong>Butuh bantuan?</strong><small>Hubungi koordinator sistem desa.</small></div></div><div class="account-row"><span class="avatar" aria-hidden="true">{{printf "%.1s" .User.Username}}</span><span class="account-name"><strong>{{.User.Username}}</strong><small>{{.User.Role}}</small></span><form method="post" action="/logout"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="icon-button" type="submit" aria-label="Keluar">↗</button></form></div></div>
+      <a class="brand" href="/" aria-label="E-LAYAN Desa Sabah Balau"><span><strong>E-LAYAN</strong><small>DESA SABAH BALAU</small></span></a>
+      <p class="nav-label">MENU UTAMA</p><nav aria-label="Menu utama"><a class="nav-link active" href="/" aria-current="page"><svg class="ui-icon" aria-hidden="true"><use href="/static/ui-icons.svg#file"/></svg> Permohonan</a><a class="nav-link" href="/settings#letters"><svg class="ui-icon" aria-hidden="true"><use href="/static/ui-icons.svg#sliders"/></svg> Data layanan</a><a class="nav-link" href="/settings#faq"><svg class="ui-icon" aria-hidden="true"><use href="/static/ui-icons.svg#bot"/></svg> FAQ bot</a></nav>
+      <div class="sidebar-bottom"><div class="help-card"><span class="help-icon" aria-hidden="true">i</span><div><strong>Butuh bantuan?</strong><small>Hubungi koordinator sistem desa.</small></div></div><div class="account-row"><span class="avatar" aria-hidden="true">{{printf "%.1s" .User.Username}}</span><span class="account-name"><strong>{{.User.Username}}</strong><small>{{.User.Role}}</small></span><form method="post" action="/logout"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="icon-button" type="submit" aria-label="Keluar"><svg class="ui-icon" aria-hidden="true"><use href="/static/ui-icons.svg#logout"/></svg></button></form></div></div>
     </aside>
 
     <main class="main-content">

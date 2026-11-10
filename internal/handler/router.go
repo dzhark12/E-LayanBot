@@ -96,8 +96,10 @@ func (r *Router) Handle(parent context.Context, message messenger.Message) {
 		r.checkStatus(ctx, message, code)
 		return
 	}
-	if upper == "MENU" || upper == "HALO" || upper == "HAI" {
-		r.reply(ctx, message.JID, "E-LAYAN Desa Sabah Balau\nKetik SURAT untuk mengajukan surat. Kirim pertanyaan tentang layanan desa untuk mencari informasi. Untuk status, kirim kode permohonan, misalnya DM01245. Ketik BATAL untuk membatalkan pengajuan.")
+	// Sapaan ditangani kode biasa (tanpa Gemini): cepat, tidak memakai kuota,
+	// dan tidak mengirim pesan warga ke layanan luar.
+	if message.Media == nil && isGreeting(text) {
+		r.reply(ctx, message.JID, menuText)
 		return
 	}
 	if upper == "SURAT" {
@@ -122,7 +124,26 @@ func (r *Router) Handle(parent context.Context, message messenger.Message) {
 		return
 	}
 	if session.Flow == "surat" {
+		// Pertanyaan bantuan di tengah alur dijawab tanpa mengubah langkah
+		// permohonan. Gemini hanya menerima teks pertanyaan yang lolos filter PII;
+		// state, ringkasan, lampiran, dan data permohonan tidak ikut dikirim.
+		if isHelpQuestion(text) {
+			r.mu.Unlock()
+			locked = false
+			r.answerFAQ(ctx, message.JID, text)
+			return
+		}
 		r.handleLetterFlow(ctx, message, session, state, text)
+		return
+	}
+	// Di luar alur surat: identitas bot dan ucapan terima kasih dijawab
+	// kode biasa (tanpa AI) agar konsisten, cepat, dan tidak memakai kuota.
+	if isIdentityQuestion(text) {
+		r.reply(ctx, message.JID, identityText)
+		return
+	}
+	if isThanks(text) {
+		r.reply(ctx, message.JID, thanksText)
 		return
 	}
 	// Jawaban FAQ/AI tidak mengubah sesi, jadi lepas kunci global agar
@@ -301,7 +322,9 @@ func (r *Router) submit(ctx context.Context, message messenger.Message, state co
 func (r *Router) checkStatus(ctx context.Context, message messenger.Message, code string) {
 	result, err := r.api.CheckStatus(ctx, code, message.PhoneJID)
 	if errors.Is(err, client.ErrNotFound) {
-		r.reply(ctx, message.JID, "Kode tidak ditemukan.")
+		// Pesan sama untuk "kode tidak ada" dan "kode milik nomor lain",
+		// agar orang luar tidak bisa menebak kode permohonan warga.
+		r.reply(ctx, message.JID, statusNotFoundText)
 		return
 	}
 	if err != nil {
@@ -317,7 +340,24 @@ func (r *Router) answerFAQ(ctx context.Context, jid, query string) {
 		r.reply(ctx, jid, "Kirim pertanyaan tentang jam layanan, persyaratan, alur pengurusan, atau kontak desa.")
 		return
 	}
-	// 1) FAQ kata kunci tetap yang utama: murah, instan, dan resmi.
+	// Gemini diprioritaskan agar bisa mencocokkan maksud dan bahasa santai.
+	// Model hanya diberi FAQ aktif; ia tidak mendapat state atau data permohonan.
+	if r.ai.Enabled() {
+		entries, err := repository.ListActiveFAQ(ctx, r.db, 100)
+		if err != nil {
+			r.logger.Printf("faq load for ai failed: %v", err)
+			r.reply(ctx, jid, "Informasi belum dapat dimuat. Coba lagi sebentar.")
+			return
+		}
+		facts := make([]gemini.Fact, 0, len(entries)+1)
+		facts = append(facts, identityFact)
+		for _, e := range entries {
+			facts = append(facts, gemini.Fact{Question: e.Question, Answer: e.Answer})
+		}
+		r.reply(ctx, jid, r.ai.Answer(ctx, jid, query, facts))
+		return
+	}
+	// Tanpa Gemini, pencocokan FAQ deterministik tetap tersedia.
 	answer, err := r.api.FAQ(ctx, query)
 	if err == nil {
 		r.reply(ctx, jid, answer)
@@ -327,22 +367,31 @@ func (r *Router) answerFAQ(ctx context.Context, jid, query string) {
 		r.reply(ctx, jid, "Informasi belum dapat dimuat. Coba lagi sebentar.")
 		return
 	}
-	// 2) Tidak ada kecocokan kata kunci: tanya Gemini, dibatasi pada FAQ aktif.
 	if !r.ai.Enabled() {
-		r.reply(ctx, jid, "Informasi itu belum tersedia di layanan ini. Bot hanya menjawab informasi desa yang sudah disiapkan perangkat desa.")
+		r.reply(ctx, jid, "Informasi itu belum tersedia di layanan ini. Bot hanya menjawab informasi desa yang sudah disiapkan perangkat desa. Ketik MENU untuk melihat layanan.")
 		return
 	}
-	entries, err := repository.ListActiveFAQ(ctx, r.db, 100)
-	if err != nil {
-		r.logger.Printf("faq load for ai failed: %v", err)
-		r.reply(ctx, jid, "Informasi belum dapat dimuat. Coba lagi sebentar.")
-		return
+}
+
+func isHelpQuestion(text string) bool {
+	text = strings.ToLower(strings.TrimSpace(text))
+	if text == "" {
+		return false
 	}
-	facts := make([]gemini.Fact, len(entries))
-	for i, e := range entries {
-		facts[i] = gemini.Fact{Question: e.Question, Answer: e.Answer}
+	if strings.Contains(text, "?") {
+		return true
 	}
-	r.reply(ctx, jid, r.ai.Answer(ctx, jid, query, facts))
+	for _, prefix := range []string{
+		"apa ", "apa itu", "bagaimana ", "gimana ", "kenapa ", "mengapa ",
+		"syarat ", "berapa ", "boleh ", "bisakah ", "bisa ", "cara ",
+		"maksud ", "arti ", "kalau ", "kalo ", "untuk apa", "tolong jelaskan",
+		"mau tanya", "izin tanya", "nanya",
+	} {
+		if strings.HasPrefix(text, prefix) {
+			return true
+		}
+	}
+	return false
 }
 
 func (r *Router) save(ctx context.Context, session domain.SesiBot, state conversation) error {

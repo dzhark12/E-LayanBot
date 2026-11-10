@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Masuk · E-LAYAN Desa Sabah Balau</title>
   <link rel="stylesheet" href="/static/app.css">
+  <link rel="stylesheet" href="/static/figma-ui.css">
 </head>
 <body class="login-page">
   <!-- Kumpulan ikon SVG (tidak butuh internet / font Google). Dipakai lewat <use href="#i-..."> -->
@@ -53,8 +54,8 @@
             <svg class="icon" aria-hidden="true"><use href="#i-badge-check"/></svg>
             <span>Portal Administrasi & Surat Menyurat</span>
           </div>
-          <h1 class="brand-headline">Layanan surat desa, lebih cepat dan tertata.</h1>
-          <p class="brand-description">Platform pelayanan publik terintegrasi untuk melayani kebutuhan administrasi kependudukan warga Sabah Balau secara transparan dan responsif.</p>
+          <h1 class="brand-headline">Dari permohonan warga, ke pelayanan tertata.</h1>
+          <p class="brand-description">Mendampingi perangkat Desa Sabah Balau melayani kebutuhan surat warga dengan alur yang jelas.</p>
 
           <!-- Value Props -->
           <div class="brand-features">
@@ -63,7 +64,7 @@
                 <svg class="icon"><use href="#i-message"/></svg>
               </div>
               <div>
-                <p class="brand-feature-title">01 Warga mengajukan</p>
+                <p class="brand-feature-title">Warga Mengajukan</p>
                 <p class="brand-feature-desc">Permohonan dan persyaratan dikirim melalui bot Whatsapp</p>
               </div>
             </div>
@@ -72,7 +73,7 @@
                 <svg class="icon"><use href="#i-printer"/></svg>
               </div>
               <div>
-                <p class="brand-feature-title">02 Operator memverifikasi</p>
+                <p class="brand-feature-title">Operator memverifikasi</p>
                 <p class="brand-feature-desc">Perangkat desa memeriksa data dan kelengkapan berkas</p>
               </div>
             </div>
@@ -81,7 +82,7 @@
                 <svg class="icon"><use href="#i-folder-user"/></svg>
               </div>
               <div>
-                <p class="brand-feature-title">03 Surat diproses</p>
+                <p class="brand-feature-title">Surat diproses</p>
                 <p class="brand-feature-desc">Surat disiapkan sesuai hasil verifikasi permohonan</p>
               </div>
             </div>
@@ -146,7 +147,7 @@
                 required
                 maxlength="80"
                 autofocus
-                placeholder="contoh: admin@sabahbalau.desa.id"
+                placeholder="contoh: admin.desa@sabahbalau.desa.id"
                 class="form-input"
               >
             </div>
@@ -168,7 +169,7 @@
                 autocomplete="current-password"
                 required
                 maxlength="256"
-                placeholder="Masukkan kata sandi akun Anda"
+                placeholder="Masukkan kata sandi akun anda"
                 class="form-input has-toggle"
               >
               <button
@@ -208,25 +209,13 @@
           </button>
         </form>
 
-        <!-- Help Shortcut -->
-        <div class="login-help">
-          <div class="login-help-info">
-            <svg class="icon login-help-icon" aria-hidden="true"><use href="#i-help"/></svg>
-            <div>
-              <p class="login-help-title">Butuh bantuan teknis aparatur?</p>
-              <p class="login-help-desc">Hubungi Tim IT Kominfo Desa</p>
-            </div>
-          </div>
-          <a href="https://wa.me/6288286086844" target="_blank" rel="noopener noreferrer" class="login-help-link">
-            WhatsApp
-          </a>
-        </div>
       </div>
 
       <!-- Footer -->
       <div class="login-footer">
-        <p>E-LAYAN Desa Sabah Balau &middot; Layanan administrasi warga</p>
-        <p class="login-footer-copyright">Terintegrasi Database Kependudukan &copy; 2026. Dilindungi hak cipta.</p>
+        <p>E-Layan Desa Sabah Balau</p>
+        <p class="login-footer-copyright">Melayani kebutuhan administrasi warga Desa Sabah Balau.</p>
+        <a class="login-support-link" href="https://wa.me/6288286086844" target="_blank" rel="noopener noreferrer" title="Hubungi Tim IT Kominfo Desa melalui WhatsApp">Butuh bantuan? Hubungi WhatsApp</a>
       </div>
     </div>
   </main>
