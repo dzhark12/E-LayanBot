@@ -84,9 +84,12 @@
       field.maxLength = 16;
       field.pattern = "[0-9]{16}";
     } else if (rule === "letter-number" && field.tagName === "INPUT") {
+      // Ini bagian setelah "100/" pada nomor surat, BUKAN nomor urut 100.
+      // Nilai dapat kosong, berupa huruf, angka, atau gabungannya.
       field.type = "text";
-      field.inputMode = "numeric";
-      field.pattern = "[0-9]+";
+      field.inputMode = "text";
+      field.removeAttribute("pattern");
+      field.placeholder = "Opsional — boleh kosong, huruf, atau angka";
     }
     return field;
   });
@@ -104,7 +107,8 @@
       case "nik":
         return /^[0-9]{16}$/.test(value) ? "" : "NIK harus tepat 16 digit angka (tanpa spasi atau tanda baca).";
       case "letter-number":
-        return /^[0-9]+$/.test(value) ? "" : "Nomor surat harus berisi angka saja.";
+        // Bagian ini opsional, jadi tidak mensyaratkan angka ataupun huruf.
+        return "";
       case "full-name":
         return NAME_CHARS.test(value) && LETTER.test(value)
           ? "" : "Nama lengkap hanya boleh berisi huruf, spasi, titik, apostrof, atau tanda hubung.";
