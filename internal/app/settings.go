@@ -93,7 +93,7 @@ func (s *Server) saveLetterType(w http.ResponseWriter, r *http.Request) {
 	name := strings.TrimSpace(r.FormValue("name"))
 	requirements, err := parseLines(r.FormValue("requirements"), 20, 160, true)
 	if !letterCodePattern.MatchString(code) || utf8.RuneCountInString(name) < 2 || utf8.RuneCountInString(name) > 120 || err != nil {
-		http.Redirect(w, r, "/settings?notice=invalid-letter", http.StatusSeeOther)
+		http.Redirect(w, r, "/settings?notice=invalid-letter#letters", http.StatusSeeOther)
 		return
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
@@ -103,7 +103,7 @@ func (s *Server) saveLetterType(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Jenis surat belum dapat disimpan.", http.StatusServiceUnavailable)
 		return
 	}
-	http.Redirect(w, r, "/settings?notice=saved", http.StatusSeeOther)
+	http.Redirect(w, r, "/settings?notice=saved#letters", http.StatusSeeOther)
 }
 
 func (s *Server) saveFAQ(w http.ResponseWriter, r *http.Request) {
@@ -117,7 +117,7 @@ func (s *Server) saveFAQ(w http.ResponseWriter, r *http.Request) {
 	category := strings.TrimSpace(r.FormValue("category"))
 	keywords, err := parseLines(r.FormValue("keywords"), 20, 60, false)
 	if utf8.RuneCountInString(question) < 3 || utf8.RuneCountInString(question) > 300 || utf8.RuneCountInString(answer) < 3 || utf8.RuneCountInString(answer) > 2000 || utf8.RuneCountInString(category) > 80 || err != nil {
-		http.Redirect(w, r, "/settings?notice=invalid-faq", http.StatusSeeOther)
+		http.Redirect(w, r, "/settings?notice=invalid-faq#faq", http.StatusSeeOther)
 		return
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
@@ -126,7 +126,7 @@ func (s *Server) saveFAQ(w http.ResponseWriter, r *http.Request) {
 	if rawID := strings.TrimSpace(r.FormValue("id")); rawID != "" {
 		id, parseErr := strconv.ParseInt(rawID, 10, 64)
 		if parseErr != nil || id < 1 {
-			http.Redirect(w, r, "/settings?notice=invalid-faq", http.StatusSeeOther)
+			http.Redirect(w, r, "/settings?notice=invalid-faq#faq", http.StatusSeeOther)
 			return
 		}
 		result, err := s.db.ExecContext(ctx, `UPDATE faq SET pertanyaan=$1,kata_kunci=$2,jawaban=$3,kategori=$4,aktif=$5 WHERE id=$6`, question, keywords, answer, category, active, id)
@@ -142,7 +142,7 @@ func (s *Server) saveFAQ(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "FAQ belum dapat disimpan.", http.StatusServiceUnavailable)
 		return
 	}
-	http.Redirect(w, r, "/settings?notice=saved", http.StatusSeeOther)
+	http.Redirect(w, r, "/settings?notice=saved#faq", http.StatusSeeOther)
 }
 
 func parseLines(raw string, maxCount, maxLength int, allowEmpty bool) ([]string, error) {
