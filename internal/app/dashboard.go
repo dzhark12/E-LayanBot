@@ -76,9 +76,13 @@ type dashboardPage struct {
 	Page         int
 	Pages        int
 	Total        int
-	Menunggu     int
-	Dikerjakan   int
-	Selesai      int
+	Menunggu       int
+	Dikerjakan     int
+	Selesai        int
+	PerluPerbaikan int
+	Ditolak        int
+	// RequestCount = jumlah seluruh permohonan tanpa filter; dipakai untuk tab
+	// "Semua" dan sebagai versi data untuk penyegaran otomatis dashboard.
 	RequestCount int64
 	Notice       string
 }
@@ -155,19 +159,9 @@ func (s *Server) dashboard(w http.ResponseWriter, r *http.Request) {
 	}
 	page.Page = pageInt(r.URL.Query().Get("page"))
 	page.Notice = r.URL.Query().Get("notice")
-	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM permohonan`).Scan(&page.RequestCount); err != nil {
-		http.Error(w, "Data permohonan belum dapat dimuat.", http.StatusServiceUnavailable)
-		return
-	}
-	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM permohonan WHERE status='Menunggu'`).Scan(&page.Menunggu); err != nil {
-		http.Error(w, "Data permohonan belum dapat dimuat.", http.StatusServiceUnavailable)
-		return
-	}
-	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM permohonan WHERE status='Dikerjakan'`).Scan(&page.Dikerjakan); err != nil {
-		http.Error(w, "Data permohonan belum dapat dimuat.", http.StatusServiceUnavailable)
-		return
-	}
-	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM permohonan WHERE status='Selesai'`).Scan(&page.Selesai); err != nil {
+	// Hitungan per status untuk tab filter; selalu tanpa filter pencarian agar
+	// angka tiap tab tidak berubah saat petugas berpindah tab atau mencari.
+	if err := s.statusCounts(ctx, &page); err != nil {
 		http.Error(w, "Data permohonan belum dapat dimuat.", http.StatusServiceUnavailable)
 		return
 	}
@@ -206,6 +200,36 @@ func (s *Server) dashboard(w http.ResponseWriter, r *http.Request) {
 	}
 	rows.Close()
 	s.render(w, "dashboard.html", page)
+}
+
+// statusCounts mengisi jumlah permohonan per status dan totalnya dengan satu query.
+func (s *Server) statusCounts(ctx context.Context, page *dashboardPage) error {
+	rows, err := s.db.QueryContext(ctx, `SELECT status, count(*) FROM permohonan GROUP BY status`)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var status string
+		var count int
+		if err := rows.Scan(&status, &count); err != nil {
+			return err
+		}
+		page.RequestCount += int64(count)
+		switch domain.Status(status) {
+		case domain.Menunggu:
+			page.Menunggu = count
+		case domain.Dikerjakan:
+			page.Dikerjakan = count
+		case domain.Selesai:
+			page.Selesai = count
+		case domain.PerluPerbaikan:
+			page.PerluPerbaikan = count
+		case domain.Ditolak:
+			page.Ditolak = count
+		}
+	}
+	return rows.Err()
 }
 
 func (s *Server) requestVersion(w http.ResponseWriter, r *http.Request) {
@@ -545,13 +569,22 @@ func identityComplete(code string, identity domain.Identitas) bool {
 
 func letterFieldsComplete(code string, identity domain.Identitas) bool {
 	fields := letterFields[code]
+
 	if len(fields) == 0 || validateIdentity(identity) != nil {
 		return false
 	}
+
 	for _, field := range fields {
+		// NoUrut (Nomor Surat) bersifat opsional
+		if field.Key == "NoUrut" {
+			continue
+		}
+
+		// Field lainnya tetap wajib diisi
 		if strings.TrimSpace(identityValue(identity, field.Key)) == "" {
 			return false
 		}
 	}
+
 	return true
 }

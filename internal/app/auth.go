@@ -34,6 +34,13 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Permintaan tidak valid.", http.StatusForbidden)
 		return
 	}
+	// Galat ditampilkan di halaman login (bukan teks polos) dengan kode status yang tepat.
+	fail := func(status int) {
+		s.renderStatus(w, status, "login.html", map[string]string{
+			"ErrorTitle": "Layanan Sedang Bermasalah",
+			"Error":      "Sistem belum dapat memproses permintaan. Coba lagi beberapa saat.",
+		})
+	}
 	r.Body = http.MaxBytesReader(w, r.Body, 16<<10)
 	if err := r.ParseForm(); err != nil {
 		s.render(w, "login.html", map[string]string{"Error": "Isian tidak valid."})
@@ -51,25 +58,28 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 	ipHash := s.requestHash([]byte("login:" + remoteIP(r) + "\x00" + username))
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		http.Error(w, "Layanan sedang bermasalah.", http.StatusServiceUnavailable)
+		fail(http.StatusServiceUnavailable)
 		return
 	}
 	defer tx.Rollback()
 	if _, err := tx.ExecContext(ctx, `SELECT pg_advisory_xact_lock($1)`, advisoryLockID(ipHash)); err != nil {
-		http.Error(w, "Layanan sedang bermasalah.", http.StatusServiceUnavailable)
+		fail(http.StatusServiceUnavailable)
 		return
 	}
 	if _, err := tx.ExecContext(ctx, `DELETE FROM admin_login_attempt WHERE attempted_at < now() - interval '1 day'`); err != nil {
-		http.Error(w, "Layanan sedang bermasalah.", http.StatusServiceUnavailable)
+		fail(http.StatusServiceUnavailable)
 		return
 	}
 	var attempts int
 	if err := tx.QueryRowContext(ctx, `SELECT count(*) FROM admin_login_attempt WHERE ip_hash=$1 AND attempted_at > now() - interval '15 minutes'`, ipHash).Scan(&attempts); err != nil {
-		http.Error(w, "Layanan sedang bermasalah.", http.StatusServiceUnavailable)
+		fail(http.StatusServiceUnavailable)
 		return
 	}
 	if attempts >= 8 {
-		http.Error(w, "Terlalu banyak percobaan. Coba lagi beberapa saat.", http.StatusTooManyRequests)
+		s.renderStatus(w, http.StatusTooManyRequests, "login.html", map[string]string{
+			"ErrorTitle": "Terlalu Banyak Percobaan",
+			"Error":      "Demi keamanan, percobaan masuk dibatasi sementara. Coba lagi sekitar 15 menit.",
+		})
 		return
 	}
 
@@ -77,43 +87,43 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 	var passwordHash string
 	err = tx.QueryRowContext(ctx, `SELECT id, username, role, password_hash FROM admin_user WHERE username=$1 AND aktif=TRUE`, username).Scan(&user.ID, &user.Username, &user.Role, &passwordHash)
 	if err != nil && err != sql.ErrNoRows {
-		http.Error(w, "Layanan sedang bermasalah.", http.StatusServiceUnavailable)
+		fail(http.StatusServiceUnavailable)
 		return
 	}
 	if err == sql.ErrNoRows || !security.VerifyPassword(password, passwordHash) {
 		if _, err := tx.ExecContext(ctx, `INSERT INTO admin_login_attempt(ip_hash) VALUES ($1)`, ipHash); err != nil {
-			http.Error(w, "Layanan sedang bermasalah.", http.StatusServiceUnavailable)
+			fail(http.StatusServiceUnavailable)
 			return
 		}
 		if err := tx.Commit(); err != nil {
-			http.Error(w, "Layanan sedang bermasalah.", http.StatusServiceUnavailable)
+			fail(http.StatusServiceUnavailable)
 			return
 		}
 		s.render(w, "login.html", map[string]string{"Error": "Nama pengguna atau kata sandi salah."})
 		return
 	}
 	if _, err := tx.ExecContext(ctx, `DELETE FROM admin_login_attempt WHERE ip_hash=$1`, ipHash); err != nil {
-		http.Error(w, "Layanan sedang bermasalah.", http.StatusServiceUnavailable)
+		fail(http.StatusServiceUnavailable)
 		return
 	}
 
 	token, err := randomToken(32)
 	if err != nil {
-		http.Error(w, "Layanan sedang bermasalah.", http.StatusInternalServerError)
+		fail(http.StatusInternalServerError)
 		return
 	}
 	csrf, err := randomToken(32)
 	if err != nil {
-		http.Error(w, "Layanan sedang bermasalah.", http.StatusInternalServerError)
+		fail(http.StatusInternalServerError)
 		return
 	}
 	expires := time.Now().UTC().Add(sessionDuration)
 	if _, err := tx.ExecContext(ctx, `INSERT INTO admin_session(token_hash, csrf_token, admin_id, expires_at) VALUES ($1,$2,$3,$4)`, s.sessionHash(token), csrf, user.ID, expires); err != nil {
-		http.Error(w, "Layanan sedang bermasalah.", http.StatusInternalServerError)
+		fail(http.StatusInternalServerError)
 		return
 	}
 	if err := tx.Commit(); err != nil {
-		http.Error(w, "Layanan sedang bermasalah.", http.StatusInternalServerError)
+		fail(http.StatusInternalServerError)
 		return
 	}
 	http.SetCookie(w, &http.Cookie{Name: sessionCookie, Value: token, Path: "/", HttpOnly: true, Secure: s.cfg.CookieSecure, SameSite: http.SameSiteLaxMode, Expires: expires, MaxAge: int(sessionDuration.Seconds())})

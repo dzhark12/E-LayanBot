@@ -6,6 +6,7 @@
   <title>Masuk · E-LAYAN Desa Sabah Balau</title>
   <link rel="stylesheet" href="/static/app.css">
   <link rel="stylesheet" href="/static/figma-ui.css">
+  <link rel="stylesheet" href="/static/type-scale.css">
 </head>
 <body class="login-page">
   <!-- Kumpulan ikon SVG (tidak butuh internet / font Google). Dipakai lewat <use href="#i-..."> -->
@@ -121,7 +122,7 @@
         <div class="form-error-alert" role="alert">
           <svg class="icon" aria-hidden="true"><use href="#i-alert"/></svg>
           <div>
-            <p class="form-error-title">Kredensial Tidak Sesuai</p>
+            <p class="form-error-title">{{if .ErrorTitle}}{{.ErrorTitle}}{{else}}Kredensial Tidak Sesuai{{end}}</p>
             <p class="form-error-desc">{{.Error}}</p>
           </div>
           <button type="button" class="form-error-close" aria-label="Tutup pesan error">
@@ -134,7 +135,7 @@
         <form method="post" action="/login" class="login-form" id="login-form">
           <!-- Username Field -->
           <div class="form-field">
-            <label for="username" class="form-label">Username atau Email</label>
+            <label for="username" class="form-label">Nama pengguna</label>
             <div class="form-input-wrapper">
               <span class="form-input-icon" aria-hidden="true">
                 <svg class="icon"><use href="#i-user"/></svg>
@@ -147,7 +148,7 @@
                 required
                 maxlength="80"
                 autofocus
-                placeholder="contoh: admin.desa@sabahbalau.desa.id"
+                placeholder="contoh: admin"
                 class="form-input"
               >
             </div>
