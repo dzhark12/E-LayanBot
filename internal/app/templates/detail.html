@@ -21,7 +21,7 @@
 
     <main class="main-content">
       <div class="breadcrumb"><a href="/">← Kembali ke permohonan</a><span>/</span><span>{{.Request.Kode}}</span></div>
-      <header class="detail-header"><div><p class="eyebrow">{{.Request.JenisKode}} · {{.Request.JenisNama}}</p><h1>{{.Request.Kode}}</h1><p class="muted">Dikirim {{date .Request.DibuatPada}}</p></div><span class="status-pill {{statusClass (printf "%s" .Request.Status)}}"><span class="status-dot" aria-hidden="true"></span>{{.Request.Status}}</span></header>
+      <header class="detail-header"><div><p class="eyebrow">{{.Request.JenisKode}} · {{.Request.JenisNama}}</p><h1>{{.Request.Kode}}</h1><p class="muted">Dikirim {{date .Request.DibuatPada}}</p>{{if .Request.WAJID}}<p class="muted"><svg class="ui-icon" aria-hidden="true"><use href="/static/ui-icons.svg#phone"/></svg> {{phoneNumber .Request.WAJID}}</p>{{end}}</div><span class="status-pill {{statusClass (printf "%s" .Request.Status)}}"><span class="status-dot" aria-hidden="true"></span>{{.Request.Status}}</span></header>
       {{if eq .Notice "identity-saved"}}<p class="notice" role="status">Data surat tersimpan.</p>{{else if eq .Notice "identity-error"}}<p class="form-error" role="alert">Periksa kembali format data, tanggal, dan NIK (16 digit).</p>{{else if eq .Notice "identity-required"}}<p class="form-error" role="alert">Lengkapi identitas pemohon sebelum memulai pengerjaan.</p>{{else if eq .Notice "letter-fields-required"}}<p class="form-error" role="alert">Lengkapi semua data yang diperlukan pada formulir surat sebelum menetapkan status Selesai.</p>{{else if eq .Notice "status-saved"}}<p class="notice" role="status">Status permohonan diperbarui.</p>{{else if eq .Notice "status-error"}}<p class="form-error" role="alert">Perubahan status tidak valid untuk tahap permohonan ini.</p>{{end}}
 
       <div class="detail-grid">
@@ -81,3 +81,4 @@
   </div>
 </body>
 </html>
+
