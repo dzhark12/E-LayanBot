@@ -1,0 +1,62 @@
+﻿<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Generate Ulang Data Surat · E-LAYAN Desa Sabah Balau</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <link rel="stylesheet" href="/static/figma-ui.css">
+  <link rel="stylesheet" href="/static/identity-validation.css">
+  <link rel="stylesheet" href="/static/type-scale.css">
+  <script defer src="/static/lightbox.js"></script>
+</head>
+<body class="admin-page detail-page">
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="/" aria-label="E-LAYAN Desa Sabah Balau"><span><strong>E-LAYAN</strong><small>DESA SABAH BALAU</small></span></a>
+      <p class="nav-label">MENU UTAMA</p><nav aria-label="Menu utama"><a class="nav-link active" href="/" aria-current="page"><svg class="ui-icon" aria-hidden="true"><use href="/static/ui-icons.svg#file"/></svg> Permohonan</a><a class="nav-link" href="/settings#letters"><svg class="ui-icon" aria-hidden="true"><use href="/static/ui-icons.svg#sliders"/></svg> Data layanan</a><a class="nav-link" href="/settings#faq"><svg class="ui-icon" aria-hidden="true"><use href="/static/ui-icons.svg#bot"/></svg> FAQ bot</a></nav>
+      <div class="sidebar-bottom"><div class="help-card"><span class="help-icon" aria-hidden="true">i</span><div><strong>Butuh bantuan?</strong><small>Hubungi koordinator sistem desa.</small></div></div><div class="account-row"><span class="avatar" aria-hidden="true">{{printf "%.1s" .User.Username}}</span><span class="account-name"><strong>{{.User.Username}}</strong><small>{{.User.Role}}</small></span><form method="post" action="/logout"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="icon-button" type="submit" aria-label="Keluar"><svg class="ui-icon" aria-hidden="true"><use href="/static/ui-icons.svg#logout"/></svg></button></form></div></div>
+    </aside>
+
+    <main class="main-content">
+      <div class="breadcrumb"><a href="/">← Kembali ke permohonan</a><span>/</span><span>{{.Request.Kode}}</span></div>
+      <header class="detail-header"><div><p class="eyebrow">{{.Request.JenisKode}} · {{.Request.JenisNama}}</p><h1>{{.Request.Kode}}</h1><p class="muted">Generate ulang data surat</p></div><span class="status-pill {{statusClass (printf "%s" .Request.Status)}}"><span class="status-dot" aria-hidden="true"></span>{{.Request.Status}}</span></header>
+      {{if eq .Notice "identity-saved"}}<p class="notice" role="status">Data surat tersimpan.</p>{{else if eq .Notice "identity-error"}}<p class="form-error" role="alert">Periksa kembali format data, tanggal, dan NIK (16 digit).</p>{{else if eq .Notice "letter-fields-required"}}<p class="form-error" role="alert">Lengkapi semua data yang diperlukan pada formulir surat sebelum menyimpan.</p>{{end}}
+
+      <div class="detail-grid">
+        <section class="panel attachment-panel" aria-labelledby="attachment-title">
+          <div class="panel-heading"><div><h2 id="attachment-title">Foto persyaratan</h2><p class="muted">{{len .Lampiran}} lampiran · hanya dapat dilihat setelah masuk</p></div></div>
+          {{if .Lampiran}}
+          <div class="attachment-grid">
+            {{range .Lampiran}}<figure class="attachment-card"><a href="/attachments/{{.ID}}" target="_blank" rel="noopener" data-lightbox data-caption="{{.Jenis}} · {{printf "%.1f" (divFloat .Ukuran 1048576)}} MB"><img src="/attachments/{{.ID}}" alt="Lampiran {{.Jenis}}" loading="lazy"></a><figcaption><span>{{.Jenis}}</span><small>{{printf "%.1f" (divFloat .Ukuran 1048576)}} MB</small></figcaption></figure>{{end}}
+          </div>
+          {{else}}<div class="empty-state compact"><span class="empty-icon" aria-hidden="true">□</span><h3>Foto belum tersedia</h3></div>{{end}}
+          <div class="summary-box"><span class="eyebrow">CATATAN PEMOHON</span><p>{{.Request.Ringkasan}}</p></div>
+        </section>
+
+        <div class="detail-side">
+          <section class="panel identity-panel" aria-labelledby="identity-title">
+            <div class="panel-heading"><div><h2 id="identity-title">Formulir data surat</h2><p class="muted">Isi dan verifikasi data surat. Semua field wajib diisi kecuali Nomor Surat dan Penandatangan.</p></div></div>
+            <form method="post" action="/requests/{{.Request.ID}}/letter/regenerate" class="identity-form">
+              <input type="hidden" name="csrf" value="{{.CSRF}}">
+              {{range .Fields}}
+              <label for="field-{{.Key}}">{{.Label}}{{if eq .Type "nik"}} <small>16 digit</small>{{end}}</label>
+              {{if eq .Type "signer"}}<select id="field-{{.Key}}" name="field-{{.Key}}"><option value="Kepala Desa" {{if eq .Value "Kepala Desa"}}selected{{end}}>Kepala Desa (PUJIANTO, SE.,MM.)</option><option value="Sekretaris Desa" {{if eq .Value "Sekretaris Desa"}}selected{{end}}>Sekretaris Desa (ERPANDI, S.Ag)</option></select>
+              {{else if eq .Type "gender"}}<select id="field-{{.Key}}" name="field-{{.Key}}"><option value="">Pilih</option><option value="Laki-laki" {{if eq .Value "Laki-laki"}}selected{{end}}>Laki-laki</option><option value="Perempuan" {{if eq .Value "Perempuan"}}selected{{end}}>Perempuan</option></select>
+              {{else if eq .Type "textarea"}}<textarea id="field-{{.Key}}" name="field-{{.Key}}" rows="3" maxlength="300">{{.Value}}</textarea>
+              {{else if eq .Type "nik"}}<input id="field-{{.Key}}" name="field-{{.Key}}" inputmode="numeric" autocomplete="off" value="{{.Value}}" maxlength="16">
+              {{else}}<input id="field-{{.Key}}" name="field-{{.Key}}" type="{{.Type}}" value="{{.Value}}" maxlength="300">
+              {{end}}
+              {{end}}
+              <button class="button button-primary button-wide" type="submit">Simpan & Download PDF</button>
+              <a class="button button-secondary button-wide" href="/requests/{{.Request.ID}}">Batal</a>
+            </form>
+          </section>
+        </div>
+      </div>
+
+      <footer class="page-footer">E-LAYAN Desa Sabah Balau <span>·</span> Layanan administrasi warga</footer>
+    </main>
+  </div>
+</body>
+</html>
