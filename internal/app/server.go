@@ -37,7 +37,10 @@ const adminContextKey contextKey = "elayan-admin"
 
 func New(db *sql.DB, cfg config.Config, files *storage.Local) (*Server, error) {
 	tmpl, err := template.New("pages").Funcs(template.FuncMap{
-		"date": func(t time.Time) string { return t.Format("02 Jan 2006, 15:04") },
+		"date": func(t time.Time) string {
+			wib := time.FixedZone("WIB", 7*60*60)
+			return t.In(wib).Format("02 Jan 2006, 15:04")
+		},
 		"statusClass": func(status string) string {
 			switch status {
 			case "Menunggu":
@@ -56,6 +59,21 @@ func New(db *sql.DB, cfg config.Config, files *storage.Local) (*Server, error) {
 		"sub":       func(a, b int) int { return a - b },
 		"divFloat":  func(a int64, b int64) float64 { return float64(a) / float64(b) },
 		"joinLines": func(lines []string) string { return strings.Join(lines, "\n") },
+	"phoneNumber": func(jid string) string {
+		// Format: 628123456789@s.whatsapp.net or 628123456789:1@s.whatsapp.net
+		// Extract just the number part before @ or :
+		if idx := strings.Index(jid, "@"); idx != -1 {
+			jid = jid[:idx]
+		}
+		if idx := strings.Index(jid, ":"); idx != -1 {
+			jid = jid[:idx]
+		}
+		// Format as +62 812-3456-789
+		if len(jid) >= 10 && strings.HasPrefix(jid, "62") {
+			return "+" + jid[:2] + " " + jid[2:5] + "-" + jid[5:9] + "-" + jid[9:]
+		}
+		return jid
+	},
 	}).ParseFS(assets, "templates/*.html")
 	if err != nil {
 		return nil, err

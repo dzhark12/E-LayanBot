@@ -38,6 +38,7 @@ type Permohonan struct {
 	ID         string
 	Kode       string
 	JenisKode  string
+	WAJID      string
 	JenisNama  string
 	Ringkasan  string
 	Status     Status

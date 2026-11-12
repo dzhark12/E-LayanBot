@@ -257,7 +257,7 @@ func (s *Server) requestDetail(w http.ResponseWriter, r *http.Request) {
 	page.Notice = r.URL.Query().Get("notice")
 	var status string
 	var identity []byte
-	err := s.db.QueryRowContext(ctx, `SELECT p.id::text, p.kode_unik, j.kode, j.nama, p.ringkasan, p.status, p.data_identitas, p.dibuat_pada, p.diubah_pada FROM permohonan p JOIN jenis_surat j ON j.id=p.jenis_id WHERE p.id=$1`, r.PathValue("id")).Scan(&page.Request.ID, &page.Request.Kode, &page.Request.JenisKode, &page.Request.JenisNama, &page.Request.Ringkasan, &status, &identity, &page.Request.DibuatPada, &page.Request.DiubahPada)
+	err := s.db.QueryRowContext(ctx, `SELECT p.id::text, p.kode_unik, p.wa_jid, j.kode, j.nama, p.ringkasan, p.status, p.data_identitas, p.dibuat_pada, p.diubah_pada FROM permohonan p JOIN jenis_surat j ON j.id=p.jenis_id WHERE p.id=$1`, r.PathValue("id")).Scan(&page.Request.ID, &page.Request.Kode, &page.Request.WAJID, &page.Request.JenisKode, &page.Request.JenisNama, &page.Request.Ringkasan, &status, &identity, &page.Request.DibuatPada, &page.Request.DiubahPada)
 	if errors.Is(err, sql.ErrNoRows) {
 		http.NotFound(w, r)
 		return
@@ -588,3 +588,4 @@ func letterFieldsComplete(code string, identity domain.Identitas) bool {
 
 	return true
 }
+
