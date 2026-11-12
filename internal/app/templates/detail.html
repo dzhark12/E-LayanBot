@@ -22,7 +22,7 @@
     <main class="main-content">
       <div class="breadcrumb"><a href="/">← Kembali ke permohonan</a><span>/</span><span>{{.Request.Kode}}</span></div>
       <header class="detail-header"><div><p class="eyebrow">{{.Request.JenisKode}} · {{.Request.JenisNama}}</p><h1>{{.Request.Kode}}</h1><p class="muted">Dikirim {{date .Request.DibuatPada}}</p>{{if .Request.WAJID}}<p class="muted"><svg class="ui-icon" aria-hidden="true"><use href="/static/ui-icons.svg#phone"/></svg> {{phoneNumber .Request.WAJID}}</p>{{end}}</div><span class="status-pill {{statusClass (printf "%s" .Request.Status)}}"><span class="status-dot" aria-hidden="true"></span>{{.Request.Status}}</span></header>
-      {{if eq .Notice "identity-saved"}}<p class="notice" role="status">Data surat tersimpan.</p>{{else if eq .Notice "identity-error"}}<p class="form-error" role="alert">Periksa kembali format data, tanggal, dan NIK (16 digit).</p>{{else if eq .Notice "identity-required"}}<p class="form-error" role="alert">Lengkapi identitas pemohon sebelum memulai pengerjaan.</p>{{else if eq .Notice "letter-fields-required"}}<p class="form-error" role="alert">Lengkapi semua data yang diperlukan pada formulir surat sebelum menetapkan status Selesai.</p>{{else if eq .Notice "status-saved"}}<p class="notice" role="status">Status permohonan diperbarui.</p>{{else if eq .Notice "status-error"}}<p class="form-error" role="alert">Perubahan status tidak valid untuk tahap permohonan ini.</p>{{end}}
+      {{if eq .Notice "identity-saved"}}<p class="notice" role="status">Data surat tersimpan.</p>{{else if eq .Notice "identity-error"}}<p class="form-error" role="alert">Periksa kembali format data, tanggal, dan NIK (16 digit).</p>{{else if eq .Notice "identity-required"}}<p class="form-error" role="alert">Lengkapi identitas pemohon sebelum memulai pengerjaan.</p>{{else if eq .Notice "letter-fields-required"}}<p class="form-error" role="alert">Lengkapi semua data yang diperlukan pada formulir surat sebelum menetapkan status Selesai.</p>{{else if eq .Notice "status-saved"}}<p class="notice" role="status">Status permohonan diperbarui.</p>{{else if eq .Notice "status-error"}}<p class="form-error" role="alert">Perubahan status tidak valid untuk tahap permohonan ini.</p>{{else if eq .Notice "note-required"}}<p class="form-error" role="alert">Catatan admin wajib diisi untuk status Perlu Perbaikan atau Ditolak.</p>{{end}}
 
       <div class="detail-grid">
         <section class="panel attachment-panel" aria-labelledby="attachment-title">
@@ -37,7 +37,7 @@
 
         <div class="detail-side">
           <section class="panel identity-panel" aria-labelledby="identity-title">
-            {{if eq (printf "%s" .Request.Status) "Selesai"}}
+            {{if or (eq (printf "%s" .Request.Status) "Selesai") (eq (printf "%s" .Request.Status) "Ditolak") (eq (printf "%s" .Request.Status) "Dibatalkan")}}
             <div class="panel-heading"><div><h2 id="identity-title">Surat selesai</h2><p class="muted">Status permohonan sudah selesai.</p></div></div>
             <div class="identity-form">
               {{if .HasPDF}}<a class="button button-primary button-wide" href="/requests/{{.Request.ID}}/letter.pdf">Unduh PDF surat</a><a class="button button-secondary button-wide" href="/requests/{{.Request.ID}}/letter/regenerate">Generate ulang data surat</a>{{else}}<p class="muted">Template PDF belum tersedia untuk jenis surat ini.</p>{{end}}
@@ -64,8 +64,8 @@
             <div class="panel-heading"><div><h2 id="status-title">Perbarui status</h2><p class="muted">Setiap perubahan tercatat di riwayat.</p></div></div>
             <form method="post" action="/requests/{{.Request.ID}}/status" class="stack-form">
               <input type="hidden" name="csrf" value="{{.CSRF}}">
-              <label for="status">Status baru</label><select id="status" name="status">{{range .Statuses}}<option value="{{.}}" {{if eq . $.Request.Status}}selected{{end}}>{{.}}</option>{{end}}</select>
-              <label for="catatan">Catatan <small>opsional</small></label><textarea id="catatan" name="catatan" rows="2" maxlength="500" placeholder="Misalnya: foto KTP perlu dikirim ulang"></textarea>
+              <label for="status">Status baru</label><select id="status" name="status">{{range .Statuses}}<option value="{{.}}" {{if statusSelected . $.Request.Status}}selected{{end}}>{{.}}</option>{{end}}</select>
+              <label for="catatan">Catatan admin <small id="catatan-hint">(wajib untuk Dibatalkan dan Diperbaiki)</small></label><textarea id="catatan" name="catatan" rows="3" maxlength="500" placeholder="Tuliskan catatan atau keterangan perubahan status untuk warga..."></textarea>
               <button class="button button-secondary button-wide" type="submit">Simpan perubahan</button>
             </form>
           </section>

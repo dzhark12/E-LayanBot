@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"elayan.local/desa/config"
+	"elayan.local/desa/internal/domain"
 	"elayan.local/desa/internal/storage"
 )
 
@@ -49,11 +50,23 @@ func New(db *sql.DB, cfg config.Config, files *storage.Local) (*Server, error) {
 				return "working"
 			case "Selesai":
 				return "done"
-			case "Perlu Perbaikan":
+			case "Perlu Perbaikan", "Diperbaiki":
 				return "revision"
 			default:
 				return "rejected"
 			}
+		},
+		"statusSelected": func(opt, curr domain.Status) bool {
+			if opt == curr {
+				return true
+			}
+			if (opt == domain.Diperbaiki || opt == domain.PerluPerbaikan) && (curr == domain.Diperbaiki || curr == domain.PerluPerbaikan) {
+				return true
+			}
+			if (opt == domain.Dibatalkan || opt == domain.Ditolak) && (curr == domain.Dibatalkan || curr == domain.Ditolak) {
+				return true
+			}
+			return false
 		},
 		"add":       func(a, b int) int { return a + b },
 		"sub":       func(a, b int) int { return a - b },

@@ -24,10 +24,6 @@ func tanggalID(t time.Time) string {
 	return strconv.Itoa(t.Day()) + " " + bulanID[t.Month()] + " " + strconv.Itoa(t.Year())
 }
 
-const (
-	SignerKades  = "Kepala Desa"
-	SignerSekdes = "Sekretaris Desa"
-)
 
 func defaultSigner(code string) string {
 	if code == "KM" {
