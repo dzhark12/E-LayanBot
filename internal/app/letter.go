@@ -36,7 +36,7 @@ func signerBlock(signer, tanggal string) (jabatan, nama string) {
 	if signer == SignerKades {
 		return `Sabah Balau, ` + tanggal + `\par Kepala Desa Sabah Balau`, "PUJIANTO, SE.,MM."
 	}
-	return `Sabah Balau, ` + tanggal + `\par An. Kepala Desa Sabah Balau\par Sekretaris Desa`, "ERPANDI, S.Ag"
+	return `Sabah Balau, ` + tanggal + `\par Sekretaris Desa Sabah Balau`, "ERPANDI, S.Ag"
 }
 
 func letterData(code string, i domain.Identitas, now time.Time) map[string]string {
