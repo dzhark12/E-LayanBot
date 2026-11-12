@@ -71,12 +71,10 @@
     if (opener) { openDialog(document.getElementById(opener.dataset.openDialog)); return; }
     const closer = event.target.closest('[data-close-dialog]');
     if (closer) { const dialog = closer.closest('dialog'); dialog?.close?.(); return; }
-    const deactivate = event.target.closest('[data-deactivate-faq]');
-    if (deactivate) {
-      const form = document.getElementById(deactivate.dataset.deactivateFaq);
-      if (!form || !window.confirm('Nonaktifkan FAQ ini? FAQ tidak dihapus dan dapat diaktifkan kembali melalui Edit.')) return;
-      const active = form.querySelector('input[name="aktif"]');
-      if (active) active.checked = false;
+    const remove = event.target.closest('[data-delete-faq]');
+    if (remove) {
+      const form = document.getElementById(remove.dataset.deleteFaq);
+      if (!form || !window.confirm('Hapus FAQ ini secara permanen? Tindakan ini tidak dapat dibatalkan.\n\nUntuk menyembunyikan sementara, gunakan Edit lalu hapus centang "Aktif".')) return;
       form.requestSubmit ? form.requestSubmit() : form.submit();
       return;
     }

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"hash/fnv"
 	"log"
 	"strings"
 	"sync"
@@ -23,6 +24,34 @@ import (
 	"elayan.local/desa/pkg/validator"
 )
 
+const (
+	workerCount  = 4
+	shardQueue   = 25
+	maxPerSender = 5
+	replyBase    = 600 * time.Millisecond
+	replyPerChar = 20 * time.Millisecond
+	replyMax     = 2500 * time.Millisecond
+)
+
+func replyDelay(text string) time.Duration {
+	d := replyBase + time.Duration(utf8.RuneCountInString(text))*replyPerChar
+	if d > replyMax {
+		d = replyMax
+	}
+	return d
+}
+
+func sleepCtx(ctx context.Context, d time.Duration) error {
+	t := time.NewTimer(d)
+	defer t.Stop()
+	select {
+	case <-t.C:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
 type Router struct {
 	db            *sql.DB
 	wa            messenger.Messenger
@@ -30,8 +59,12 @@ type Router struct {
 	files         *storage.Local
 	retentionDays int
 	logger        *log.Logger
-	ai            *gemini.Assistant // nil/nonaktif = hanya FAQ kata kunci
+	ai            *gemini.Assistant
 	mu            sync.Mutex
+
+	shards    []chan messenger.Message
+	pendingMu sync.Mutex
+	pending   map[string]int
 }
 
 type conversation struct {
@@ -43,26 +76,92 @@ type conversation struct {
 }
 
 func NewRouter(db *sql.DB, wa messenger.Messenger, api *client.Backend, files *storage.Local, retentionDays int, logger *log.Logger, ai *gemini.Assistant) *Router {
-	return &Router{db: db, wa: wa, api: api, files: files, retentionDays: retentionDays, logger: logger, ai: ai}
+	shards := make([]chan messenger.Message, workerCount)
+	for i := range shards {
+		shards[i] = make(chan messenger.Message, shardQueue)
+	}
+	return &Router{
+		db: db, wa: wa, api: api, files: files, retentionDays: retentionDays, logger: logger, ai: ai,
+		shards:  shards,
+		pending: make(map[string]int),
+	}
 }
 
 func (r *Router) Start(ctx context.Context) {
+	for _, shard := range r.shards {
+		go r.worker(ctx, shard)
+	}
 	r.wa.OnMessage(func(message messenger.Message) {
-		go r.Handle(ctx, message)
+		if !r.enqueue(message) {
+			r.logger.Printf("pesan dibuang: antrean penuh atau terlalu banyak dari satu pengirim")
+		}
 	})
 	go r.expireSessions(ctx)
+}
+
+func (r *Router) shardFor(jid string) chan messenger.Message {
+	h := fnv.New32a()
+	_, _ = h.Write([]byte(jid))
+	return r.shards[h.Sum32()%uint32(len(r.shards))]
+}
+
+// enqueue memasukkan pesan tanpa memblokir callback WhatsApp; false bila ditolak.
+func (r *Router) enqueue(message messenger.Message) bool {
+	r.pendingMu.Lock()
+	if r.pending[message.JID] >= maxPerSender {
+		r.pendingMu.Unlock()
+		return false
+	}
+	r.pending[message.JID]++
+	r.pendingMu.Unlock()
+
+	select {
+	case r.shardFor(message.JID) <- message:
+		return true
+	default: // antrean worker penuh
+		r.release(message.JID)
+		return false
+	}
+}
+
+func (r *Router) release(jid string) {
+	r.pendingMu.Lock()
+	defer r.pendingMu.Unlock()
+	if r.pending[jid] <= 1 {
+		delete(r.pending, jid)
+		return
+	}
+	r.pending[jid]--
+}
+
+func (r *Router) worker(ctx context.Context, queue <-chan messenger.Message) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case message := <-queue:
+			r.process(ctx, message)
+		}
+	}
+}
+
+func (r *Router) process(ctx context.Context, message messenger.Message) {
+	defer r.release(message.JID)
+	defer func() {
+		if rec := recover(); rec != nil {
+			r.logger.Printf("panic saat memproses pesan: %v", rec)
+		}
+	}()
+	r.Handle(ctx, message)
 }
 
 func (r *Router) Handle(parent context.Context, message messenger.Message) {
 	if message.JID == "" || message.PhoneJID == "" {
 		return
 	}
-<<<<<<< Updated upstream
-	ctx, cancel := context.WithTimeout(parent, 60*time.Second)
-	defer cancel()
-=======
+	// Simpan alamat chat WhatsApp yang aktif untuk kebutuhan notifikasi status.
+	// Operasi ini bersifat best-effort dan tidak mengganggu alur percakapan.
 	r.rememberChat(parent, message)
->>>>>>> Stashed changes
 	r.mu.Lock()
 	locked := true
 	defer func() {
@@ -70,10 +169,12 @@ func (r *Router) Handle(parent context.Context, message messenger.Message) {
 			r.mu.Unlock()
 		}
 	}()
+	ctx, cancel := context.WithTimeout(parent, 60*time.Second)
+	defer cancel()
+
 	if ctx.Err() != nil {
 		return
 	}
-
 	session, err := repository.LoadBotSession(ctx, r.db, message.JID)
 	state := conversation{}
 	if err == nil {
@@ -415,7 +516,17 @@ func (r *Router) removeStaged(state conversation) {
 	}
 }
 
+type typingNotifier interface {
+	Typing(ctx context.Context, jid string) error
+}
+
 func (r *Router) reply(ctx context.Context, jid, text string) error {
+	if t, ok := r.wa.(typingNotifier); ok {
+		_ = t.Typing(ctx, jid)
+	}
+	if err := sleepCtx(ctx, replyDelay(text)); err != nil {
+		return err
+	}
 	if err := r.wa.SendText(ctx, jid, text); err != nil {
 		r.logger.Printf("WhatsApp reply failed: %v", err)
 		return err
