@@ -61,6 +61,10 @@ func Render(ctx context.Context, code string, data map[string]string) ([]byte, e
 			return ""
 		}
 
+		if key == "TtdJabatan" && ok && strings.TrimSpace(v) != "" {
+			return v
+		}
+
 		return latexEscape.Replace(v)
 	})
 	if len(missing) > 0 {
