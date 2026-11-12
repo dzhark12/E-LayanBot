@@ -22,7 +22,26 @@ func tanggalID(t time.Time) string {
 	return strconv.Itoa(t.Day()) + " " + bulanID[t.Month()] + " " + strconv.Itoa(t.Year())
 }
 
-func letterData(i domain.Identitas, now time.Time) map[string]string {
+const (
+	SignerKades  = "Kepala Desa"
+	SignerSekdes = "Sekretaris Desa"
+)
+
+func defaultSigner(code string) string {
+	if code == "KM" {
+		return SignerKades
+	}
+	return SignerSekdes
+}
+// Nilai hanya berasal dari konstanta di sini, bukan input pengguna.
+func signerBlock(signer, tanggal string) (jabatan, nama string) {
+	if signer == SignerKades {
+		return `Sabah Balau, ` + tanggal + `\par Kepala Desa Sabah Balau`, "PUJIANTO, SE.,MM."
+	}
+	return `Sabah Balau, ` + tanggal + `\par An. Kepala Desa Sabah Balau\par Sekretaris Desa`, "ERPANDI, S.Ag"
+}
+
+func letterData(code string, i domain.Identitas, now time.Time) map[string]string {
 	now = now.In(wib)
 	lahir := i.TanggalLahir
 	if t, err := time.Parse("2006-01-02", i.TanggalLahir); err == nil {
@@ -40,6 +59,12 @@ func letterData(i domain.Identitas, now time.Time) map[string]string {
 	for k, v := range i.Tambahan {
 		d[k] = v
 	}
+
+	signer := d["Penandatangan"]
+	if signer != SignerKades && signer != SignerSekdes {
+		signer = defaultSigner(code)
+	}
+	d["TtdJabatan"], d["TtdNama"] = signerBlock(signer, d["Tanggal"])
 	if t, err := time.Parse("2006-01-02", d["TanggalMeninggal"]); err == nil {
 		d["TanggalMeninggal"] = tanggalID(t)
 	}
@@ -79,7 +104,7 @@ func (s *Server) letterPDF(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Lengkapi data surat terlebih dahulu.", http.StatusUnprocessableEntity)
 		return
 	}
-	out, err := pdf.Render(ctx, kode, letterData(ident, time.Now()))
+	out, err := pdf.Render(ctx, kode, letterData(kode, ident, time.Now()))
 	switch {
 	case errors.Is(err, pdf.ErrNoTemplate):
 		http.Error(w, "Belum ada template surat untuk jenis ini.", http.StatusNotFound)
