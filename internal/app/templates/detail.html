@@ -48,7 +48,8 @@
               <input type="hidden" name="csrf" value="{{.CSRF}}">
               {{range .Fields}}
               <label for="field-{{.Key}}">{{.Label}}{{if eq .Type "nik"}} <small>16 digit</small>{{end}}</label>
-              {{if eq .Type "gender"}}<select id="field-{{.Key}}" name="field-{{.Key}}"><option value="">Pilih</option><option value="Laki-laki" {{if eq .Value "Laki-laki"}}selected{{end}}>Laki-laki</option><option value="Perempuan" {{if eq .Value "Perempuan"}}selected{{end}}>Perempuan</option></select>
+              {{if eq .Type "signer"}}<select id="field-{{.Key}}" name="field-{{.Key}}"><option value="Kepala Desa" {{if eq .Value "Kepala Desa"}}selected{{end}}>PUJIANTO, SE.,MM.</option><option value="Sekretaris Desa" {{if eq .Value "Sekretaris Desa"}}selected{{end}}>ERPANDI, S.Ag</option></select>
+              {{else if eq .Type "gender"}}<select id="field-{{.Key}}" name="field-{{.Key}}"><option value="">Pilih</option><option value="Laki-laki" {{if eq .Value "Laki-laki"}}selected{{end}}>Laki-laki</option><option value="Perempuan" {{if eq .Value "Perempuan"}}selected{{end}}>Perempuan</option></select>
               {{else if eq .Type "textarea"}}<textarea id="field-{{.Key}}" name="field-{{.Key}}" rows="3" maxlength="300">{{.Value}}</textarea>
               {{else if eq .Type "nik"}}<input id="field-{{.Key}}" name="field-{{.Key}}" inputmode="numeric" autocomplete="off" value="{{.Value}}" maxlength="16">
               {{else}}<input id="field-{{.Key}}" name="field-{{.Key}}" type="{{.Type}}" value="{{.Value}}" maxlength="300">

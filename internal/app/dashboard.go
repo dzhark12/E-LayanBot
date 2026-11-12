@@ -26,7 +26,7 @@ type letterField struct {
 
 var letterFields = map[string][]letterField{
 	"DM": {
-		{"NoUrut", "Nomor surat", "text", ""}, {"Nama", "Nama lengkap", "text", ""},
+		{"NoUrut", "Nomor surat", "text", ""}, {"Penandatangan", "Penandatangan surat", "signer", "Sekretaris Desa"},{"Nama", "Nama lengkap", "text", ""},
 		{"JenisKelamin", "Jenis kelamin", "gender", ""}, {"TempatLahir", "Tempat lahir", "text", ""},
 		{"TanggalLahir", "Tanggal lahir", "date", ""}, {"Nik", "NIK", "nik", ""},
 		{"Agama", "Agama", "text", ""}, {"StatusPerkawinan", "Status perkawinan", "text", ""},
@@ -34,7 +34,7 @@ var letterFields = map[string][]letterField{
 		{"Kecamatan", "Kecamatan", "text", "Tanjung Bintang"}, {"AlamatDomisili", "Alamat domisili", "textarea", ""},
 	},
 	"SU": {
-		{"NoUrut", "Nomor surat", "text", ""}, {"Nama", "Nama lengkap", "text", ""},
+		{"NoUrut", "Nomor surat", "text", ""}, {"Penandatangan", "Penandatangan surat", "signer", "Sekretaris Desa"}, {"Nama", "Nama lengkap", "text", ""},
 		{"JenisKelamin", "Jenis kelamin", "gender", ""}, {"TempatLahir", "Tempat lahir", "text", ""},
 		{"TanggalLahir", "Tanggal lahir", "date", ""}, {"Nik", "NIK", "nik", ""},
 		{"Agama", "Agama", "text", ""}, {"StatusPerkawinan", "Status perkawinan", "text", ""},
@@ -43,7 +43,7 @@ var letterFields = map[string][]letterField{
 		{"LokasiUsaha", "Lokasi usaha", "textarea", ""},
 	},
 	"TM": {
-		{"NoUrut", "Nomor surat", "text", ""}, {"Nama", "Nama lengkap", "text", ""},
+		{"NoUrut", "Nomor surat", "text", ""}, {"Penandatangan", "Penandatangan surat", "signer", "Sekretaris Desa"},{"Nama", "Nama lengkap", "text", ""},
 		{"JenisKelamin", "Jenis kelamin", "gender", ""}, {"TempatLahir", "Tempat lahir", "text", ""},
 		{"TanggalLahir", "Tanggal lahir", "date", ""}, {"Nik", "NIK", "nik", ""},
 		{"Agama", "Agama", "text", ""}, {"Pekerjaan", "Pekerjaan", "text", ""},
@@ -56,7 +56,7 @@ var letterFields = map[string][]letterField{
 		{"AnakKecamatan", "Kecamatan anak", "text", ""},
 	},
 	"KM": {
-		{"NoUrut", "Nomor surat", "text", ""}, {"Nama", "Nama almarhum/almarhumah", "text", ""},
+		{"NoUrut", "Nomor surat", "text", ""}, {"Penandatangan", "Penandatangan surat", "signer", "Sekretaris Desa"}, {"Nama", "Nama almarhum/almarhumah", "text", ""},
 		{"Nik", "NIK almarhum/almarhumah", "nik", ""}, {"TempatLahir", "Tempat lahir", "text", ""},
 		{"TanggalLahir", "Tanggal lahir", "date", ""}, {"JenisKelamin", "Jenis kelamin", "gender", ""},
 		{"Alamat", "Alamat", "textarea", ""}, {"Kecamatan", "Kecamatan", "text", "Tanjung Bintang"},
@@ -545,6 +545,9 @@ func validateIdentity(identity domain.Identitas) error {
 			}
 		}
 	}
+	if v := identity.Tambahan["Penandatangan"]; v != "" && v != SignerKades && v != SignerSekdes {
+		return errors.New("invalid signer")
+	}
 	if identity.JenisKelamin != "" && identity.JenisKelamin != "Laki-laki" && identity.JenisKelamin != "Perempuan" {
 		return errors.New("invalid gender")
 	}
@@ -576,10 +579,9 @@ func letterFieldsComplete(code string, identity domain.Identitas) bool {
 
 	for _, field := range fields {
 		// NoUrut (Nomor Surat) bersifat opsional
-		if field.Key == "NoUrut" {
+		if field.Key == "NoUrut" || field.Key == "Penandatangan" {
 			continue
 		}
-
 		// Field lainnya tetap wajib diisi
 		if strings.TrimSpace(identityValue(identity, field.Key)) == "" {
 			return false
