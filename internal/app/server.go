@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"elayan.local/desa/config"
-	"elayan.local/desa/internal/domain"
 	"elayan.local/desa/internal/storage"
 )
 
@@ -50,23 +49,11 @@ func New(db *sql.DB, cfg config.Config, files *storage.Local) (*Server, error) {
 				return "working"
 			case "Selesai":
 				return "done"
-			case "Perlu Perbaikan", "Diperbaiki":
+			case "Perlu Perbaikan":
 				return "revision"
 			default:
 				return "rejected"
 			}
-		},
-		"statusSelected": func(opt, curr domain.Status) bool {
-			if opt == curr {
-				return true
-			}
-			if (opt == domain.Diperbaiki || opt == domain.PerluPerbaikan) && (curr == domain.Diperbaiki || curr == domain.PerluPerbaikan) {
-				return true
-			}
-			if (opt == domain.Dibatalkan || opt == domain.Ditolak) && (curr == domain.Dibatalkan || curr == domain.Ditolak) {
-				return true
-			}
-			return false
 		},
 		"add":       func(a, b int) int { return a + b },
 		"sub":       func(a, b int) int { return a - b },
@@ -113,8 +100,6 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("POST /requests/{id}/identity", s.requireAdmin(http.HandlerFunc(s.updateIdentity)))
 	mux.Handle("GET /requests/{id}/letter.pdf", s.requireAdmin(http.HandlerFunc(s.letterPDF)))
 	mux.Handle("POST /requests/{id}/letter.pdf", s.requireAdmin(http.HandlerFunc(s.regenerateLetterPDF)))
-	mux.Handle("GET /requests/{id}/letter/regenerate", s.requireAdmin(http.HandlerFunc(s.regenerateLetterForm)))
-	mux.Handle("POST /requests/{id}/letter/regenerate", s.requireAdmin(http.HandlerFunc(s.updateLetterFields)))
 	mux.Handle("GET /attachments/{id}", s.requireAdmin(http.HandlerFunc(s.attachment)))
 	mux.HandleFunc("POST /api/v1/submissions", s.botAuth(s.createSubmission))
 	mux.HandleFunc("POST /api/v1/status", s.botAuth(s.lookupStatus))
@@ -244,7 +229,3 @@ func pageInt(value string) int {
 	}
 	return page
 }
-
-
-
-

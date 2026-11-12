@@ -8,13 +8,11 @@ const (
 	Menunggu       Status = "Menunggu"
 	Dikerjakan     Status = "Dikerjakan"
 	PerluPerbaikan Status = "Perlu Perbaikan"
-	Diperbaiki     Status = "Diperbaiki"
 	Selesai        Status = "Selesai"
 	Ditolak        Status = "Ditolak"
-	Dibatalkan     Status = "Dibatalkan"
 )
 
-var Statuses = []Status{Menunggu, Dikerjakan, Diperbaiki, Selesai, Dibatalkan}
+var Statuses = []Status{Menunggu, Dikerjakan, PerluPerbaikan, Selesai, Ditolak}
 
 type Identitas struct {
 	Nama         string `json:"nama"`

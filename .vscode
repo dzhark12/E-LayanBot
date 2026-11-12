@@ -1,6 +1,0 @@
-{
-  "mssql.intelliSense.enableErrorChecking": false,
-  "files.associations": {
-    "**/internal/repository/migrations/*.sql": "postgres"
-  }
-}

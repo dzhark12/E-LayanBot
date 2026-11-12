@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"hash/fnv"
+	"hash/fnv" 
 	"log"
 	"strings"
 	"sync"
@@ -25,13 +25,13 @@ import (
 )
 
 const (
-	workerCount  = 4
-	shardQueue   = 25
-	maxPerSender = 5
-	replyBase    = 600 * time.Millisecond
-	replyPerChar = 20 * time.Millisecond
-	replyMax     = 2500 * time.Millisecond
-)
+	workerCount  = 4  
+	shardQueue   = 25 
+	maxPerSender = 5  
+	replyBase    = 600 * time.Millisecond  
+	replyPerChar = 20 * time.Millisecond   
+	replyMax     = 2500 * time.Millisecond 
+)	
 
 func replyDelay(text string) time.Duration {
 	d := replyBase + time.Duration(utf8.RuneCountInString(text))*replyPerChar
@@ -59,12 +59,12 @@ type Router struct {
 	files         *storage.Local
 	retentionDays int
 	logger        *log.Logger
-	ai            *gemini.Assistant
+	ai            *gemini.Assistant 
 	mu            sync.Mutex
 
-	shards    []chan messenger.Message
-	pendingMu sync.Mutex
-	pending   map[string]int
+	shards    []chan messenger.Message 
+	pendingMu sync.Mutex               
+	pending   map[string]int           
 }
 
 type conversation struct {
@@ -159,9 +159,6 @@ func (r *Router) Handle(parent context.Context, message messenger.Message) {
 	if message.JID == "" || message.PhoneJID == "" {
 		return
 	}
-	// Simpan alamat chat WhatsApp yang aktif untuk kebutuhan notifikasi status.
-	// Operasi ini bersifat best-effort dan tidak mengganggu alur percakapan.
-	r.rememberChat(parent, message)
 	r.mu.Lock()
 	locked := true
 	defer func() {
