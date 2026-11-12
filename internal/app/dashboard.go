@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"regexp"
 	"strings"
@@ -15,10 +16,16 @@ import (
 
 	"elayan.local/desa/internal/domain"
 	"elayan.local/desa/internal/pdf"
+	"elayan.local/desa/internal/service"
 )
 
 var uuidPattern = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
 var nikPattern = regexp.MustCompile(`^[0-9]{16}$`)
+
+const (
+	SignerKades  = "Kepala Desa"
+	SignerSekdes = "Sekretaris Desa"
+)
 
 type letterField struct {
 	Key, Label, Type, Value string
@@ -155,6 +162,17 @@ func (s *Server) dashboard(w http.ResponseWriter, r *http.Request) {
 	}
 	page.Page = pageInt(r.URL.Query().Get("page"))
 	page.Notice = r.URL.Query().Get("notice")
+
+	statusFilter := page.Status
+	statusAlt := page.Status
+	if page.Status == "Diperbaiki" || page.Status == "Perlu Perbaikan" {
+		statusFilter = "Diperbaiki"
+		statusAlt = "Perlu Perbaikan"
+	} else if page.Status == "Dibatalkan" || page.Status == "Ditolak" {
+		statusFilter = "Dibatalkan"
+		statusAlt = "Ditolak"
+	}
+
 	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM permohonan`).Scan(&page.RequestCount); err != nil {
 		http.Error(w, "Data permohonan belum dapat dimuat.", http.StatusServiceUnavailable)
 		return
@@ -171,8 +189,8 @@ func (s *Server) dashboard(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Data permohonan belum dapat dimuat.", http.StatusServiceUnavailable)
 		return
 	}
-	countQuery := `SELECT count(*) FROM permohonan p JOIN jenis_surat j ON j.id=p.jenis_id WHERE ($1='' OR p.status=$1) AND ($2='' OR p.kode_unik ILIKE '%'||$2||'%' OR j.nama ILIKE '%'||$2||'%' OR p.ringkasan ILIKE '%'||$2||'%')`
-	if err := s.db.QueryRowContext(ctx, countQuery, page.Status, page.Query).Scan(&page.Total); err != nil {
+	countQuery := `SELECT count(*) FROM permohonan p JOIN jenis_surat j ON j.id=p.jenis_id WHERE ($1='' OR p.status=$1 OR p.status=$2) AND ($3='' OR p.kode_unik ILIKE '%'||$3||'%' OR j.nama ILIKE '%'||$3||'%' OR p.ringkasan ILIKE '%'||$3||'%')`
+	if err := s.db.QueryRowContext(ctx, countQuery, statusFilter, statusAlt, page.Query).Scan(&page.Total); err != nil {
 		http.Error(w, "Data permohonan belum dapat dimuat.", http.StatusServiceUnavailable)
 		return
 	}
@@ -183,7 +201,7 @@ func (s *Server) dashboard(w http.ResponseWriter, r *http.Request) {
 	if page.Page > page.Pages {
 		page.Page = page.Pages
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT p.id::text, p.kode_unik, j.kode, j.nama, p.ringkasan, p.status, p.dibuat_pada, p.diubah_pada FROM permohonan p JOIN jenis_surat j ON j.id=p.jenis_id WHERE ($1='' OR p.status=$1) AND ($2='' OR p.kode_unik ILIKE '%'||$2||'%' OR j.nama ILIKE '%'||$2||'%' OR p.ringkasan ILIKE '%'||$2||'%') ORDER BY p.dibuat_pada DESC LIMIT 25 OFFSET $3`, page.Status, page.Query, (page.Page-1)*25)
+	rows, err := s.db.QueryContext(ctx, `SELECT p.id::text, p.kode_unik, j.kode, j.nama, p.ringkasan, p.status, p.dibuat_pada, p.diubah_pada FROM permohonan p JOIN jenis_surat j ON j.id=p.jenis_id WHERE ($1='' OR p.status=$1 OR p.status=$2) AND ($3='' OR p.kode_unik ILIKE '%'||$3||'%' OR j.nama ILIKE '%'||$3||'%' OR p.ringkasan ILIKE '%'||$3||'%') ORDER BY p.dibuat_pada DESC LIMIT 25 OFFSET $4`, statusFilter, statusAlt, page.Query, (page.Page-1)*25)
 	if err != nil {
 		http.Error(w, "Data permohonan belum dapat dimuat.", http.StatusServiceUnavailable)
 		return
@@ -356,7 +374,7 @@ func (s *Server) updateIdentity(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	result, err := s.db.ExecContext(ctx, `UPDATE permohonan SET data_identitas=$1::jsonb, diubah_pada=now() WHERE id=$2 AND status NOT IN ('Selesai','Ditolak')`, string(encoded), r.PathValue("id"))
+	result, err := s.db.ExecContext(ctx, `UPDATE permohonan SET data_identitas=$1::jsonb, diubah_pada=now() WHERE id=$2 AND status NOT IN ('Selesai','Ditolak','Dibatalkan')`, string(encoded), r.PathValue("id"))
 	if err != nil {
 		http.Error(w, "Data identitas belum dapat disimpan.", http.StatusServiceUnavailable)
 		return
@@ -407,10 +425,18 @@ func (s *Server) updateStatus(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/requests/"+r.PathValue("id")+"?notice=status-error", http.StatusSeeOther)
 		return
 	}
+
+	// Catatan admin wajib diisi apabila status membutuhkan keterangan (Dibatalkan dan Diperbaiki)
+	if service.NoteRequired(newStatus) && note == "" {
+		http.Redirect(w, r, "/requests/"+r.PathValue("id")+"?notice=note-required", http.StatusSeeOther)
+		return
+	}
+
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
+		log.Printf("updateStatus gagal pada langkah %q: %v", "mulai transaksi", err)
 		http.Error(w, "Status belum dapat diperbarui.", http.StatusServiceUnavailable)
 		return
 	}
@@ -423,9 +449,19 @@ func (s *Server) updateStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
+		log.Printf("updateStatus gagal pada langkah %q: %v", "baca permohonan", err)
 		http.Error(w, "Status belum dapat diperbarui.", http.StatusServiceUnavailable)
 		return
 	}
+
+	// Jangan mengirim notifikasi apabila admin hanya membuka atau menyimpan ulang status yang sama tanpa perubahan.
+	if oldStatus == string(newStatus) ||
+		((oldStatus == string(domain.PerluPerbaikan) || oldStatus == string(domain.Diperbaiki)) && (newStatus == domain.PerluPerbaikan || newStatus == domain.Diperbaiki)) ||
+		((oldStatus == string(domain.Ditolak) || oldStatus == string(domain.Dibatalkan)) && (newStatus == domain.Ditolak || newStatus == domain.Dibatalkan)) {
+		http.Redirect(w, r, "/requests/"+r.PathValue("id")+"?notice=status-saved", http.StatusSeeOther)
+		return
+	}
+
 	if !canTransition(domain.Status(oldStatus), newStatus) {
 		http.Redirect(w, r, "/requests/"+r.PathValue("id")+"?notice=status-error", http.StatusSeeOther)
 		return
@@ -445,20 +481,28 @@ func (s *Server) updateStatus(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if _, err := tx.ExecContext(ctx, `UPDATE permohonan SET status=$1, diubah_pada=now(), selesai_pada=CASE WHEN $1='Selesai' THEN now() ELSE selesai_pada END WHERE id=$2`, newStatus, r.PathValue("id")); err != nil {
+		log.Printf("updateStatus gagal pada langkah %q: %v", "ubah status permohonan", err)
 		http.Error(w, "Status belum dapat diperbarui.", http.StatusServiceUnavailable)
 		return
 	}
-	if _, err := tx.ExecContext(ctx, `INSERT INTO status_log(permohonan_id,status_lama,status_baru,admin_id,catatan) VALUES ($1,$2,$3,$4,$5)`, r.PathValue("id"), oldStatus, newStatus, currentAdmin(r).ID, note); err != nil {
+
+	var statusLogID int64
+	if err := tx.QueryRowContext(ctx, `INSERT INTO status_log(permohonan_id,status_lama,status_baru,admin_id,catatan) VALUES ($1,$2,$3,$4,$5) RETURNING id`, r.PathValue("id"), oldStatus, newStatus, currentAdmin(r).ID, note).Scan(&statusLogID); err != nil {
+		log.Printf("updateStatus gagal pada langkah %q: %v", "tulis status_log", err)
 		http.Error(w, "Status belum dapat diperbarui.", http.StatusServiceUnavailable)
 		return
 	}
-	if newStatus == domain.Selesai {
-		if _, err := tx.ExecContext(ctx, `INSERT INTO notifikasi_log(permohonan_id,status_terkirim) VALUES ($1,'Selesai') ON CONFLICT (permohonan_id,status_terkirim) DO NOTHING`, r.PathValue("id")); err != nil {
+
+	if service.Notifies(newStatus) {
+		if _, err := tx.ExecContext(ctx, `INSERT INTO notifikasi_log(permohonan_id,status_terkirim,status_log_id) VALUES ($1,$2,$3) ON CONFLICT (status_log_id) WHERE status_log_id IS NOT NULL DO NOTHING`, r.PathValue("id"), string(newStatus), statusLogID); err != nil {
+			log.Printf("updateStatus gagal pada langkah %q: %v", "antre notifikasi", err)
 			http.Error(w, "Status belum dapat diperbarui.", http.StatusServiceUnavailable)
 			return
 		}
 	}
+
 	if err := tx.Commit(); err != nil {
+		log.Printf("updateStatus gagal pada langkah %q: %v", "commit", err)
 		http.Error(w, "Status belum dapat diperbarui.", http.StatusServiceUnavailable)
 		return
 	}
@@ -466,25 +510,30 @@ func (s *Server) updateStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 func validStatus(value string) bool {
-	for _, status := range domain.Statuses {
-		if value == string(status) {
-			return true
-		}
-	}
-	return false
-}
-
-func canTransition(from, to domain.Status) bool {
-	switch from {
-	case domain.Menunggu:
-		return to == domain.Dikerjakan || to == domain.PerluPerbaikan || to == domain.Ditolak
-	case domain.PerluPerbaikan:
-		return to == domain.Dikerjakan || to == domain.Ditolak
-	case domain.Dikerjakan:
-		return to == domain.Selesai || to == domain.PerluPerbaikan || to == domain.Ditolak
+	switch domain.Status(value) {
+	case domain.Menunggu, domain.Dikerjakan, domain.Selesai,
+		domain.Diperbaiki, domain.PerluPerbaikan,
+		domain.Dibatalkan, domain.Ditolak:
+		return true
 	default:
 		return false
 	}
+}
+
+func canTransition(from, to domain.Status) bool {
+	if !validStatus(string(from)) || !validStatus(string(to)) {
+		return false
+	}
+	if from == to {
+		return false
+	}
+	if (from == domain.Diperbaiki || from == domain.PerluPerbaikan) && (to == domain.Diperbaiki || to == domain.PerluPerbaikan) {
+		return false
+	}
+	if (from == domain.Dibatalkan || from == domain.Ditolak) && (to == domain.Dibatalkan || to == domain.Ditolak) {
+		return false
+	}
+	return true
 }
 
 func validateIdentity(identity domain.Identitas) error {

@@ -57,8 +57,12 @@ func (r *Router) Handle(parent context.Context, message messenger.Message) {
 	if message.JID == "" || message.PhoneJID == "" {
 		return
 	}
+<<<<<<< Updated upstream
 	ctx, cancel := context.WithTimeout(parent, 60*time.Second)
 	defer cancel()
+=======
+	r.rememberChat(parent, message)
+>>>>>>> Stashed changes
 	r.mu.Lock()
 	locked := true
 	defer func() {

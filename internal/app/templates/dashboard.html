@@ -41,8 +41,8 @@
           <a href="/?status=Menunggu&amp;q={{urlquery .Query}}" {{if eq .Status "Menunggu"}}aria-current="page" class="selected"{{end}}>Menunggu <span class="tab-count">{{.Menunggu}}</span></a>
           <a href="/?status=Dikerjakan&amp;q={{urlquery .Query}}" {{if eq .Status "Dikerjakan"}}aria-current="page" class="selected"{{end}}>Dikerjakan <span class="tab-count">{{.Dikerjakan}}</span></a>
           <a href="/?status=Selesai&amp;q={{urlquery .Query}}" {{if eq .Status "Selesai"}}aria-current="page" class="selected"{{end}}>Selesai <span class="tab-count">{{.Selesai}}</span></a>
-          <a href="/?status=Perlu%20Perbaikan&amp;q={{urlquery .Query}}" {{if eq .Status "Perlu Perbaikan"}}aria-current="page" class="selected"{{end}}>Perlu perbaikan</a>
-          <a href="/?status=Ditolak&amp;q={{urlquery .Query}}" {{if eq .Status "Ditolak"}}aria-current="page" class="selected"{{end}}>Ditolak</a>
+          <a href="/?status=Diperbaiki&amp;q={{urlquery .Query}}" {{if or (eq .Status "Diperbaiki") (eq .Status "Perlu Perbaikan")}}aria-current="page" class="selected"{{end}}>Diperbaiki</a>
+          <a href="/?status=Dibatalkan&amp;q={{urlquery .Query}}" {{if or (eq .Status "Dibatalkan") (eq .Status "Ditolak")}}aria-current="page" class="selected"{{end}}>Dibatalkan</a>
         </nav>
         {{if .Requests}}
         <div class="table-wrap">
