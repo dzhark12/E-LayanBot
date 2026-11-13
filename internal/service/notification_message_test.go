@@ -66,7 +66,7 @@ func TestBuildStatusMessageSelesai(t *testing.T) {
 		"- Status: *SELESAI*\n\n" +
 		"Catatan Admin:\n" +
 		"Surat dapat diambil di kantor desa membawa KTP asli.\n\n" +
-		"Silakan mengikuti petunjuk pengambilan atau pengunduhan surat yang tersedia pada sistem.\n\n" +
+		"Silakan mengambil surat di balai desa.\n\n" +
 		"Terima kasih telah menggunakan layanan E-Layan Desa Sabah Balau."
 	if !ok || got != want {
 		t.Fatalf("ok=%v\n got: %q\nwant: %q", ok, got, want)
@@ -102,7 +102,7 @@ func TestBuildStatusMessageDiperbaiki(t *testing.T) {
 			"- Status: *DIPERBAIKI*\n\n" +
 			"Catatan Perbaikan dari Admin:\n" +
 			"Foto kartu keluarga buram, mohon upload ulang.\n\n" +
-			"Mohon melakukan perbaikan sesuai catatan yang diberikan, kemudian ajukan kembali atau lengkapi persyaratan melalui sistem.\n\n" +
+			"Mohon melakukan perbaikan sesuai catatan yang diberikan, kemudian ajukan ulang dari awal (dengan ketik MENU) persyaratan melalui kontak ini.\n\n" +
 			"Terima kasih atas kerja samanya."
 		if !ok || got != want {
 			t.Fatalf("status %s ok=%v\n got: %q\nwant: %q", status, ok, got, want)
