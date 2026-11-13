@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"hash/fnv" 
+	"hash/fnv"
 	"log"
 	"strings"
 	"sync"
@@ -25,13 +25,13 @@ import (
 )
 
 const (
-	workerCount  = 4  
-	shardQueue   = 25 
-	maxPerSender = 5  
-	replyBase    = 600 * time.Millisecond  
-	replyPerChar = 20 * time.Millisecond   
-	replyMax     = 2500 * time.Millisecond 
-)	
+	workerCount  = 4
+	shardQueue   = 25
+	maxPerSender = 5
+	replyBase    = 600 * time.Millisecond
+	replyPerChar = 20 * time.Millisecond
+	replyMax     = 2500 * time.Millisecond
+)
 
 func replyDelay(text string) time.Duration {
 	d := replyBase + time.Duration(utf8.RuneCountInString(text))*replyPerChar
@@ -59,12 +59,12 @@ type Router struct {
 	files         *storage.Local
 	retentionDays int
 	logger        *log.Logger
-	ai            *gemini.Assistant 
+	ai            *gemini.Assistant
 	mu            sync.Mutex
 
-	shards    []chan messenger.Message 
-	pendingMu sync.Mutex               
-	pending   map[string]int           
+	shards    []chan messenger.Message
+	pendingMu sync.Mutex
+	pending   map[string]int
 }
 
 type conversation struct {
@@ -159,6 +159,9 @@ func (r *Router) Handle(parent context.Context, message messenger.Message) {
 	if message.JID == "" || message.PhoneJID == "" {
 		return
 	}
+	// Simpan alamat chat WhatsApp yang aktif untuk kebutuhan notifikasi status.
+	// Operasi ini bersifat best-effort dan tidak mengganggu alur percakapan.
+	r.rememberChat(parent, message)
 	r.mu.Lock()
 	locked := true
 	defer func() {
@@ -182,7 +185,7 @@ func (r *Router) Handle(parent context.Context, message messenger.Message) {
 			session = domain.SesiBot{}
 		}
 	} else if err != sql.ErrNoRows {
-		r.reply(ctx, message.JID, "Layanan sedang bermasalah. Coba lagi sebentar.")
+		r.reply(ctx, message.JID, "Layanan sedang bermasalah. \nCoba lagi sebentar.")
 		return
 	}
 
@@ -191,7 +194,7 @@ func (r *Router) Handle(parent context.Context, message messenger.Message) {
 	if upper == "BATAL" {
 		r.removeStaged(state)
 		_ = repository.DeleteBotSession(ctx, r.db, message.JID)
-		r.reply(ctx, message.JID, "Pengajuan dibatalkan. Ketik MENU untuk mulai lagi.")
+		r.reply(ctx, message.JID, "Pengajuan dibatalkan. \nKetik *MENU* untuk mulai lagi.")
 		return
 	}
 	if code := utils.RequestCode(text); code != "" {
@@ -208,13 +211,13 @@ func (r *Router) Handle(parent context.Context, message messenger.Message) {
 		r.removeStaged(state)
 		requestID, err := id.UUID()
 		if err != nil {
-			r.reply(ctx, message.JID, "Pengajuan belum dapat dimulai. Coba lagi sebentar.")
+			r.reply(ctx, message.JID, "Pengajuan belum dapat dimulai. \nCoba lagi sebentar.")
 			return
 		}
 		state = conversation{RequestID: requestID}
 		session = domain.SesiBot{JID: message.JID, Flow: "surat", Step: "jenis"}
 		if err := r.save(ctx, session, state); err != nil {
-			r.reply(ctx, message.JID, "Pengajuan belum dapat dimulai. Coba lagi sebentar.")
+			r.reply(ctx, message.JID, "Pengajuan belum dapat dimulai. \nCoba lagi sebentar.")
 			return
 		}
 		r.showLetterTypes(ctx, message.JID)
@@ -258,11 +261,11 @@ func (r *Router) Handle(parent context.Context, message messenger.Message) {
 func (r *Router) showLetterTypes(ctx context.Context, jid string) {
 	types, err := r.api.LetterTypes(ctx)
 	if err != nil {
-		r.reply(ctx, jid, "Daftar surat belum dapat dimuat. Coba lagi sebentar atau ketik BATAL.")
+		r.reply(ctx, jid, "Daftar surat belum dapat dimuat. \nCoba lagi sebentar atau ketik BATAL.")
 		return
 	}
 	var menu strings.Builder
-	menu.WriteString("Pilih jenis surat dengan mengetik nomor atau kodenya. Contoh: ketik 1 atau DM untuk memilih Surat Keterangan Domisili.\n\n")
+	menu.WriteString("Pilih jenis surat dengan mengetik nomor atau kodenya. \nContoh: ketik 1 atau DM untuk memilih Surat Keterangan Domisili.\n\n")
 	for i, item := range types {
 		fmt.Fprintf(&menu, "*%d. %s (%s)*\n", i+1, item.Name, item.Code)
 		if len(item.Requirements) > 0 {
@@ -270,7 +273,7 @@ func (r *Router) showLetterTypes(ctx context.Context, jid string) {
 		}
 		menu.WriteByte('\n')
 	}
-	menu.WriteString("Syarat resmi dapat berbeda menurut jenis surat; bot menerima foto KTP, KK, atau pengantar RT sesuai arahan perangkat desa.")
+	menu.WriteString("Syarat resmi dapat berbeda menurut jenis surat; \nbot menerima foto KTP, KK, atau pengantar RT sesuai arahan perangkat desa.")
 	r.reply(ctx, jid, menu.String())
 }
 
@@ -278,7 +281,7 @@ func (r *Router) handleLetterFlow(ctx context.Context, message messenger.Message
 	if state.LetterCode != "" && len(state.Requirements) == 0 {
 		types, err := r.api.LetterTypes(ctx)
 		if err != nil {
-			r.reply(ctx, message.JID, "Syarat dokumen belum dapat dimuat. Coba lagi sebentar.")
+			r.reply(ctx, message.JID, "Syarat dokumen belum dapat dimuat. \nCoba lagi sebentar.")
 			return
 		}
 		for _, item := range types {
@@ -288,11 +291,11 @@ func (r *Router) handleLetterFlow(ctx context.Context, message messenger.Message
 			}
 		}
 		if len(state.Requirements) == 0 {
-			r.reply(ctx, message.JID, "Jenis surat tidak tersedia lagi. Ketik SURAT untuk memilih jenis lain.")
+			r.reply(ctx, message.JID, "Jenis surat tidak tersedia lagi. \nKetik SURAT untuk memilih jenis lain.")
 			return
 		}
 		if err := r.save(ctx, session, state); err != nil {
-			r.reply(ctx, message.JID, "Syarat dokumen belum tersimpan. Coba lagi sebentar.")
+			r.reply(ctx, message.JID, "Syarat dokumen belum tersimpan. \nCoba lagi sebentar.")
 			return
 		}
 	}
@@ -300,7 +303,7 @@ func (r *Router) handleLetterFlow(ctx context.Context, message messenger.Message
 	case "jenis":
 		types, err := r.api.LetterTypes(ctx)
 		if err != nil {
-			r.reply(ctx, message.JID, "Daftar surat belum dapat dimuat. Coba lagi sebentar.")
+			r.reply(ctx, message.JID, "Daftar surat belum dapat dimuat. \nCoba lagi sebentar.")
 			return
 		}
 		selection := strings.ToUpper(strings.TrimSpace(text))
@@ -310,7 +313,7 @@ func (r *Router) handleLetterFlow(ctx context.Context, message messenger.Message
 				state.Requirements = item.Requirements
 				session.Step = "keperluan"
 				if err := r.save(ctx, session, state); err != nil {
-					r.reply(ctx, message.JID, "Pilihan belum tersimpan. Coba lagi sebentar.")
+					r.reply(ctx, message.JID, "Pilihan belum tersimpan. \nCoba lagi sebentar.")
 					return
 				}
 				r.reply(ctx, message.JID, fmt.Sprintf("Syarat dokumen %s: %s.\nJelaskan singkat keperluan surat ini.", item.Name, strings.Join(item.Requirements, ", ")))
@@ -320,50 +323,50 @@ func (r *Router) handleLetterFlow(ctx context.Context, message messenger.Message
 		r.showLetterTypes(ctx, message.JID)
 	case "keperluan":
 		if utf8.RuneCountInString(text) < 1 || utf8.RuneCountInString(text) > 500 {
-			r.reply(ctx, message.JID, "Keperluan harus berisi 1 sampai 500 karakter. Silakan kirim ulang.")
+			r.reply(ctx, message.JID, "Keperluan harus berisi 1 sampai 500 karakter. \nSilakan kirim ulang.")
 			return
 		}
 		state.Summary = text
 		session.Step = "persetujuan"
 		if err := r.save(ctx, session, state); err != nil {
-			r.reply(ctx, message.JID, "Data belum tersimpan. Coba lagi sebentar.")
+			r.reply(ctx, message.JID, "Data belum tersimpan. \nCoba lagi sebentar.")
 			return
 		}
-		r.reply(ctx, message.JID, fmt.Sprintf("Dokumen yang perlu disiapkan: %s. Foto dokumen akan diproses untuk pengajuan surat, dilihat petugas desa melalui dashboard, dan dihapus %d hari setelah surat selesai. Ketik SETUJU untuk melanjutkan.", strings.Join(state.Requirements, ", "), r.retentionDays))
+		r.reply(ctx, message.JID, fmt.Sprintf("Dokumen yang perlu disiapkan: %s. Foto dokumen akan diproses untuk pengajuan surat, dilihat petugas desa melalui dashboard, dan dihapus %d hari setelah surat selesai. \nKetik *SETUJU* untuk melanjutkan.", strings.Join(state.Requirements, ", "), r.retentionDays))
 	case "persetujuan":
 		if strings.ToUpper(strings.TrimSpace(text)) != "SETUJU" {
-			r.reply(ctx, message.JID, "Untuk melanjutkan, ketik SETUJU. Ketik BATAL untuk berhenti.")
+			r.reply(ctx, message.JID, "Untuk melanjutkan, ketik SETUJU. \nKetik BATAL untuk berhenti.")
 			return
 		}
 		session.Step = "lampiran"
 		if err := r.save(ctx, session, state); err != nil {
-			r.reply(ctx, message.JID, "Persetujuan belum tersimpan. Coba lagi sebentar.")
+			r.reply(ctx, message.JID, "Persetujuan belum tersimpan. \nCoba lagi sebentar.")
 			return
 		}
-		r.reply(ctx, message.JID, fmt.Sprintf("Kirim foto sesuai syarat: %s. Gunakan caption KTP, KK, RT, atau LAINNYA pada tiap foto. Setelah semua foto terkirim, ketik SELESAI. Maksimal 5 foto, JPEG/PNG, 10 MB per foto.", strings.Join(state.Requirements, ", ")))
+		r.reply(ctx, message.JID, fmt.Sprintf("Kirim foto sesuai syarat: %s. Gunakan caption KTP, KK, RT, atau LAINNYA pada tiap foto. \nSetelah semua foto terkirim, ketik *SELESAI*. \nMaksimal 5 foto, JPEG/PNG, 10 MB per foto.", strings.Join(state.Requirements, ", ")))
 	case "lampiran":
 		if strings.ToUpper(strings.TrimSpace(text)) == "SELESAI" {
 			r.submit(ctx, message, state)
 			return
 		}
-		r.reply(ctx, message.JID, "Kirim foto dengan caption KTP, KK, RT, atau LAINNYA; ketik SELESAI jika sudah lengkap.")
+		r.reply(ctx, message.JID, "Kirim foto dengan caption KTP, KK, RT, atau LAINNYA; \nketik SELESAI jika sudah lengkap.")
 	default:
-		r.reply(ctx, message.JID, "Sesi pengajuan tidak valid. Ketik SURAT untuk memulai lagi.")
+		r.reply(ctx, message.JID, "Sesi pengajuan tidak valid. Ketik *SURAT* untuk memulai lagi.")
 	}
 }
 
 func (r *Router) handlePhoto(ctx context.Context, message messenger.Message, session domain.SesiBot, state conversation, caption string) {
 	if session.Flow != "surat" || session.Step != "lampiran" {
-		r.reply(ctx, message.JID, "Untuk mengirim foto, mulai pengajuan dengan mengetik SURAT terlebih dahulu.")
+		r.reply(ctx, message.JID, "Untuk mengirim foto, mulai pengajuan dengan mengetik *SURAT* terlebih dahulu.")
 		return
 	}
 	kind := strings.ToUpper(strings.TrimSpace(caption))
 	if kind != "KTP" && kind != "KK" && kind != "RT" && kind != "LAINNYA" {
-		r.reply(ctx, message.JID, "Foto belum diterima. Sertakan caption KTP, KK, RT, atau LAINNYA pada foto.")
+		r.reply(ctx, message.JID, "Foto belum diterima. \nSertakan caption KTP, KK, RT, atau LAINNYA pada foto.")
 		return
 	}
 	if len(state.Attachments) >= 5 {
-		r.reply(ctx, message.JID, "Batas 5 foto sudah tercapai. Ketik SELESAI untuk mengirim pengajuan.")
+		r.reply(ctx, message.JID, "Batas 5 foto sudah tercapai. \nKetik *SELESAI* untuk mengirim pengajuan.")
 		return
 	}
 	if message.Media.Size == 0 || message.Media.Size > 10<<20 || message.Media.MIME != "image/jpeg" && message.Media.MIME != "image/png" {
@@ -382,12 +385,12 @@ func (r *Router) handlePhoto(ctx context.Context, message messenger.Message, ses
 	}
 	storageID, err := id.UUID()
 	if err != nil {
-		r.reply(ctx, message.JID, "Foto belum dapat disimpan. Coba lagi sebentar.")
+		r.reply(ctx, message.JID, "Foto belum dapat disimpan. \nCoba lagi sebentar.")
 		return
 	}
 	key := storageID + extension
 	if err := r.files.Create(key, data); err != nil {
-		r.reply(ctx, message.JID, "Foto belum dapat disimpan. Coba lagi sebentar.")
+		r.reply(ctx, message.JID, "Foto belum dapat disimpan. \nCoba lagi sebentar.")
 		return
 	}
 	state.Attachments = append(state.Attachments, client.Attachment{Key: key, Kind: kind, MIME: mime, Size: int64(len(data))})
@@ -396,7 +399,7 @@ func (r *Router) handlePhoto(ctx context.Context, message messenger.Message, ses
 		r.reply(ctx, message.JID, "Foto belum tercatat. Silakan kirim ulang.")
 		return
 	}
-	r.reply(ctx, message.JID, fmt.Sprintf("Foto %d diterima. Kirim foto berikutnya atau ketik SELESAI.", len(state.Attachments)))
+	r.reply(ctx, message.JID, fmt.Sprintf("Foto %d diterima. \nKirim foto berikutnya atau ketik *SELESAI*.", len(state.Attachments)))
 }
 
 func (r *Router) submit(ctx context.Context, message messenger.Message, state conversation) {
@@ -409,7 +412,7 @@ func (r *Router) submit(ctx context.Context, message messenger.Message, state co
 		Summary: state.Summary, ConsentVersion: "v1", Attachments: state.Attachments,
 	})
 	if err != nil {
-		r.reply(ctx, message.JID, "Pengajuan belum mendapat konfirmasi dari server. Data sementara tersimpan 24 jam; ketik SELESAI lagi untuk mencoba ulang atau BATAL untuk membatalkan.")
+		r.reply(ctx, message.JID, "Pengajuan belum mendapat konfirmasi dari server. Data sementara tersimpan 24 jam; \nketik *SELESAI* lagi untuk mencoba ulang atau *BATAL* untuk membatalkan.")
 		return
 	}
 	if err := r.reply(ctx, message.JID, fmt.Sprintf("Pengajuan diterima. Simpan kode %s untuk mengecek status kapan saja. Status saat ini: %s.", result.Code, result.Status)); err != nil {
@@ -430,7 +433,7 @@ func (r *Router) checkStatus(ctx context.Context, message messenger.Message, cod
 		return
 	}
 	if err != nil {
-		r.reply(ctx, message.JID, "Status belum dapat diperiksa. Coba lagi sebentar.")
+		r.reply(ctx, message.JID, "Status belum dapat diperiksa. \nCoba lagi sebentar.")
 		return
 	}
 	r.reply(ctx, message.JID, fmt.Sprintf("Status pengajuan %s: %s.", result.Code, result.Status))
@@ -448,7 +451,7 @@ func (r *Router) answerFAQ(ctx context.Context, jid, query string) {
 		entries, err := repository.ListActiveFAQ(ctx, r.db, 100)
 		if err != nil {
 			r.logger.Printf("faq load for ai failed: %v", err)
-			r.reply(ctx, jid, "Informasi belum dapat dimuat. Coba lagi sebentar.")
+			r.reply(ctx, jid, "Informasi belum dapat dimuat. \nCoba lagi sebentar.")
 			return
 		}
 		facts := make([]gemini.Fact, 0, len(entries)+1)
@@ -466,11 +469,11 @@ func (r *Router) answerFAQ(ctx context.Context, jid, query string) {
 		return
 	}
 	if !errors.Is(err, client.ErrNotFound) {
-		r.reply(ctx, jid, "Informasi belum dapat dimuat. Coba lagi sebentar.")
+		r.reply(ctx, jid, "Informasi belum dapat dimuat. \nCoba lagi sebentar.")
 		return
 	}
 	if !r.ai.Enabled() {
-		r.reply(ctx, jid, "Informasi itu belum tersedia di layanan ini. Bot hanya menjawab informasi desa yang sudah disiapkan perangkat desa. Ketik MENU untuk melihat layanan.")
+		r.reply(ctx, jid, "Informasi itu belum tersedia di layanan ini. Bot hanya menjawab informasi desa yang sudah disiapkan perangkat desa.\nKetik *MENU* untuk melihat layanan.")
 		return
 	}
 }

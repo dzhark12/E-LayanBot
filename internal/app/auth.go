@@ -48,6 +48,7 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 	}
 	username := strings.TrimSpace(r.FormValue("username"))
 	password := r.FormValue("password")
+	remember := r.FormValue("remember") == "on"
 	if username == "" || password == "" || len(username) > 80 || len(password) > 256 {
 		s.render(w, "login.html", map[string]string{"Error": "Nama pengguna atau kata sandi salah."})
 		return
@@ -117,7 +118,11 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 		fail(http.StatusInternalServerError)
 		return
 	}
-	expires := time.Now().UTC().Add(sessionDuration)
+	duration := sessionDuration
+	if remember {
+		duration = 30 * 24 * time.Hour
+	}
+	expires := time.Now().UTC().Add(duration)
 	if _, err := tx.ExecContext(ctx, `INSERT INTO admin_session(token_hash, csrf_token, admin_id, expires_at) VALUES ($1,$2,$3,$4)`, s.sessionHash(token), csrf, user.ID, expires); err != nil {
 		fail(http.StatusInternalServerError)
 		return
@@ -126,7 +131,7 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 		fail(http.StatusInternalServerError)
 		return
 	}
-	http.SetCookie(w, &http.Cookie{Name: sessionCookie, Value: token, Path: "/", HttpOnly: true, Secure: s.cfg.CookieSecure, SameSite: http.SameSiteLaxMode, Expires: expires, MaxAge: int(sessionDuration.Seconds())})
+	http.SetCookie(w, &http.Cookie{Name: sessionCookie, Value: token, Path: "/", HttpOnly: true, Secure: s.cfg.CookieSecure, SameSite: http.SameSiteLaxMode, Expires: expires, MaxAge: int(duration.Seconds())})
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
@@ -228,3 +233,6 @@ func (s *Server) botAuth(next http.HandlerFunc) http.HandlerFunc {
 		next(w, r)
 	}
 }
+
+
+
