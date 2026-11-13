@@ -24,13 +24,13 @@ func tanggalID(t time.Time) string {
 	return strconv.Itoa(t.Day()) + " " + bulanID[t.Month()] + " " + strconv.Itoa(t.Year())
 }
 
-
 func defaultSigner(code string) string {
 	if code == "KM" {
 		return SignerKades
 	}
 	return SignerSekdes
 }
+
 // Nilai hanya berasal dari konstanta di sini, bukan input pengguna.
 func signerBlock(signer, tanggal string) (jabatan, nama string) {
 	if signer == SignerKades {
@@ -193,6 +193,11 @@ func (s *Server) regenerateLetterForm(w http.ResponseWriter, r *http.Request) {
 		}
 		lampiran = append(lampiran, att)
 	}
+	if err := attachments.Err(); err != nil {
+		attachments.Close()
+		http.Error(w, "Lampiran belum dapat dimuat.", http.StatusServiceUnavailable)
+		return
+	}
 	attachments.Close()
 
 	// Render form untuk edit data surat
@@ -311,9 +316,3 @@ func (s *Server) updateLetterFields(w http.ResponseWriter, r *http.Request) {
 	// Redirect ke download PDF
 	http.Redirect(w, r, "/requests/"+r.PathValue("id")+"/letter.pdf", http.StatusSeeOther)
 }
-
-
-
-
-
-
