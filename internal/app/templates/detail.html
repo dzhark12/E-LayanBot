@@ -39,11 +39,14 @@
 
         <div class="detail-side">
           <section class="panel identity-panel" aria-labelledby="identity-title">
-            {{if or (eq (printf "%s" .Request.Status) "Selesai") (eq (printf "%s" .Request.Status) "Ditolak")}}
+            {{if eq (printf "%s" .Request.Status) "Selesai"}}
             <div class="panel-heading"><div><h2 id="identity-title">Surat selesai</h2><p class="muted">Status permohonan sudah selesai.</p></div></div>
             <div class="identity-form">
               {{if .HasPDF}}<a class="button button-primary button-wide" href="/requests/{{.Request.ID}}/letter.pdf">Unduh PDF surat</a><a class="button button-secondary button-wide" href="/requests/{{.Request.ID}}/letter/regenerate">Generate ulang data surat</a>{{else}}<p class="muted">Template PDF belum tersedia untuk jenis surat ini.</p>{{end}}
             </div>
+            {{else if eq (printf "%s" .Request.Status) "Ditolak"}}
+            <div class="panel-heading"><div><h2 id="identity-title">Permohonan ditolak</h2><p class="muted">Permohonan ini telah ditolak oleh admin.</p></div></div>
+            <div class="identity-form"><p class="muted">Tidak dapat mengunduh atau generate ulang surat untuk permohonan yang ditolak.</p></div>
             {{else}}
             <div class="panel-heading"><div><h2 id="identity-title">Data surat</h2><p class="muted">Isi dan verifikasi sesuai foto persyaratan. Semua field harus lengkap sebelum status Selesai.</p></div></div>
             <form method="post" action="/requests/{{.Request.ID}}/identity" class="identity-form">
@@ -82,4 +85,3 @@
   </div>
 </body>
 </html>
-
