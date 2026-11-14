@@ -1,4 +1,4 @@
-package domain
+﻿package domain
 
 import "time"
 
@@ -11,10 +11,9 @@ const (
 	Diperbaiki     Status = "Diperbaiki"
 	Selesai        Status = "Selesai"
 	Ditolak        Status = "Ditolak"
-	Dibatalkan     Status = "Dibatalkan"
 )
 
-var Statuses = []Status{Menunggu, Dikerjakan, Diperbaiki, Selesai, Dibatalkan}
+var Statuses = []Status{Menunggu, Dikerjakan, Diperbaiki, Selesai, Ditolak}
 
 type Identitas struct {
 	Nama         string `json:"nama"`
@@ -25,7 +24,7 @@ type Identitas struct {
 	NIK          string `json:"nik"`
 	Pekerjaan    string `json:"pekerjaan"`
 	Alamat       string `json:"alamat"`
-	Tambahan map[string]string `json:"tambahan,omitempty"`
+	Tambahan     map[string]string `json:"tambahan,omitempty"`
 }
 
 type StatusLog struct {

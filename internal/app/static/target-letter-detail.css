@@ -1,0 +1,136 @@
+/* Dua halaman surat saja: tampilan mengikuti screenshot Figma, backend dan form asli tetap. */
+.figma-letter-detail .main-content{min-width:0;padding:32px 38px 48px;overflow-x:clip}
+.figma-letter-detail .breadcrumb{display:flex;align-items:center;gap:8px;margin:0 0 6px;font-size:13px;line-height:20px}
+.figma-letter-detail .breadcrumb a{color:#1e5b3a;text-decoration:none;font-weight:500}
+.figma-letter-detail .detail-header{display:flex;align-items:flex-start;justify-content:flex-start;margin:0 0 22px;gap:12px}
+.figma-letter-detail .detail-header h1{margin:0;color:#111827;font-size:26px;line-height:1.2;letter-spacing:-.45px;font-weight:700}
+.figma-letter-detail .detail-header .muted{font-size:13px;line-height:1.5;color:#748092;margin:3px 0 0}
+.figma-letter-detail .detail-code-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.figma-letter-detail .detail-code-row .status-pill{margin:0;align-self:center;font-size:11px}
+.figma-letter-detail .detail-grid{display:grid;grid-template-columns:minmax(0, .92fr) minmax(0,1.08fr);align-items:start;gap:22px}
+.figma-letter-detail .detail-side{min-width:0;display:flex;flex-direction:column;gap:20px}
+.figma-letter-detail .attachment-panel,.figma-letter-detail .identity-panel,.figma-letter-detail .status-panel,.figma-letter-detail .history-panel{min-width:0;margin:0;border-radius:11px;border:1px solid #e5e7eb;background:#fff;box-shadow:none;overflow:hidden}
+.figma-letter-detail .panel-heading{display:flex;align-items:center;padding:16px 22px;min-height:64px;border-bottom:1px solid #e5e7eb}
+.figma-letter-detail .panel-heading h2{font-size:15px;line-height:20px;font-weight:700;letter-spacing:0;color:#111827;margin:0}
+.figma-letter-detail .panel-heading .muted{font-size:11px;line-height:17px;color:#7c8594;margin:2px 0 0}
+.figma-letter-detail .attachment-panel .attachment-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;padding:20px 22px 0}
+.figma-letter-detail .attachment-card{display:flex;flex-direction:column;min-width:0;margin:0;border:0;border-radius:0;background:transparent;overflow:visible}
+.figma-letter-detail .attachment-card figcaption{order:-1;display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 7px;padding:0;font-size:12px;color:#111827;background:none;border:0;min-width:0;line-height:18px}
+.figma-letter-detail .attachment-card figcaption span{font-size:12px;font-weight:600;overflow-wrap:anywhere;min-width:0}
+.figma-letter-detail .attachment-card figcaption small{font-size:11px;color:#8c97a8;font-weight:400;flex:none}
+.figma-letter-detail .attachment-card a{position:relative;display:flex;align-items:center;justify-content:center;height:170px;min-width:0;border:1px solid #e1e4e9;border-radius:8px;background:#f3f4f6;overflow:hidden}
+.figma-letter-detail .attachment-card a img{display:block;width:100%;height:100%;object-fit:contain}
+.figma-letter-detail .summary-box{margin:18px 22px 22px;padding:14px 15px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;min-width:0;overflow-wrap:anywhere}
+.figma-letter-detail .summary-box .eyebrow{font-size:10px;color:#667085;font-weight:600;letter-spacing:0}
+.figma-letter-detail .summary-box p{font-size:12px;line-height:1.5;color:#374151;margin:6px 0 0;white-space:pre-wrap}
+.figma-letter-detail .identity-form{display:flex;flex-direction:column;gap:10px;padding:20px 22px 22px;min-width:0}
+.figma-letter-detail .figma-fields-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:16px;row-gap:14px;min-width:0;margin-bottom:4px}
+.figma-letter-detail .figma-form-field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.figma-letter-detail .figma-form-field.field-wide,.figma-letter-detail .figma-section-label{grid-column:1/-1}
+.figma-letter-detail .figma-section-label{font-size:10px;font-weight:700;line-height:16px;color:#236344;margin-top:1px;margin-bottom:-3px}
+.figma-letter-detail .figma-form-field label{margin:0;font-size:12px;line-height:17px;font-weight:500;color:#111827}
+.figma-letter-detail .figma-form-field label small{font-size:10px;font-weight:400;color:#7d8895;margin:0 0 0 4px}
+.figma-letter-detail .figma-form-field input,.figma-letter-detail .figma-form-field select,.figma-letter-detail .figma-form-field textarea{width:100%;min-width:0;box-sizing:border-box;margin:0;padding:10px 12px;min-height:41px;border:1px solid #e0e5eb;border-radius:7px;background:#f9fafb;font-size:12px;line-height:18px;color:#273142;box-shadow:none}
+.figma-letter-detail .figma-form-field textarea{min-height:76px;resize:vertical}
+.figma-letter-detail .figma-form-field input::placeholder,.figma-letter-detail .figma-form-field textarea::placeholder{color:#9aa4b2}
+.figma-letter-detail .identity-form .button{min-height:41px;margin:0;border-radius:7px;font-size:12px;font-weight:600;display:flex;justify-content:center;align-items:center;text-align:center}
+.figma-letter-detail .identity-form .button-primary{background:#1e5b3a;color:white;border-color:#1e5b3a}
+.figma-letter-detail .identity-form .button-secondary{background:white;color:#475467;border:1px solid #e1e5ea}
+.figma-letter-detail .status-panel .stack-form{display:flex;flex-direction:column;gap:8px;padding:18px 22px 22px}
+.figma-letter-detail .status-panel .stack-form label{font-size:12px;line-height:17px;margin-top:2px;color:#111827;font-weight:500}
+.figma-letter-detail .status-panel .stack-form select,.figma-letter-detail .status-panel .stack-form textarea{width:100%;box-sizing:border-box;min-height:40px;border:1px solid #e1e5ea;border-radius:7px;background:#f9fafb;padding:10px 12px;font-size:12px;color:#344054}
+.figma-letter-detail .status-panel .stack-form textarea{min-height:75px}
+.figma-letter-detail .status-panel .stack-form .button{margin-top:4px;min-height:40px;border-radius:7px}
+.figma-letter-detail .history-panel{margin:0}
+.figma-letter-detail .history-list{padding:18px 22px 12px;margin:0}
+.figma-letter-detail .history-list strong{font-size:12px}
+.figma-letter-detail .history-list p{font-size:11px}
+.figma-regenerate-surat .regenerate-request-header{margin:0 0 20px}
+.figma-regenerate-surat .detail-header h1{font-size:25px}
+.figma-regenerate-surat .identity-form .button-primary{margin-top:1px}
+.figma-regenerate-surat .identity-panel{min-height:730px}
+@media (min-width:1400px){.figma-letter-detail .detail-grid{grid-template-columns:minmax(0, .9fr) minmax(0,1.1fr)}.figma-letter-detail .attachment-card a{height:190px}}
+@media(max-width:900px){.figma-letter-detail .main-content{padding:25px 20px}.figma-letter-detail .detail-grid{grid-template-columns:minmax(0,1fr)}.figma-regenerate-surat .identity-panel{min-height:auto}}
+@media(max-width:540px){.figma-letter-detail .main-content{padding:22px 14px}.figma-letter-detail .figma-fields-grid{grid-template-columns:minmax(0,1fr)}.figma-letter-detail .panel-heading{padding:16px}.figma-letter-detail .identity-form,.figma-letter-detail .status-panel .stack-form{padding:18px 16px}.figma-letter-detail .attachment-panel .attachment-grid{padding:16px 16px 0}.figma-letter-detail .summary-box{margin:16px}.figma-letter-detail .detail-header h1{font-size:23px}}
+
+/* Revisi visual berdasarkan ekspor Figma dua halaman (14 Nov 2026).
+   Semua selector dibatasi hanya pada halaman surat, tanpa mengubah field atau aksi. */
+.figma-letter-detail {
+  --surat-green:#1e5b3a;
+  --surat-border:#e5e7eb;
+  --surat-muted:#778296;
+}
+/* Rasio di Figma: panel lampiran ~37%, panel form ~63%. */
+.figma-letter-detail .detail-grid {
+  grid-template-columns:minmax(0, .76fr) minmax(0, 1.24fr);
+  gap:24px;
+}
+.figma-letter-detail .detail-header{margin-bottom:20px}
+.figma-letter-detail .detail-header h1{font-size:26px;letter-spacing:-.5px}
+.figma-letter-detail .detail-header .muted{font-size:13px;line-height:19px}
+.figma-letter-detail .panel-heading{padding:16px 23px;min-height:64px}
+.figma-letter-detail .panel-heading h2{font-size:15px;line-height:21px;letter-spacing:-.15px}
+.figma-letter-detail .panel-heading .muted{font-size:11px;line-height:16px}
+.figma-letter-detail .attachment-panel .attachment-grid{padding:20px 23px 0;gap:17px}
+.figma-letter-detail .attachment-card figcaption{margin-bottom:7px}
+.figma-letter-detail .attachment-card a{
+  width:100%;height:auto;aspect-ratio:1.58/1;
+  max-height:215px;background:#f3f4f6;
+}
+.figma-letter-detail .attachment-card a img{object-fit:contain}
+.figma-letter-detail .summary-box{margin:18px 23px 23px;padding:13px 14px}
+.figma-letter-detail .identity-form{padding:21px 23px 23px;gap:11px}
+.figma-letter-detail .figma-fields-grid{column-gap:16px;row-gap:15px;margin-bottom:6px}
+.figma-letter-detail .figma-form-field{gap:6px;min-width:0}
+.figma-letter-detail .figma-form-field label{font-size:12px;line-height:18px;font-weight:500}
+.figma-letter-detail .figma-section-label{margin-top:3px;margin-bottom:-1px;font-size:10px}
+.figma-letter-detail .figma-form-field input,
+.figma-letter-detail .figma-form-field select,
+.figma-letter-detail .figma-form-field textarea{
+  min-height:42px;padding:10px 13px;border-radius:7px;
+  font-size:12px;line-height:20px;
+}
+.figma-letter-detail .figma-form-field textarea{min-height:74px}
+/* Field tambahan dari backend boleh tetap muncul; jangan menjadi kotak kecil tak sejajar. */
+.figma-data-surat .figma-form-field[data-field-name="alamat domisili"]{grid-column:1/-1}
+.figma-letter-detail .figma-form-field[data-field-name="alamat domisili"] textarea{
+  min-height:42px;height:42px;resize:vertical;
+}
+.figma-letter-detail .figma-form-field.field-nik input{font-variant-numeric:tabular-nums;letter-spacing:0;font-size:12px}
+.figma-letter-detail .identity-form .button{min-height:41px;font-size:12px}
+.figma-letter-detail .status-panel .stack-form{gap:10px;padding:18px 23px 23px}
+.figma-letter-detail .status-panel .stack-form label{font-size:12px;margin-top:0}
+.figma-letter-detail .status-panel .stack-form select{min-height:41px}
+.figma-letter-detail .status-panel .stack-form textarea{min-height:75px}
+.figma-letter-detail .history-list{padding:19px 23px 15px}
+.figma-letter-detail .detail-side{gap:20px}
+/* Ekspor Figma menggunakan ukuran sidebar konstan, tetapi pada viewport laptop
+   yang lebih sempit sidebar dibuat proporsional agar form tidak terjepit. */
+@media (min-width:801px) and (max-width:1199px){
+  .figma-letter-detail .sidebar{width:clamp(190px,20vw,238px);padding-right:16px;padding-left:16px}
+  .figma-letter-detail .sidebar .brand{padding-left:12px;padding-right:10px}
+  .figma-letter-detail .sidebar nav{padding-left:8px;padding-right:8px}
+  .figma-letter-detail .sidebar .nav-label{margin-left:12px}
+  .figma-letter-detail .main-content{
+    margin-left:clamp(190px,20vw,238px);
+    padding:30px clamp(18px,3vw,34px) 38px;
+  }
+  .figma-letter-detail .detail-grid{gap:20px;grid-template-columns:minmax(0,.76fr) minmax(0,1.24fr)}
+  .figma-letter-detail .panel-heading{padding:15px 18px}
+  .figma-letter-detail .attachment-panel .attachment-grid{padding:18px 18px 0}
+  .figma-letter-detail .summary-box{margin:18px}
+  .figma-letter-detail .identity-form,.figma-letter-detail .status-panel .stack-form{padding:18px}
+  .figma-letter-detail .figma-fields-grid{column-gap:12px}
+}
+@media(max-width:800px){
+  .figma-letter-detail .detail-grid{grid-template-columns:minmax(0,1fr)}
+  .figma-letter-detail .attachment-card a{max-height:none;aspect-ratio:1.85/1}
+  .figma-letter-detail .main-content{margin-left:0}
+}
+@media(max-width:540px){
+  .figma-letter-detail .figma-fields-grid{grid-template-columns:minmax(0,1fr)}
+  .figma-letter-detail .attachment-panel .attachment-grid{padding:16px 16px 0}
+  .figma-letter-detail .summary-box{margin:16px}
+  .figma-letter-detail .identity-form,.figma-letter-detail .status-panel .stack-form{padding:17px 16px}
+  .figma-letter-detail .panel-heading{padding:16px}
+}

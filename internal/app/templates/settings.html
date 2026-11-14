@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="/static/settings.css">
   <link rel="stylesheet" href="/static/figma-ui.css">
   <link rel="stylesheet" href="/static/type-scale.css">
+  <link rel="stylesheet" href="/static/target-dialogs.css">
 </head>
 <body class="admin-page settings-page">
   <div class="app-shell">
@@ -47,8 +48,30 @@
                   <td><div class="tag-list">{{range .Requirements}}<span class="data-tag">{{.}}</span>{{else}}<span class="muted">Belum ada persyaratan</span>{{end}}</div></td>
                   <td>{{if .Active}}<span class="active-status">● &nbsp;Aktif</span>{{else}}<span class="inactive-status">● &nbsp;Nonaktif</span>{{end}}</td>
                   <td class="actions-cell"><button type="button" class="table-icon-button" title="Edit jenis surat" aria-label="Edit jenis surat {{.Name}}" data-open-dialog="letter-edit-{{.Code}}"><svg class="ui-icon"><use href="/static/ui-icons.svg#edit"/></svg></button><button type="button" class="table-icon-button" title="Lihat detail" aria-label="Lihat detail {{.Name}}" data-open-dialog="letter-view-{{.Code}}"><svg class="ui-icon"><use href="/static/ui-icons.svg#eye"/></svg></button>
-                    <dialog class="edit-dialog" id="letter-view-{{.Code}}" aria-labelledby="view-title-{{.Code}}"><div class="dialog-header"><div><p class="eyebrow">DETAIL LAYANAN</p><h2 id="view-title-{{.Code}}">{{.Name}}</h2></div><button class="dialog-close" type="button" data-close-dialog aria-label="Tutup">×</button></div><div class="dialog-body"><p><strong>Kode:</strong> {{.Code}}</p><p><strong>Status:</strong> {{if .Active}}Aktif{{else}}Nonaktif{{end}}</p><p><strong>Persyaratan:</strong></p><ul>{{range .Requirements}}<li>{{.}}</li>{{else}}<li>Belum ada persyaratan</li>{{end}}</ul></div><div class="dialog-footer"><button type="button" class="button button-secondary" data-close-dialog>Tutup</button><button type="button" class="button button-primary" data-open-dialog="letter-edit-{{.Code}}">Edit layanan</button></div></dialog>
-                    <dialog class="edit-dialog" id="letter-edit-{{.Code}}" aria-labelledby="edit-title-{{.Code}}"><div class="dialog-header"><div><p class="eyebrow">PENGELOLAAN LAYANAN</p><h2 id="edit-title-{{.Code}}">Edit {{.Name}}</h2></div><button class="dialog-close" type="button" data-close-dialog aria-label="Tutup">×</button></div><form method="post" action="/settings/letter" class="stack-form dialog-form"><input type="hidden" name="csrf" value="{{$.CSRF}}"><input type="hidden" name="code" value="{{.Code}}"><label for="name-{{.Code}}">Nama surat</label><input id="name-{{.Code}}" name="name" value="{{.Name}}" maxlength="120" required><label for="requirements-{{.Code}}">Persyaratan <small>satu per baris</small></label><textarea id="requirements-{{.Code}}" name="requirements" rows="5" maxlength="4000">{{joinLines .Requirements}}</textarea><label class="checkbox-label"><input type="checkbox" name="aktif" {{if .Active}}checked{{end}}> Tampilkan pada bot</label><div class="dialog-footer"><button type="button" class="button button-secondary" data-close-dialog>Batal</button><button class="button button-primary" type="submit">Simpan jenis surat</button></div></form></dialog>
+                    <dialog class="edit-dialog figma-dialog service-detail-dialog" id="letter-view-{{.Code}}" aria-labelledby="view-title-{{.Code}}">
+  <div class="dialog-header"><div><h2 id="view-title-{{.Code}}">Detail Layanan</h2><p class="dialog-subtitle">{{.Name}}</p></div></div>
+  <div class="dialog-body service-detail-body">
+    <div class="service-detail-row"><span>Kode</span><strong>{{.Code}}</strong></div>
+    <div class="service-detail-row"><span>Status</span>{{if .Active}}<span class="service-active">Aktif</span>{{else}}<span class="service-inactive">Nonaktif</span>{{end}}</div>
+    <div class="service-detail-row"><span>Persyaratan</span><div class="service-requirements">{{range .Requirements}}<div class="service-requirement">{{.}}</div>{{else}}<div class="service-requirement">Belum ada persyaratan</div>{{end}}</div></div>
+  </div>
+  <div class="dialog-footer"><button type="button" class="button button-secondary" data-close-dialog>Tutup</button><button type="button" class="button button-primary" data-open-dialog="letter-edit-{{.Code}}">Edit Layanan</button></div>
+</dialog>
+                    <dialog class="edit-dialog figma-dialog service-edit-dialog" id="letter-edit-{{.Code}}" aria-labelledby="edit-title-{{.Code}}">
+  <div class="dialog-header"><div><h2 id="edit-title-{{.Code}}">Edit Layanan</h2><p class="dialog-subtitle">Perbarui informasi dan persyaratan layanan surat.</p></div></div>
+  <form method="post" action="/settings/letter" class="stack-form dialog-form">
+    <input type="hidden" name="csrf" value="{{$.CSRF}}"><input type="hidden" name="code" value="{{.Code}}">
+    <div class="dialog-fields">
+      <div class="dialog-field"><label for="name-{{.Code}}">Nama Layanan</label><input id="name-{{.Code}}" name="name" value="{{.Name}}" maxlength="120" required></div>
+      <div class="dialog-field"><label for="requirements-{{.Code}}">Persyaratan Dokumen</label>
+        <div class="tag-editor" data-tag-editor><div class="tag-chips" data-tag-chips></div><input type="text" data-tag-entry placeholder="Tambah syarat..." aria-label="Tambah persyaratan dokumen"><textarea id="requirements-{{.Code}}" name="requirements" rows="3" maxlength="4000" class="tag-source">{{joinLines .Requirements}}</textarea></div>
+        <p class="field-hint">Pisahkan dengan koma atau tekan enter untuk menambah dokumen.</p>
+      </div>
+      <label class="checkbox-label"><input type="checkbox" name="aktif" {{if .Active}}checked{{end}}> Aktif — layanan tersedia pada bot</label>
+    </div>
+    <div class="dialog-footer"><button type="button" class="button button-secondary" data-close-dialog>Batal</button><button class="button button-primary" type="submit">Simpan Perubahan</button></div>
+  </form>
+</dialog>
                   </td>
                 </tr>
                 {{end}}
@@ -74,7 +97,28 @@
               <td><strong class="faq-question">{{.Question}}</strong><p class="faq-answer">{{.Answer}}</p>{{if not .Active}}<span class="inactive-status">Nonaktif</span>{{end}}</td>
               <td><div class="tag-list">{{range .Keywords}}<span class="data-tag">{{.}}</span>{{end}}</div></td>
               <td class="actions-cell"><button type="button" class="table-icon-button" data-open-dialog="faq-edit-{{.ID}}" aria-label="Edit FAQ {{.Question}}" title="Edit FAQ"><svg class="ui-icon"><use href="/static/ui-icons.svg#edit"/></svg></button><button type="button" class="table-icon-button" data-delete-faq="faq-delete-{{.ID}}" aria-label="Hapus FAQ {{.Question}}" title="Hapus FAQ (permanen)"><svg class="ui-icon"><use href="/static/ui-icons.svg#trash"/></svg></button><form id="faq-delete-{{.ID}}" method="post" action="/settings/faq/delete" hidden><input type="hidden" name="csrf" value="{{$.CSRF}}"><input type="hidden" name="id" value="{{.ID}}"></form>
-                <dialog class="edit-dialog" id="faq-edit-{{.ID}}" aria-labelledby="faq-title-{{.ID}}"><div class="dialog-header"><div><p class="eyebrow">PENGELOLAAN FAQ</p><h2 id="faq-title-{{.ID}}">Edit FAQ bot</h2></div><button class="dialog-close" type="button" data-close-dialog aria-label="Tutup">×</button></div><form id="faq-form-{{.ID}}" method="post" action="/settings/faq" class="stack-form dialog-form"><input type="hidden" name="csrf" value="{{$.CSRF}}"><input type="hidden" name="id" value="{{.ID}}"><label for="question-{{.ID}}">Pertanyaan</label><input id="question-{{.ID}}" name="question" value="{{.Question}}" maxlength="300" required><label for="keywords-{{.ID}}">Kata kunci <small>satu per baris</small></label><textarea id="keywords-{{.ID}}" name="keywords" rows="3" maxlength="1400" required>{{joinLines .Keywords}}</textarea><label for="answer-{{.ID}}">Jawaban</label><textarea id="answer-{{.ID}}" name="answer" rows="5" maxlength="2000" required>{{.Answer}}</textarea><label for="category-{{.ID}}">Kategori</label><input id="category-{{.ID}}" name="category" value="{{.Category}}" maxlength="80"><label class="checkbox-label"><input type="checkbox" name="aktif" {{if .Active}}checked{{end}}> Aktif</label><div class="dialog-footer"><button type="button" class="button button-secondary" data-close-dialog>Batal</button><button class="button button-primary" type="submit">Simpan FAQ</button></div></form></dialog>
+                <dialog class="edit-dialog figma-dialog faq-delete-dialog" id="faq-confirm-delete-{{.ID}}" aria-labelledby="faq-delete-title-{{.ID}}">
+  <div class="dialog-header"><div><h2 id="faq-delete-title-{{.ID}}">Hapus FAQ ini?</h2><p class="dialog-subtitle">Tindakan ini tidak dapat dibatalkan.</p></div></div>
+  <div class="dialog-body"><div class="faq-delete-summary"><strong>{{.Question}}</strong><span>Kata kunci: {{range $i, $word := .Keywords}}{{if $i}}, {{end}}{{$word}}{{end}}</span></div><p>Setelah FAQ dihapus, bot WhatsApp tidak lagi menjawab pertanyaan ini.</p></div>
+  <div class="dialog-footer"><button type="button" class="button button-secondary" data-close-dialog>Batal</button><button class="button button-danger" type="submit" form="faq-delete-{{.ID}}">Ya, Hapus FAQ</button></div>
+</dialog>
+                <dialog class="edit-dialog figma-dialog faq-edit-dialog" id="faq-edit-{{.ID}}" aria-labelledby="faq-title-{{.ID}}">
+  <div class="dialog-header"><div><h2 id="faq-title-{{.ID}}">Edit FAQ</h2><p class="dialog-subtitle">Perbarui pertanyaan dan jawaban yang dijawab bot WhatsApp.</p></div></div>
+  <form id="faq-form-{{.ID}}" method="post" action="/settings/faq" class="stack-form dialog-form">
+    <input type="hidden" name="csrf" value="{{$.CSRF}}"><input type="hidden" name="id" value="{{.ID}}">
+    <div class="dialog-fields">
+      <div class="dialog-field"><label for="question-{{.ID}}">Pertanyaan</label><input id="question-{{.ID}}" name="question" value="{{.Question}}" maxlength="300" required></div>
+      <div class="dialog-field"><label for="keywords-{{.ID}}">Kata kunci</label>
+        <div class="tag-editor" data-tag-editor><div class="tag-chips" data-tag-chips></div><input type="text" data-tag-entry placeholder="Tambah kata kunci..." aria-label="Tambah kata kunci"><textarea id="keywords-{{.ID}}" name="keywords" rows="3" maxlength="1400" data-required class="tag-source">{{joinLines .Keywords}}</textarea></div>
+        <p class="field-hint">Pisahkan dengan koma atau tekan enter untuk menambah kata kunci.</p>
+      </div>
+      <div class="dialog-field"><label for="answer-{{.ID}}">Jawaban</label><textarea id="answer-{{.ID}}" name="answer" rows="4" maxlength="2000" required>{{.Answer}}</textarea></div>
+      <div class="dialog-field"><label for="category-{{.ID}}">Kategori</label><input id="category-{{.ID}}" name="category" value="{{.Category}}" maxlength="80"></div>
+      <label class="checkbox-label"><input type="checkbox" name="aktif" {{if .Active}}checked{{end}}> Aktif — bot akan menjawab FAQ ini</label>
+    </div>
+    <div class="dialog-footer"><button type="button" class="button button-secondary" data-close-dialog>Batal</button><button class="button button-primary" type="submit">Simpan Perubahan</button></div>
+  </form>
+</dialog>
               </td>
             </tr>
             {{end}}

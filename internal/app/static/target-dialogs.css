@@ -1,0 +1,63 @@
+/* Hanya modal Figma yang diminta, tidak mengubah gaya komponen halaman lain. */
+.settings-page .figma-dialog{box-sizing:border-box;width:min(452px,calc(100vw - 32px));max-width:452px;max-height:min(90vh,900px);padding:0;overflow:auto;background:#fff;border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -1px rgba(0,0,0,.06);color:#111827;font-family:Inter,Arial,sans-serif}
+.settings-page .figma-dialog::backdrop{background:rgba(17,24,39,.48)}
+.settings-page .figma-dialog .dialog-header{display:block;padding:20px 24px;border-bottom:1px solid #e5e7eb}
+.settings-page .figma-dialog .dialog-header h2{font-size:18px;line-height:1.35;font-weight:700;letter-spacing:0;margin:0;color:#111827}
+.settings-page .figma-dialog .dialog-subtitle{margin:4px 0 0;color:#6b7280;font-size:12px;line-height:1.5}
+.settings-page .figma-dialog .dialog-form{padding:0;display:block}
+.settings-page .figma-dialog .dialog-fields{display:flex;flex-direction:column;gap:16px;padding:24px}
+.settings-page .figma-dialog .dialog-field{display:flex;flex-direction:column;gap:8px;min-width:0}
+.settings-page .figma-dialog .dialog-field>label{font-weight:600;font-size:13px;color:#111827;margin:0}
+.settings-page .figma-dialog .dialog-field>input:not([type=checkbox]),.settings-page .figma-dialog .dialog-field>textarea{width:100%;box-sizing:border-box;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px;font-size:14px;line-height:1.5;color:#111827;min-height:44px;resize:vertical}
+.settings-page .figma-dialog .faq-edit-dialog textarea{min-height:96px}
+.settings-page .figma-dialog .dialog-field>textarea{min-height:96px}
+.settings-page .figma-dialog .checkbox-label{display:flex;align-items:center;gap:8px;color:#4b5563;font-size:13px;font-weight:400;margin:0}
+.settings-page .figma-dialog .checkbox-label input{accent-color:#1f5f4a;width:16px;height:16px}
+.settings-page .figma-dialog .dialog-footer{box-sizing:border-box;display:flex;justify-content:flex-end;gap:12px;align-items:center;margin:0;padding:20px 24px;border-top:1px solid #e5e7eb;background:#f9fafb}
+.settings-page .figma-dialog .dialog-footer .button{padding:11px 20px;min-height:42px;border-radius:8px;font-size:14px;line-height:20px;font-weight:600;white-space:normal}
+.settings-page .figma-dialog .dialog-footer .button-primary{background:#1e5b3a;border-color:#1e5b3a;color:#fff}
+.settings-page .figma-dialog .dialog-footer .button-secondary{background:#fff;border:1px solid #e5e7eb;color:#4b5563}
+.settings-page .figma-dialog .dialog-footer .button-danger{background:#b42318;border:1px solid #b42318;color:#fff}
+.settings-page .figma-dialog .tag-editor{background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;min-height:46px;display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 12px}
+.settings-page .figma-dialog .tag-chips{display:contents}
+.settings-page .figma-dialog .tag-chip{display:inline-flex;gap:6px;align-items:center;border:1px solid #a7f3d0;background:#e8f3ee;border-radius:6px;padding:4px 8px 4px 10px;color:#1e5b3a;font-size:12px;font-weight:500;max-width:100%;overflow-wrap:anywhere}
+.settings-page .figma-dialog .tag-chip-remove{color:inherit;border:0;background:none;cursor:pointer;font-size:16px;line-height:1;padding:0}
+.settings-page .figma-dialog .tag-editor [data-tag-entry]{flex:1 1 115px;width:115px;min-width:70px;background:transparent;border:0;padding:3px 0;outline:none;color:#111827;font-size:13px;min-height:20px}
+.settings-page .figma-dialog .tag-editor .tag-source{position:absolute;width:1px;height:1px;padding:0;opacity:0;pointer-events:none;clip-path:inset(50%)}
+.settings-page .figma-dialog .field-hint{font-size:11px;color:#6b7280;margin:0;line-height:1.4}
+.settings-page .figma-dialog .dialog-body{padding:24px;font-size:13px;color:#4b5563}
+.settings-page .figma-dialog .dialog-body p{margin:0;line-height:1.5}
+.settings-page .service-detail-row{display:flex;gap:16px;align-items:flex-start;margin-bottom:16px}
+.settings-page .service-detail-row:last-child{margin-bottom:0}
+.settings-page .service-detail-row>span:first-child{flex:0 0 96px;color:#6b7280;font-size:12px}
+.settings-page .service-detail-row strong{font-size:13px;font-weight:600;color:#111827}
+.settings-page .service-detail-row ul{padding:0;margin:0;list-style:none;color:#111827;font-size:13px;line-height:1.9}
+.settings-page .service-detail-row li::before{content:"•";margin-right:10px}
+.settings-page .service-active,.settings-page .service-inactive{padding:4px 10px;border-radius:99px;background:#e8f3ee;color:#1e5b3a;font-weight:600;font-size:12px}
+.settings-page .service-inactive{background:#f3f4f6;color:#6b7280}
+.settings-page .faq-delete-summary{background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px;margin-bottom:16px;display:flex;flex-direction:column;gap:4px}
+.settings-page .faq-delete-summary strong{font-size:13px;color:#111827}
+.settings-page .faq-delete-summary span{font-size:12px;color:#6b7280}
+.settings-page .faq-delete-dialog .dialog-body{padding:24px}
+@media(max-width:520px){.settings-page .figma-dialog .dialog-footer{padding:16px;gap:8px}.settings-page .figma-dialog .dialog-fields{padding:20px 16px}.settings-page .figma-dialog .dialog-header{padding:18px 16px}.settings-page .figma-dialog .dialog-footer .button{padding:10px 12px}}
+
+/* Koreksi modal: tanpa scrollbar horizontal dan tanpa teks keluar kotak. */
+.settings-page dialog.figma-dialog{overflow-x:hidden;overflow-y:auto;min-width:0;max-width:min(452px,calc(100vw - 32px));white-space:normal;text-align:left}
+.settings-page dialog.figma-dialog,.settings-page dialog.figma-dialog *{box-sizing:border-box}
+.settings-page dialog.figma-dialog .dialog-header,.settings-page dialog.figma-dialog .dialog-body,.settings-page dialog.figma-dialog .dialog-footer{width:100%;min-width:0;max-width:100%;white-space:normal}
+.settings-page dialog.figma-dialog .dialog-header{justify-content:center;text-align:center;align-items:center}
+.settings-page dialog.figma-dialog .dialog-header>div{min-width:0;width:100%}
+.settings-page dialog.figma-dialog .dialog-header h2,.settings-page dialog.figma-dialog .dialog-subtitle{white-space:normal;overflow-wrap:anywhere}
+.settings-page dialog.figma-dialog .dialog-body{display:block;overflow-wrap:anywhere;word-break:normal}
+.settings-page dialog.figma-dialog .faq-delete-summary{width:100%;max-width:100%;min-width:0;overflow:hidden;white-space:normal}
+.settings-page dialog.figma-dialog .faq-delete-summary strong,.settings-page dialog.figma-dialog .faq-delete-summary span{display:block;max-width:100%;min-width:0;white-space:normal;overflow-wrap:anywhere;word-break:break-word;line-height:1.5}
+.settings-page dialog.figma-dialog .dialog-footer{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end}
+.settings-page dialog.figma-dialog .dialog-footer .button{max-width:100%;min-width:0}
+.settings-page dialog.figma-dialog .service-detail-row{display:grid;grid-template-columns:96px minmax(0,1fr);column-gap:16px;align-items:start;min-width:0;margin-bottom:16px}
+.settings-page dialog.figma-dialog .service-detail-row>span:first-child{flex:none;width:auto;min-width:0}
+.settings-page dialog.figma-dialog .service-requirements{min-width:0;max-width:100%;font-size:13px;color:#111827}
+.settings-page dialog.figma-dialog .service-requirement{display:grid;grid-template-columns:8px minmax(0,1fr);column-gap:10px;align-items:start;line-height:1.65;margin-bottom:6px;overflow-wrap:anywhere}
+.settings-page dialog.figma-dialog .service-requirement::before{content:'•';display:block}
+.settings-page dialog.figma-dialog .service-requirement:last-child{margin-bottom:0}
+.settings-page dialog.figma-dialog .service-detail-row .service-active,.settings-page dialog.figma-dialog .service-detail-row .service-inactive{justify-self:start}
+@media(max-width:390px){.settings-page dialog.figma-dialog .dialog-footer{justify-content:stretch}.settings-page dialog.figma-dialog .dialog-footer .button{flex:1 1 auto;padding:10px 8px}.settings-page dialog.figma-dialog .service-detail-row{grid-template-columns:82px minmax(0,1fr);gap:12px}}

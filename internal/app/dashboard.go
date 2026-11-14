@@ -1,4 +1,4 @@
-package app
+﻿package app
 
 import (
 	"context"
@@ -178,8 +178,8 @@ func (s *Server) dashboard(w http.ResponseWriter, r *http.Request) {
 	case "Diperbaiki", "Perlu Perbaikan":
 		statusFilter = "Diperbaiki"
 		statusAlt = "Perlu Perbaikan"
-	case "Dibatalkan", "Ditolak":
-		statusFilter = "Dibatalkan"
+	case "Ditolak":
+		statusFilter = "Ditolak"
 		statusAlt = "Ditolak"
 	}
 
@@ -418,7 +418,7 @@ func (s *Server) updateIdentity(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	result, err := s.db.ExecContext(ctx, `UPDATE permohonan SET data_identitas=$1::jsonb, diubah_pada=now() WHERE id=$2 AND status NOT IN ('Selesai','Ditolak','Dibatalkan')`, string(encoded), r.PathValue("id"))
+	result, err := s.db.ExecContext(ctx, `UPDATE permohonan SET data_identitas=$1::jsonb, diubah_pada=now() WHERE id=$2 AND status NOT IN ('Selesai','Ditolak')`, string(encoded), r.PathValue("id"))
 	if err != nil {
 		http.Error(w, "Data identitas belum dapat disimpan.", http.StatusServiceUnavailable)
 		return
@@ -470,7 +470,7 @@ func (s *Server) updateStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Catatan admin wajib diisi apabila status membutuhkan keterangan (Dibatalkan dan Diperbaiki)
+	// Catatan admin wajib diisi apabila status membutuhkan keterangan (Ditolak dan Diperbaiki)
 	if service.NoteRequired(newStatus) && note == "" {
 		http.Redirect(w, r, "/requests/"+r.PathValue("id")+"?notice=note-required", http.StatusSeeOther)
 		return
@@ -502,7 +502,7 @@ func (s *Server) updateStatus(w http.ResponseWriter, r *http.Request) {
 	// Jangan mengirim notifikasi apabila admin hanya membuka atau menyimpan ulang status yang sama tanpa perubahan.
 	if oldStatus == string(newStatus) ||
 		((oldStatus == string(domain.PerluPerbaikan) || oldStatus == string(domain.Diperbaiki)) && (newStatus == domain.PerluPerbaikan || newStatus == domain.Diperbaiki)) ||
-		((oldStatus == string(domain.Ditolak) || oldStatus == string(domain.Dibatalkan)) && (newStatus == domain.Ditolak || newStatus == domain.Dibatalkan)) {
+		(oldStatus == string(domain.Ditolak) && newStatus == domain.Ditolak) {
 		http.Redirect(w, r, "/requests/"+r.PathValue("id")+"?notice=status-saved", http.StatusSeeOther)
 		return
 	}
@@ -557,7 +557,7 @@ func validStatus(value string) bool {
 	switch domain.Status(value) {
 	case domain.Menunggu, domain.Dikerjakan, domain.Selesai,
 		domain.Diperbaiki, domain.PerluPerbaikan,
-		domain.Dibatalkan, domain.Ditolak:
+		domain.Ditolak:
 		return true
 	default:
 		return false
@@ -574,7 +574,7 @@ func canTransition(from, to domain.Status) bool {
 	if (from == domain.Diperbaiki || from == domain.PerluPerbaikan) && (to == domain.Diperbaiki || to == domain.PerluPerbaikan) {
 		return false
 	}
-	if (from == domain.Dibatalkan || from == domain.Ditolak) && (to == domain.Dibatalkan || to == domain.Ditolak) {
+	if from == domain.Ditolak && to == domain.Ditolak {
 		return false
 	}
 	return true

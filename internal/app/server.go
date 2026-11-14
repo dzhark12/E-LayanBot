@@ -1,4 +1,4 @@
-package app
+﻿package app
 
 import (
 	"bytes"
@@ -63,7 +63,7 @@ func New(db *sql.DB, cfg config.Config, files *storage.Local) (*Server, error) {
 			if (opt == domain.Diperbaiki || opt == domain.PerluPerbaikan) && (curr == domain.Diperbaiki || curr == domain.PerluPerbaikan) {
 				return true
 			}
-			if (opt == domain.Dibatalkan || opt == domain.Ditolak) && (curr == domain.Dibatalkan || curr == domain.Ditolak) {
+			if (opt == domain.Ditolak) && (curr == domain.Ditolak) {
 				return true
 			}
 			return false
@@ -244,6 +244,8 @@ func pageInt(value string) int {
 	}
 	return page
 }
+
+
 
 
 

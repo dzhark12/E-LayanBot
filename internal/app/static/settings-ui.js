@@ -60,6 +60,56 @@
     redraw();
   });
 
+  // Chip editor: mempertahankan textarea dan format baris yang diterima backend.
+  document.querySelectorAll('[data-tag-editor]').forEach(editor => {
+    const source = editor.querySelector('.tag-source');
+    const entry = editor.querySelector('[data-tag-entry]');
+    const chips = editor.querySelector('[data-tag-chips]');
+    if (!source || !entry || !chips) return;
+    let values = source.value.split(/[,\n\r]+/).map(v => v.trim()).filter(Boolean);
+    const sync = () => {
+      source.value = values.join('\n');
+      source.dispatchEvent(new Event('input', {bubbles: false}));
+      chips.replaceChildren();
+      values.forEach((value, i) => {
+        const chip = document.createElement('span');
+        chip.className = 'tag-chip';
+        chip.append(document.createTextNode(value));
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'tag-chip-remove';
+        remove.setAttribute('aria-label', 'Hapus ' + value);
+        remove.textContent = '×';
+        remove.addEventListener('click', () => { values.splice(i, 1); sync(); entry.focus(); });
+        chip.append(remove);
+        chips.append(chip);
+      });
+    };
+    const add = () => {
+      const inputs = entry.value.split(/[,\n]+/).map(v => v.trim()).filter(Boolean);
+      if (!inputs.length) return;
+      values.push(...inputs);
+      entry.value = '';
+      sync();
+    };
+    entry.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); add(); }
+      if (e.key === 'Backspace' && !entry.value && values.length) { values.pop(); sync(); }
+    });
+    entry.addEventListener('blur', add);
+    editor.closest('form')?.addEventListener('submit', e => {
+      add(); sync();
+      if (source.hasAttribute('data-required') && !values.length) {
+        e.preventDefault();
+        entry.setCustomValidity('Isi setidaknya satu kata kunci.');
+        entry.reportValidity();
+        entry.focus();
+      } else entry.setCustomValidity('');
+    });
+    entry.addEventListener('input', () => entry.setCustomValidity(''));
+    sync();
+  });
+
   const openDialog = dialog => {
     if (!dialog) return;
     const opened = document.querySelector('dialog[open]');
@@ -74,8 +124,9 @@
     const remove = event.target.closest('[data-delete-faq]');
     if (remove) {
       const form = document.getElementById(remove.dataset.deleteFaq);
-      if (!form || !window.confirm('Hapus FAQ ini secara permanen? Tindakan ini tidak dapat dibatalkan.\n\nUntuk menyembunyikan sementara, gunakan Edit lalu hapus centang "Aktif".')) return;
-      form.requestSubmit ? form.requestSubmit() : form.submit();
+      if (!form) return;
+      const dialogId = remove.dataset.deleteFaq.replace('faq-delete-', 'faq-confirm-delete-');
+      openDialog(document.getElementById(dialogId));
       return;
     }
     if (event.target instanceof HTMLDialogElement) {

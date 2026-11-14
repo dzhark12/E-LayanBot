@@ -1,4 +1,4 @@
-package handler
+﻿package handler
 
 import (
 	"context"
@@ -194,7 +194,7 @@ func (r *Router) Handle(parent context.Context, message messenger.Message) {
 	if upper == "BATAL" {
 		r.removeStaged(state)
 		_ = repository.DeleteBotSession(ctx, r.db, message.JID)
-		r.reply(ctx, message.JID, "Pengajuan dibatalkan. \nKetik *MENU* untuk mulai lagi.")
+		r.reply(ctx, message.JID, "Pengajuan ditolak. \nKetik *MENU* untuk mulai lagi.")
 		return
 	}
 	if code := utils.RequestCode(text); code != "" {

@@ -1,4 +1,4 @@
-package service
+﻿package service
 
 import (
 	"strings"
@@ -73,21 +73,19 @@ func TestBuildStatusMessageSelesai(t *testing.T) {
 	}
 }
 
-func TestBuildStatusMessageDibatalkan(t *testing.T) {
-	for _, status := range []domain.Status{domain.Dibatalkan, domain.Ditolak} {
-		got, ok := buildStatusMessage(sample(status, "Pemohon tidak terdaftar pada data kependudukan desa."))
-		want := "Halo, *Budi Santoso*.\n\n" +
-			"Mohon maaf, pengajuan surat Anda telah dibatalkan oleh admin.\n\n" +
-			"Informasi Pengajuan:\n" +
-			"- Jenis Surat: Surat Keterangan Domisili\n" +
-			"- Nomor Pengajuan: DM00001\n" +
-			"- Status: *DIBATALKAN*\n\n" +
-			"Keterangan Admin:\n" +
-			"Pemohon tidak terdaftar pada data kependudukan desa.\n\n" +
-			"Silakan menghubungi perangkat desa apabila membutuhkan informasi lebih lanjut."
-		if !ok || got != want {
-			t.Fatalf("status %s ok=%v\n got: %q\nwant: %q", status, ok, got, want)
-		}
+func TestBuildStatusMessageDitolak(t *testing.T) {
+	got, ok := buildStatusMessage(sample(domain.Ditolak, "Pemohon tidak terdaftar pada data kependudukan desa."))
+	want := "Halo, *Budi Santoso*.\n\n" +
+		"Mohon maaf, pengajuan surat Anda telah ditolak oleh admin.\n\n" +
+		"Informasi Pengajuan:\n" +
+		"- Jenis Surat: Surat Keterangan Domisili\n" +
+		"- Nomor Pengajuan: DM00001\n" +
+		"- Status: *DITOLAK*\n\n" +
+		"Keterangan Admin:\n" +
+		"Pemohon tidak terdaftar pada data kependudukan desa.\n\n" +
+		"Silakan menghubungi perangkat desa apabila membutuhkan informasi lebih lanjut."
+	if !ok || got != want {
+		t.Fatalf("ok=%v\n got: %q\nwant: %q", ok, got, want)
 	}
 }
 
@@ -140,7 +138,6 @@ func TestNotifiesDanNoteRequired(t *testing.T) {
 		domain.Menunggu,
 		domain.Dikerjakan,
 		domain.Selesai,
-		domain.Dibatalkan,
 		domain.Ditolak,
 		domain.Diperbaiki,
 		domain.PerluPerbaikan,
@@ -154,7 +151,6 @@ func TestNotifiesDanNoteRequired(t *testing.T) {
 		domain.Menunggu:       false,
 		domain.Dikerjakan:     false,
 		domain.Selesai:        false,
-		domain.Dibatalkan:     true,
 		domain.Ditolak:        true,
 		domain.Diperbaiki:     true,
 		domain.PerluPerbaikan: true,
