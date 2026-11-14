@@ -1,4 +1,7 @@
-// Pratinjau foto lampiran: klik foto -> muncul di atas halaman, ditutup dengan tombol X, Esc, atau klik area gelap.
+﻿// Pratinjau foto lampiran: klik foto -> muncul di atas halaman, ditutup dengan tombol X, Esc, atau klik area gelap.
+// Tombol putar (rotate) -> putar 90° clockwise, berguna untuk foto vertikal (potrait) yang terlihat kecil.
+// Scroll/rodi mouse -> zoom in/out. Klik foto -> toggle zoom 100% / fit layar.
+// Saat zoom > 1x: drag/geser untuk pindah area (baca KTP, dll).
 (() => {
   const links = [...document.querySelectorAll("a[data-lightbox]")];
   if (!links.length || typeof HTMLDialogElement === "undefined") return; // tanpa JS/dialog, link tetap membuka foto di tab baru
@@ -12,25 +15,49 @@
   dialog.innerHTML = `
     <div class="lightbox-bar">
       <span class="lightbox-caption"></span>
-      <button type="button" class="lightbox-btn" data-act="close" aria-label="Tutup">${icon('<path d="M6 6l12 12M18 6L6 18"/>')}</button>
+      <button type="button" class="lightbox-btn lightbox-btn-text" data-act="rotate" aria-label="Putar 90°">rotate</button>
+      <button type="button" class="lightbox-btn" data-act="close" aria-label="Tutup">${icon('<path d="M18 6L6 18M6 6l12 12"/>')}</button>
     </div>
     <div class="lightbox-stage"><img alt=""></div>
-    <button type="button" class="lightbox-nav lightbox-prev" data-act="prev" aria-label="Foto sebelumnya">${icon('<path d="M15 5l-7 7 7 7"/>')}</button>
-    <button type="button" class="lightbox-nav lightbox-next" data-act="next" aria-label="Foto berikutnya">${icon('<path d="M9 5l7 7-7 7"/>')}</button>`;
+    <button type="button" class="lightbox-nav lightbox-prev" data-act="prev" aria-label="Foto sebelumnya">${icon('<path d="M15 18l-6-6 6-6"/>')}</button>
+    <button type="button" class="lightbox-nav lightbox-next" data-act="next" aria-label="Foto berikutnya">${icon('<path d="M9 6l6 6-6 6"/>')}</button>`;
   dialog.classList.toggle("single", links.length < 2);
   document.body.append(dialog);
 
   const img = dialog.querySelector("img");
   const caption = dialog.querySelector(".lightbox-caption");
+  const stage = dialog.querySelector(".lightbox-stage");
   let index = 0;
+  let scale = 1;
+  let translateX = 0;
+  let translateY = 0;
+  let isDragging = false;
+  let hasDragged = false;
+  let dragStartX = 0;
+  let dragStartY = 0;
+  let dragTranslateX = 0;
+  let dragTranslateY = 0;
 
   function show(i) {
     index = (i + links.length) % links.length;
     const link = links[index];
-    img.classList.remove("zoomed");
+    img.classList.remove("zoomed", "rotated");
+    img.style.transform = "";
+    scale = 1;
+    translateX = 0;
+    translateY = 0;
+    dragTranslateX = 0;
+    dragTranslateY = 0;
     img.src = link.href;
     img.alt = link.querySelector("img")?.alt ?? "";
     caption.textContent = `${link.dataset.caption ?? ""} (${index + 1}/${links.length})`;
+  }
+
+  function applyTransform() {
+    const rotate = img.classList.contains("rotated") ? "rotate(90deg)" : "";
+    const zoom = scale !== 1 ? `scale(${scale})` : "";
+    const pan = (translateX !== 0 || translateY !== 0) ? `translate(${translateX}px, ${translateY}px)` : "";
+    img.style.transform = [pan, rotate, zoom].filter(Boolean).join(" ");
   }
 
   links.forEach((link, i) =>
@@ -47,16 +74,199 @@
     if (act === "close") dialog.close();
     else if (act === "prev") show(index - 1);
     else if (act === "next") show(index + 1);
+    else if (act === "rotate") {
+      img.classList.toggle("rotated");
+      scale = 1;
+      translateX = 0;
+      translateY = 0;
+      dragTranslateX = 0;
+      dragTranslateY = 0;
+      img.classList.remove("zoomed");
+      applyTransform();
+      return;
+    }
     else if (e.target === dialog || e.target.classList.contains("lightbox-stage")) dialog.close();
   });
 
-  // klik foto = perbesar ke ukuran asli (berguna untuk membaca tulisan kecil di KTP), klik lagi = muat layar
-  img.addEventListener("click", () => img.classList.toggle("zoomed"));
+  // klik foto = toggle zoom 100% (ukuran asli) / fit layar
+  img.addEventListener("click", () => {
+    if (hasDragged) {
+      hasDragged = false;
+      return; // jangan toggle zoom kalau baru selesai drag
+    }
+    if (img.classList.contains("zoomed")) {
+      img.classList.remove("zoomed");
+      scale = 1;
+      translateX = 0;
+      translateY = 0;
+      dragTranslateX = 0;
+      dragTranslateY = 0;
+    } else {
+      img.classList.add("zoomed");
+      scale = 1;
+    }
+    applyTransform();
+  });
+
+  // scroll wheel = zoom in/out (smooth) - zoom ke posisi kursor
+  img.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    if (scale > 1 || e.deltaY < 0) {
+      const rect = img.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left - rect.width / 2;
+      const mouseY = e.clientY - rect.top - rect.height / 2;
+      
+      const prevScale = scale;
+      if (e.deltaY < 0) {
+        scale = Math.min(scale * 1.1, 5); // zoom in max 5x
+      } else {
+        scale = Math.max(scale / 1.1, 1); // zoom out min 1x (kalo udah 1, reset pan)
+      }
+      
+      if (scale > 1) {
+        // adjust translation to zoom towards mouse position
+        const factor = scale / prevScale;
+        translateX = translateX * factor - mouseX * (factor - 1);
+        translateY = translateY * factor - mouseY * (factor - 1);
+        img.classList.add("zoomed");
+      } else {
+        scale = 1;
+        translateX = 0;
+        translateY = 0;
+        dragTranslateX = 0;
+        dragTranslateY = 0;
+        img.classList.remove("zoomed");
+      }
+      applyTransform();
+    }
+  }, { passive: false });
+
+  // drag/pan saat zoom > 1
+  img.addEventListener("mousedown", (e) => {
+    if (scale <= 1) return;
+    if (e.button !== 0) return; // hanya left click
+    isDragging = true;
+    hasDragged = false;
+    dragStartX = e.clientX;
+    dragStartY = e.clientY;
+    dragTranslateX = translateX;
+    dragTranslateY = translateY;
+    img.style.cursor = "grabbing";
+    e.preventDefault();
+  });
+
+  window.addEventListener("mousemove", (e) => {
+    if (!isDragging) return;
+    const dx = e.clientX - dragStartX;
+    const dy = e.clientY - dragStartY;
+    // hanya set hasDragged kalau benar-benar gerak (bukan klik)
+    if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
+      hasDragged = true;
+    }
+    translateX = dragTranslateX + dx;
+    translateY = dragTranslateY + dy;
+    applyTransform();
+  });
+
+  window.addEventListener("mouseup", () => {
+    if (isDragging) {
+      isDragging = false;
+      img.style.cursor = "grab";
+    }
+  });
+
+  // touch support untuk mobile
+  img.addEventListener("touchstart", (e) => {
+    if (scale <= 1) return;
+    if (e.touches.length !== 1) return;
+    isDragging = true;
+    hasDragged = false;
+    dragStartX = e.touches[0].clientX;
+    dragStartY = e.touches[0].clientY;
+    dragTranslateX = translateX;
+    dragTranslateY = translateY;
+  }, { passive: false });
+
+  window.addEventListener("touchmove", (e) => {
+    if (!isDragging) return;
+    if (e.touches.length !== 1) return;
+    const dx = e.touches[0].clientX - dragStartX;
+    const dy = e.touches[0].clientY - dragStartY;
+    if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
+      hasDragged = true;
+    }
+    translateX = dragTranslateX + dx;
+    translateY = dragTranslateY + dy;
+    applyTransform();
+    e.preventDefault();
+  }, { passive: false });
+
+  window.addEventListener("touchend", () => {
+    isDragging = false;
+  });
 
   dialog.addEventListener("keydown", (e) => {
     if (e.key === "ArrowLeft") show(index - 1);
     if (e.key === "ArrowRight") show(index + 1);
+    if (e.key === "r" || e.key === "R") {
+      e.preventDefault();
+      img.classList.toggle("rotated");
+      scale = 1;
+      translateX = 0;
+      translateY = 0;
+      dragTranslateX = 0;
+      dragTranslateY = 0;
+      img.classList.remove("zoomed");
+      applyTransform();
+    }
+    if (e.key === "+" || e.key === "=") {
+      e.preventDefault();
+      scale = Math.min(scale * 1.2, 5);
+      img.classList.add("zoomed");
+      applyTransform();
+    }
+    if (e.key === "-" || e.key === "_") {
+      e.preventDefault();
+      scale = Math.max(scale / 1.2, 1);
+      if (scale <= 1) {
+        scale = 1;
+        translateX = 0;
+        translateY = 0;
+        dragTranslateX = 0;
+        dragTranslateY = 0;
+        img.classList.remove("zoomed");
+      }
+      applyTransform();
+    }
+    if (e.key === "0") {
+      e.preventDefault();
+      scale = 1;
+      translateX = 0;
+      translateY = 0;
+      dragTranslateX = 0;
+      dragTranslateY = 0;
+      img.classList.remove("zoomed");
+      applyTransform();
+    }
+    // pan dengan arrow keys saat zoom
+    if (scale > 1) {
+      const step = 50 / scale;
+      if (e.key === "ArrowUp") { e.preventDefault(); translateY += step; applyTransform(); }
+      if (e.key === "ArrowDown") { e.preventDefault(); translateY -= step; applyTransform(); }
+      // Note: ArrowLeft/Right already used for nav, so we don't use them for pan
+    }
   });
 
-  dialog.addEventListener("close", () => img.removeAttribute("src")); // Esc juga lewat sini
+  dialog.addEventListener("close", () => {
+    img.removeAttribute("src");
+    img.style.transform = "";
+  });
+  
+  // set cursor style saat zoom
+  const style = document.createElement("style");
+  style.textContent = `
+    .lightbox-stage img.zoomed { cursor: grab; }
+    .lightbox-stage img.zoomed:active { cursor: grabbing; }
+  `;
+  document.head.appendChild(style);
 })();
