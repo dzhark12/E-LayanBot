@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="id">
 <head>
   <meta charset="utf-8">
@@ -8,9 +8,11 @@
   <link rel="stylesheet" href="/static/figma-ui.css">
   <link rel="stylesheet" href="/static/identity-validation.css">
   <link rel="stylesheet" href="/static/type-scale.css">
+  <link rel="stylesheet" href="/static/target-letter-detail.css">
   <script defer src="/static/lightbox.js"></script>
+  <script defer src="/static/letter-figma-layout.js"></script>
 </head>
-<body class="admin-page detail-page">
+<body class="admin-page detail-page figma-letter-detail figma-regenerate-surat">
   <div class="app-shell">
     <aside class="sidebar">
       <a class="brand" href="/" aria-label="E-LAYAN Desa Sabah Balau"><span><strong>E-LAYAN</strong><small>DESA SABAH BALAU</small></span></a>
@@ -19,8 +21,8 @@
     </aside>
 
     <main class="main-content">
-      <div class="breadcrumb"><a href="/">← Kembali ke permohonan</a><span>/</span><span>{{.Request.Kode}}</span></div>
-      <header class="detail-header"><div><p class="eyebrow">{{.Request.JenisKode}} · {{.Request.JenisNama}}</p><h1>{{.Request.Kode}}</h1><p class="muted">Generate ulang data surat</p></div><span class="status-pill {{statusClass (printf "%s" .Request.Status)}}"><span class="status-dot" aria-hidden="true"></span>{{.Request.Status}}</span></header>
+      <div class="breadcrumb"><a href="/requests/{{.Request.ID}}">← Kembali ke {{.Request.Kode}}</a></div>
+      <header class="detail-header regenerate-request-header"><div><h1>Generate Ulang Data Surat</h1><p class="muted">{{.Request.Kode}} · {{.Request.JenisNama}}</p></div></header>
       {{if eq .Notice "identity-saved"}}<p class="notice" role="status">Data surat tersimpan.</p>{{else if eq .Notice "identity-error"}}<p class="form-error" role="alert">Periksa kembali format data, tanggal, dan NIK (16 digit).</p>{{else if eq .Notice "letter-fields-required"}}<p class="form-error" role="alert">Lengkapi semua data yang diperlukan pada formulir surat sebelum menyimpan.</p>{{end}}
 
       <div class="detail-grid">
@@ -36,7 +38,7 @@
 
         <div class="detail-side">
           <section class="panel identity-panel" aria-labelledby="identity-title">
-            <div class="panel-heading"><div><h2 id="identity-title">Formulir data surat</h2><p class="muted">Isi dan verifikasi data surat. Semua field wajib diisi kecuali Nomor Surat dan Penandatangan.</p></div></div>
+            <div class="panel-heading"><div><h2 id="identity-title">Data Surat</h2><p class="muted">Periksa dan ubah data. PDF baru dibuat saat Anda menyimpan.</p></div></div>
             <form method="post" action="/requests/{{.Request.ID}}/letter/regenerate" class="identity-form">
               <input type="hidden" name="csrf" value="{{.CSRF}}">
               {{range .Fields}}
