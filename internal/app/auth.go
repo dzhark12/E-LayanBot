@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"elayan.local/desa/internal/security"
 )
@@ -26,11 +27,122 @@ func (s *Server) loginPage(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
+<<<<<<< HEAD
 	data := map[string]string{"Error": ""}
 	if r.URL.Query().Get("notice") == "password-reset-success" {
 		data["Success"] = "Kata sandi Anda berhasil diperbarui. Silakan masuk menggunakan kata sandi baru."
 	}
 	s.render(w, "login.html", data)
+=======
+	data := map[string]any{"Error": ""}
+	if r.URL.Query().Get("reset") == "success" {
+		data["Notice"] = "Kata sandi berhasil direset. Silakan masuk dengan kata sandi baru."
+	}
+	s.render(w, "login.html", data)
+}
+
+func (s *Server) forgotPasswordPage(w http.ResponseWriter, r *http.Request) {
+	s.render(w, "login.html", map[string]any{"Reset": true, "ResetEnabled": s.cfg.AdminRecoveryCode != ""})
+}
+
+func (s *Server) resetForgottenPassword(w http.ResponseWriter, r *http.Request) {
+	if !sameOrigin(r) {
+		http.Error(w, "Permintaan tidak valid.", http.StatusForbidden)
+		return
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, 8<<10)
+	data := map[string]any{
+		"Reset": true, "ResetEnabled": s.cfg.AdminRecoveryCode != "",
+		"Error": "Sistem belum dapat memproses reset. Coba lagi beberapa saat.",
+	}
+	if err := r.ParseForm(); err != nil {
+		data["Error"] = "Permintaan tidak dapat diproses. Periksa isian dan kode pemulihan."
+		s.render(w, "login.html", data)
+		return
+	}
+	username := strings.TrimSpace(r.FormValue("username"))
+	code := r.FormValue("recovery_code")
+	password, confirmation := r.FormValue("new_password"), r.FormValue("confirm_password")
+	validInput := username != "" && len(username) <= 80 && len(code) <= 256 && utf8.RuneCountInString(password) >= 12 && len(password) <= 256 && password == confirmation
+
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+	ipHash := s.requestHash([]byte("password-reset:" + remoteIP(r)))
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		s.renderStatus(w, http.StatusServiceUnavailable, "login.html", data)
+		return
+	}
+	defer tx.Rollback()
+	if _, err := tx.ExecContext(ctx, `SELECT pg_advisory_xact_lock($1)`, advisoryLockID(ipHash)); err != nil {
+		s.renderStatus(w, http.StatusServiceUnavailable, "login.html", data)
+		return
+	}
+	if _, err := tx.ExecContext(ctx, `DELETE FROM admin_login_attempt WHERE attempted_at < now() - interval '1 day'`); err != nil {
+		s.renderStatus(w, http.StatusServiceUnavailable, "login.html", data)
+		return
+	}
+	var attempts int
+	if err := tx.QueryRowContext(ctx, `SELECT count(*) FROM admin_login_attempt WHERE ip_hash=$1 AND attempted_at > now() - interval '15 minutes'`, ipHash).Scan(&attempts); err != nil {
+		s.renderStatus(w, http.StatusServiceUnavailable, "login.html", data)
+		return
+	}
+	if attempts >= 8 {
+		data["Error"] = "Reset belum dapat diproses. Coba lagi sekitar 15 menit."
+		s.renderStatus(w, http.StatusTooManyRequests, "login.html", data)
+		return
+	}
+	validCode := s.cfg.AdminRecoveryCode != "" && len(code) == len(s.cfg.AdminRecoveryCode) && subtle.ConstantTimeCompare([]byte(code), []byte(s.cfg.AdminRecoveryCode)) == 1
+	var adminID int64
+	if validInput && validCode {
+		err = tx.QueryRowContext(ctx, `SELECT id FROM admin_user WHERE username=$1 AND aktif=TRUE`, username).Scan(&adminID)
+		if err != nil && err != sql.ErrNoRows {
+			s.renderStatus(w, http.StatusServiceUnavailable, "login.html", data)
+			return
+		}
+	}
+	if !validInput || !validCode || adminID == 0 {
+		if _, err := tx.ExecContext(ctx, `INSERT INTO admin_login_attempt(ip_hash) VALUES ($1)`, ipHash); err != nil {
+			s.renderStatus(w, http.StatusServiceUnavailable, "login.html", data)
+			return
+		}
+		if err := tx.Commit(); err != nil {
+			s.renderStatus(w, http.StatusServiceUnavailable, "login.html", data)
+			return
+		}
+		data["Error"] = "Reset belum berhasil. Periksa nama pengguna, kode pemulihan, dan kata sandi baru."
+		s.render(w, "login.html", data)
+		return
+	}
+	passwordHash, err := security.HashPassword(password)
+	if err != nil {
+		s.renderStatus(w, http.StatusServiceUnavailable, "login.html", data)
+		return
+	}
+	result, err := tx.ExecContext(ctx, `UPDATE admin_user SET password_hash=$1 WHERE id=$2 AND aktif=TRUE`, passwordHash, adminID)
+	if err != nil {
+		s.renderStatus(w, http.StatusServiceUnavailable, "login.html", data)
+		return
+	}
+	if changed, _ := result.RowsAffected(); changed == 0 {
+		data["Error"] = "Reset belum berhasil. Periksa nama pengguna, kode pemulihan, dan kata sandi baru."
+		s.render(w, "login.html", data)
+		return
+	}
+	if _, err := tx.ExecContext(ctx, `DELETE FROM admin_session WHERE admin_id=$1`, adminID); err != nil {
+		s.renderStatus(w, http.StatusServiceUnavailable, "login.html", data)
+		return
+	}
+	if _, err := tx.ExecContext(ctx, `DELETE FROM admin_login_attempt WHERE ip_hash=$1`, ipHash); err != nil {
+		s.renderStatus(w, http.StatusServiceUnavailable, "login.html", data)
+		return
+	}
+	if err := tx.Commit(); err != nil {
+		s.renderStatus(w, http.StatusServiceUnavailable, "login.html", data)
+		return
+	}
+	http.Redirect(w, r, "/login?reset=success", http.StatusSeeOther)
+>>>>>>> 104a744aa7baf8b17dc213d3aa67c3623eff856b
 }
 
 func (s *Server) login(w http.ResponseWriter, r *http.Request) {
@@ -237,6 +349,3 @@ func (s *Server) botAuth(next http.HandlerFunc) http.HandlerFunc {
 		next(w, r)
 	}
 }
-
-
-

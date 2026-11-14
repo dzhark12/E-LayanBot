@@ -9,17 +9,18 @@ import (
 )
 
 type Config struct {
-	ListenAddr    string
-	DatabaseURL   string
-	StorageDir    string
-	BotAPIURL     string
-	BotAPIToken   string
-	WAHashKey     string
-	AdminUsername string
-	AdminPassword string
-	CookieSecure  bool
-	RetentionDays int
-	MaxAttachment int64
+	ListenAddr        string
+	DatabaseURL       string
+	StorageDir        string
+	BotAPIURL         string
+	BotAPIToken       string
+	WAHashKey         string
+	AdminUsername     string
+	AdminPassword     string
+	AdminRecoveryCode string
+	CookieSecure      bool
+	RetentionDays     int
+	MaxAttachment     int64
 
 	GeminiAPIKey  string
 	GeminiModel   string
@@ -37,6 +38,7 @@ type Config struct {
 
 func Load() (Config, error) {
 	cfg := Config{
+<<<<<<< HEAD
 		ListenAddr:    value("HTTP_ADDR", ":8080"),
 		DatabaseURL:   strings.TrimSpace(os.Getenv("DATABASE_URL")),
 		StorageDir:    strings.TrimSpace(os.Getenv("STORAGE_DIR")),
@@ -55,6 +57,21 @@ func Load() (Config, error) {
 		SMTPPassword: os.Getenv("SMTP_PASSWORD"),
 		SMTPFrom:     value("SMTP_FROM", "E-LAYAN Desa Sabah Balau <no-reply@sabahbalau.desa.id>"),
 		AppBaseURL:   strings.TrimRight(value("APP_BASE_URL", "http://localhost:8080"), "/"),
+=======
+		ListenAddr:        value("HTTP_ADDR", ":8080"),
+		DatabaseURL:       strings.TrimSpace(os.Getenv("DATABASE_URL")),
+		StorageDir:        strings.TrimSpace(os.Getenv("STORAGE_DIR")),
+		BotAPIURL:         value("BOT_API_URL", "http://app:8080"),
+		BotAPIToken:       os.Getenv("BOT_API_TOKEN"),
+		WAHashKey:         os.Getenv("WA_HASH_KEY"),
+		AdminUsername:     strings.TrimSpace(os.Getenv("ADMIN_USERNAME")),
+		AdminPassword:     os.Getenv("ADMIN_PASSWORD"),
+		AdminRecoveryCode: strings.TrimSpace(os.Getenv("ADMIN_RECOVERY_CODE")),
+		MaxAttachment:     10 << 20,
+		GeminiAPIKey:      strings.TrimSpace(os.Getenv("GEMINI_API_KEY")),
+		GeminiModel:       value("GEMINI_MODEL", "gemini-3.5-flash-lite"),
+		VillageName:       value("VILLAGE_NAME", "Sabah Balau"),
+>>>>>>> 104a744aa7baf8b17dc213d3aa67c3623eff856b
 	}
 
 	for name, got := range map[string]string{
@@ -77,6 +94,9 @@ func Load() (Config, error) {
 	}
 	if len(cfg.AdminPassword) < 12 {
 		return Config{}, errors.New("ADMIN_PASSWORD must contain at least 12 characters")
+	}
+	if cfg.AdminRecoveryCode != "" && len(cfg.AdminRecoveryCode) < 32 {
+		return Config{}, errors.New("ADMIN_RECOVERY_CODE must contain at least 32 characters")
 	}
 
 	var err error

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Masuk · E-LAYAN Desa Sabah Balau</title>
+  <title>{{if .Reset}}Lupa kata sandi{{else}}Masuk{{end}} · E-LAYAN Desa Sabah Balau</title>
   <link rel="stylesheet" href="/static/app.css">
   <link rel="stylesheet" href="/static/figma-ui.css">
   <link rel="stylesheet" href="/static/type-scale.css">
@@ -113,8 +113,7 @@
       <div class="login-card">
         <!-- Card Header -->
         <div class="login-card-header">
-          <h2>Masuk ke E-LAYAN</h2>
-          <p class="muted">Silakan masuk untuk mengelola permohonan surat warga.</p>
+          {{if .Reset}}<h2>Reset kata sandi</h2><p class="muted">Masukkan kode pemulihan dan buat kata sandi baru.</p>{{else}}<h2>Masuk ke E-LAYAN</h2><p class="muted">Silakan masuk untuk mengelola permohonan surat warga.</p>{{end}}
         </div>
 
         <!-- Success Alert -->
@@ -141,7 +140,23 @@
           </button>
         </div>
         {{end}}
+        {{if .Notice}}<p class="notice" role="status">{{.Notice}}</p>{{end}}
 
+        {{if .Reset}}
+        {{if .ResetEnabled}}
+        <p class="muted">Kode pemulihan ada di konfigurasi server sebagai <code>ADMIN_RECOVERY_CODE</code>. Setelah reset, ganti kode itu di konfigurasi.</p>
+        <form method="post" action="/forgot-password" class="login-form" id="reset-form">
+          <div class="form-field"><label for="reset-username" class="form-label">Nama pengguna</label><input id="reset-username" name="username" type="text" autocomplete="username" maxlength="80" required class="form-input"></div>
+          <div class="form-field"><label for="recovery-code" class="form-label">Kode pemulihan</label><input id="recovery-code" name="recovery_code" type="password" autocomplete="off" maxlength="256" required class="form-input"></div>
+          <div class="form-field"><label for="new-password" class="form-label">Kata sandi baru <small>minimal 12 karakter</small></label><input id="new-password" name="new_password" type="password" autocomplete="new-password" minlength="12" maxlength="256" required class="form-input"></div>
+          <div class="form-field"><label for="confirm-password" class="form-label">Ulangi kata sandi baru</label><input id="confirm-password" name="confirm_password" type="password" autocomplete="new-password" minlength="12" maxlength="256" required class="form-input"></div>
+          <button type="submit" class="login-submit"><span>Reset kata sandi</span><svg class="icon login-btn-icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
+        </form>
+        {{else}}
+        <p class="muted" role="status">Reset belum diaktifkan. Minta pengelola server mengatur kode pemulihan.</p>
+        {{end}}
+        <p><a href="/login">Kembali ke login</a></p>
+        {{else}}
         <!-- Login Form -->
         <form method="post" action="/login" class="login-form" id="login-form">
           <!-- Username Field -->
@@ -220,6 +235,7 @@
             <svg class="icon login-btn-icon" aria-hidden="true"><use href="#i-arrow-right"/></svg>
           </button>
         </form>
+        {{end}}
 
       </div>
 

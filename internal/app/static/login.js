@@ -32,7 +32,7 @@
     });
   }
 
-  // 4. Status loading saat form dikirim (form tetap terkirim normal ke /login)
+  // 3. Status loading saat form login dikirim.
   var form = document.getElementById('login-form');
   var submitBtn = document.getElementById('submit-button');
   var spinner = submitBtn && submitBtn.querySelector('.login-spinner');

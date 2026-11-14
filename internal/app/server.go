@@ -105,9 +105,13 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /login", s.loginPage)
 	mux.HandleFunc("POST /login", s.login)
 	mux.HandleFunc("GET /forgot-password", s.forgotPasswordPage)
+<<<<<<< HEAD
 	mux.HandleFunc("POST /forgot-password", s.forgotPassword)
 	mux.HandleFunc("GET /reset-password", s.resetPasswordPage)
 	mux.HandleFunc("POST /reset-password", s.resetPassword)
+=======
+	mux.HandleFunc("POST /forgot-password", s.resetForgottenPassword)
+>>>>>>> 104a744aa7baf8b17dc213d3aa67c3623eff856b
 	mux.Handle("POST /logout", s.requireAdmin(http.HandlerFunc(s.logout)))
 	mux.Handle("GET /", s.requireAdmin(http.HandlerFunc(s.dashboard)))
 	mux.Handle("GET /admin/requests/version", s.requireAdmin(http.HandlerFunc(s.requestVersion)))

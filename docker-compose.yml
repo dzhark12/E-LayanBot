@@ -11,7 +11,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -31,6 +31,7 @@ services:
       WA_HASH_KEY: ${WA_HASH_KEY:?set WA_HASH_KEY in .env}
       ADMIN_USERNAME: ${ADMIN_USERNAME:?set ADMIN_USERNAME in .env}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD in .env}
+      ADMIN_RECOVERY_CODE: ${ADMIN_RECOVERY_CODE:-}
       SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
       ATTACHMENT_RETENTION_DAYS: ${ATTACHMENT_RETENTION_DAYS:?set retention after approval by the village}
     ports:
@@ -38,7 +39,7 @@ services:
     volumes:
       - private_uploads:/var/lib/elayan/private
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/healthz || exit 1"]
+      test: [ "CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/healthz || exit 1" ]
       interval: 30s
       timeout: 3s
       retries: 3
@@ -50,7 +51,7 @@ services:
     depends_on:
       app:
         condition: service_healthy
-    entrypoint: ["/app/elayandesa-bot"]
+    entrypoint: [ "/app/elayandesa-bot" ]
     environment:
       DATABASE_URL: ${DATABASE_URL:?set DATABASE_URL in .env}
       STORAGE_DIR: /var/lib/elayan/private
