@@ -101,6 +101,8 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /healthz", s.health)
 	mux.HandleFunc("GET /login", s.loginPage)
 	mux.HandleFunc("POST /login", s.login)
+	mux.HandleFunc("GET /forgot-password", s.forgotPasswordPage)
+	mux.HandleFunc("POST /forgot-password", s.resetForgottenPassword)
 	mux.Handle("POST /logout", s.requireAdmin(http.HandlerFunc(s.logout)))
 	mux.Handle("GET /", s.requireAdmin(http.HandlerFunc(s.dashboard)))
 	mux.Handle("GET /admin/requests/version", s.requireAdmin(http.HandlerFunc(s.requestVersion)))
