@@ -32,7 +32,7 @@ func main() {
 	if err := repository.Migrate(ctx, db); err != nil {
 		logger.Fatalf("database migration failed: %v", err)
 	}
-	if err := repository.Seed(ctx, db, cfg.AdminUsername, cfg.AdminPassword); err != nil {
+	if err := repository.Seed(ctx, db, cfg.AdminUsername, cfg.AdminPassword, cfg.AdminEmail); err != nil {
 		logger.Fatalf("initial data setup failed: %v", err)
 	}
 	files, err := storage.NewLocal(cfg.StorageDir)

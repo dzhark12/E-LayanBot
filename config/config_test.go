@@ -15,7 +15,7 @@ func setValidEnvironment(t *testing.T) {
 	} {
 		t.Setenv(key, value)
 	}
-	for _, key := range []string{"HTTP_ADDR", "BOT_API_URL", "SESSION_COOKIE_SECURE", "GEMINI_API_KEY", "GEMINI_MODEL", "VILLAGE_NAME", "GEMINI_MAX_PER_HOUR"} {
+	for _, key := range []string{"HTTP_ADDR", "BOT_API_URL", "SESSION_COOKIE_SECURE", "GEMINI_API_KEY", "GEMINI_MODEL", "VILLAGE_NAME", "GEMINI_MAX_PER_HOUR", "ADMIN_EMAIL", "SMTP_HOST", "SMTP_PORT", "SMTP_USERNAME", "SMTP_PASSWORD", "SMTP_FROM", "APP_BASE_URL"} {
 		t.Setenv(key, "")
 	}
 }
@@ -26,7 +26,7 @@ func TestLoadDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.ListenAddr != ":8080" || cfg.BotAPIURL != "http://app:8080" || cfg.GeminiModel != "gemini-3.5-flash-lite" || cfg.GeminiPerHour != 10 || cfg.RetentionDays != 30 {
+	if cfg.ListenAddr != ":8080" || cfg.BotAPIURL != "http://app:8080" || cfg.GeminiModel != "gemini-3.5-flash-lite" || cfg.GeminiPerHour != 10 || cfg.RetentionDays != 30 || cfg.SMTPPort != 587 || cfg.AppBaseURL != "http://localhost:8080" {
 		t.Fatalf("unexpected defaults: %+v", cfg)
 	}
 }
@@ -39,6 +39,8 @@ func TestLoadRejectsInvalidRequiredSettings(t *testing.T) {
 		{"ADMIN_PASSWORD", "short", "ADMIN_PASSWORD must contain"},
 		{"ATTACHMENT_RETENTION_DAYS", "0", "ATTACHMENT_RETENTION_DAYS"},
 		{"GEMINI_MAX_PER_HOUR", "201", "GEMINI_MAX_PER_HOUR"},
+		{"SMTP_PORT", "99999", "SMTP_PORT must be a valid port number"},
+		{"SMTP_PORT", "invalid", "SMTP_PORT must be a valid port number"},
 	} {
 		t.Run(tc.key, func(t *testing.T) {
 			setValidEnvironment(t)

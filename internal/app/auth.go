@@ -26,7 +26,11 @@ func (s *Server) loginPage(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
-	s.render(w, "login.html", map[string]string{"Error": ""})
+	data := map[string]string{"Error": ""}
+	if r.URL.Query().Get("notice") == "password-reset-success" {
+		data["Success"] = "Kata sandi Anda berhasil diperbarui. Silakan masuk menggunakan kata sandi baru."
+	}
+	s.render(w, "login.html", data)
 }
 
 func (s *Server) login(w http.ResponseWriter, r *http.Request) {

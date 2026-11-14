@@ -2,13 +2,20 @@ package app
 
 import (
 	"context"
+	"crypto/sha256"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"log"
 	"net/http"
+	"net/mail"
 	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
+
+	"elayan.local/desa/internal/security"
 )
 
 type letterSetting struct {
@@ -27,12 +34,22 @@ type faqSetting struct {
 	Active   bool
 }
 
+type operatorUser struct {
+	ID        int64
+	Username  string
+	Email     string
+	Role      string
+	Active    bool
+	CreatedAt time.Time
+}
+
 type settingsPage struct {
-	User    adminUser
-	CSRF    string
-	Letters []letterSetting
-	FAQs    []faqSetting
-	Notice  string
+	User      adminUser
+	CSRF      string
+	Letters   []letterSetting
+	FAQs      []faqSetting
+	Operators []operatorUser
+	Notice    string
 }
 
 func (s *Server) settings(w http.ResponseWriter, r *http.Request) {
@@ -80,6 +97,20 @@ func (s *Server) settings(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "FAQ belum dapat dimuat.", http.StatusServiceUnavailable)
 		return
 	}
+
+	if user.Role == "admin" {
+		rows, err := s.db.QueryContext(ctx, `SELECT id, username, COALESCE(email, ''), role, aktif, dibuat_pada FROM admin_user ORDER BY id ASC`)
+		if err == nil {
+			defer rows.Close()
+			for rows.Next() {
+				var op operatorUser
+				if err := rows.Scan(&op.ID, &op.Username, &op.Email, &op.Role, &op.Active, &op.CreatedAt); err == nil {
+					page.Operators = append(page.Operators, op)
+				}
+			}
+		}
+	}
+
 	s.render(w, "settings.html", page)
 }
 
@@ -192,4 +223,166 @@ func parseLines(raw string, maxCount, maxLength int, allowEmpty bool) ([]string,
 		return nil, fmt.Errorf("at least one item is required")
 	}
 	return items, nil
+}
+
+// adminResetOperatorPassword memfasilitasi admin utama mengirimkan tautan reset kata sandi ke email operator.
+func (s *Server) adminResetOperatorPassword(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, 16<<10)
+	user := currentAdmin(r)
+	if user.Role != "admin" {
+		http.Error(w, "Hanya Administrator Utama yang berhak mengatur ulang kata sandi operator.", http.StatusForbidden)
+		return
+	}
+	if err := r.ParseForm(); err != nil || !s.validCSRF(r, user.CSRF) {
+		http.Error(w, "Permintaan tidak valid.", http.StatusForbidden)
+		return
+	}
+	targetID, err := strconv.ParseInt(strings.TrimSpace(r.FormValue("id")), 10, 64)
+	if err != nil || targetID < 1 {
+		http.Redirect(w, r, "/settings?notice=invalid-operator#users", http.StatusSeeOther)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	var targetUser struct {
+		ID       int64
+		Username string
+		Email    sql.NullString
+		Role     string
+		Active   bool
+	}
+	err = s.db.QueryRowContext(ctx, `SELECT id, username, email, role, aktif FROM admin_user WHERE id=$1`, targetID).Scan(&targetUser.ID, &targetUser.Username, &targetUser.Email, &targetUser.Role, &targetUser.Active)
+	if errors.Is(err, sql.ErrNoRows) || !targetUser.Active {
+		http.Redirect(w, r, "/settings?notice=operator-not-found#users", http.StatusSeeOther)
+		return
+	}
+	if err != nil {
+		http.Error(w, "Gagal memproses data pengguna.", http.StatusServiceUnavailable)
+		return
+	}
+
+	email := strings.TrimSpace(targetUser.Email.String)
+	if email == "" {
+		http.Redirect(w, r, "/settings?notice=operator-no-email#users", http.StatusSeeOther)
+		return
+	}
+
+	rawToken, err := randomToken(32)
+	if err != nil {
+		http.Error(w, "Gagal membuat token pemulihan.", http.StatusInternalServerError)
+		return
+	}
+	tokenHash := sha256.Sum256([]byte(rawToken))
+	expiresAt := time.Now().UTC().Add(15 * time.Minute)
+
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		http.Error(w, "Layanan database bermasalah.", http.StatusServiceUnavailable)
+		return
+	}
+	defer tx.Rollback()
+
+	if _, err := tx.ExecContext(ctx, `INSERT INTO password_reset_token(admin_id, token_hash, expires_at) VALUES ($1, $2, $3)`, targetUser.ID, tokenHash[:], expiresAt); err != nil {
+		http.Error(w, "Gagal menyimpan tautan reset.", http.StatusInternalServerError)
+		return
+	}
+
+	logDetails := fmt.Sprintf("Admin '%s' mengirim tautan reset kata sandi ke email pengguna '%s' (%s)", user.Username, targetUser.Username, email)
+	_, _ = tx.ExecContext(ctx, `INSERT INTO admin_audit_log(admin_id, action, target_user_id, details, ip_address) VALUES ($1, 'admin_reset_password_request', $2, $3, $4)`, user.ID, targetUser.ID, logDetails, remoteIP(r))
+
+	if err := tx.Commit(); err != nil {
+		http.Error(w, "Gagal menyelesaikan transaksi.", http.StatusServiceUnavailable)
+		return
+	}
+
+	baseURL := s.cfg.AppBaseURL
+	if baseURL == "" {
+		baseURL = "http://" + r.Host
+	}
+	resetURL := fmt.Sprintf("%s/reset-password?token=%s", baseURL, rawToken)
+
+	go func(toEmail, toUser, link string) {
+		if err := s.mailer.SendPasswordReset(toEmail, toUser, link); err != nil {
+			log.Printf("[MAILER ERROR] Gagal mengirim email reset operator %s: %v", toEmail, err)
+		}
+	}(email, targetUser.Username, resetURL)
+
+	http.Redirect(w, r, "/settings?notice=reset-link-sent#users", http.StatusSeeOther)
+}
+
+// saveOperator menambah operator baru atau memperbarui data akun operator (email, status aktif).
+func (s *Server) saveOperator(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, 16<<10)
+	user := currentAdmin(r)
+	if user.Role != "admin" {
+		http.Error(w, "Akses ditolak.", http.StatusForbidden)
+		return
+	}
+	if err := r.ParseForm(); err != nil || !s.validCSRF(r, user.CSRF) {
+		http.Error(w, "Permintaan tidak valid.", http.StatusForbidden)
+		return
+	}
+	idStr := strings.TrimSpace(r.FormValue("id"))
+	username := strings.TrimSpace(r.FormValue("username"))
+	rawEmail := strings.TrimSpace(r.FormValue("email"))
+	role := strings.TrimSpace(r.FormValue("role"))
+	active := r.FormValue("aktif") == "on"
+
+	if role != "operator" && role != "admin" {
+		role = "operator"
+	}
+	var cleanEmail string
+	if rawEmail != "" {
+		addr, err := mail.ParseAddress(rawEmail)
+		if err != nil {
+			http.Redirect(w, r, "/settings?notice=invalid-operator-email#users", http.StatusSeeOther)
+			return
+		}
+		cleanEmail = strings.ToLower(addr.Address)
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	if idStr != "" {
+		id, err := strconv.ParseInt(idStr, 10, 64)
+		if err != nil || id < 1 {
+			http.Redirect(w, r, "/settings?notice=invalid-operator#users", http.StatusSeeOther)
+			return
+		}
+		if id == user.ID && !active {
+			active = true // Admin tidak boleh menonaktifkan dirinya sendiri
+		}
+		_, err = s.db.ExecContext(ctx, `UPDATE admin_user SET email=NULLIF($1, ''), aktif=$2 WHERE id=$3`, cleanEmail, active, id)
+		if err != nil {
+			http.Redirect(w, r, "/settings?notice=duplicate-operator-email#users", http.StatusSeeOther)
+			return
+		}
+		http.Redirect(w, r, "/settings?notice=operator-saved#users", http.StatusSeeOther)
+		return
+	}
+
+	if username == "" || len(username) > 80 {
+		http.Redirect(w, r, "/settings?notice=invalid-operator-username#users", http.StatusSeeOther)
+		return
+	}
+	password := r.FormValue("password")
+	if utf8.RuneCountInString(password) < 12 {
+		http.Redirect(w, r, "/settings?notice=operator-password-too-short#users", http.StatusSeeOther)
+		return
+	}
+	passHash, err := security.HashPassword(password)
+	if err != nil {
+		http.Error(w, "Gagal mengolah kata sandi.", http.StatusInternalServerError)
+		return
+	}
+
+	_, err = s.db.ExecContext(ctx, `INSERT INTO admin_user(username, password_hash, role, email, aktif) VALUES ($1, $2, $3, NULLIF($4, ''), $5)`, username, passHash, role, cleanEmail, active)
+	if err != nil {
+		http.Redirect(w, r, "/settings?notice=duplicate-operator#users", http.StatusSeeOther)
+		return
+	}
+	http.Redirect(w, r, "/settings?notice=operator-saved#users", http.StatusSeeOther)
 }

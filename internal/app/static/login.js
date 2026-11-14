@@ -20,16 +20,7 @@
     });
   }
 
-  // 2. "Lupa kata sandi?" — info untuk menghubungi administrator
-  var forgotLink = document.querySelector('.forgot-link');
-  if (forgotLink) {
-    forgotLink.addEventListener('click', function (event) {
-      event.preventDefault();
-      window.alert('Silakan hubungi administrator Desa Sabah Balau untuk reset akun.');
-    });
-  }
-
-  // 3. Tutup pesan error dari server
+  // 2. Tutup pesan error dari server
   var errorAlert = document.querySelector('.form-error-alert');
   var closeBtn = errorAlert && errorAlert.querySelector('.form-error-close');
   if (closeBtn && errorAlert) {

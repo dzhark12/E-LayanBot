@@ -117,6 +117,17 @@
           <p class="muted">Silakan masuk untuk mengelola permohonan surat warga.</p>
         </div>
 
+        <!-- Success Alert -->
+        {{if .Success}}
+        <div class="form-success-alert" role="status">
+          <svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>
+          <div>
+            <p class="form-success-title">Kata Sandi Berhasil Diperbarui</p>
+            <p class="form-success-desc">{{.Success}}</p>
+          </div>
+        </div>
+        {{end}}
+
         <!-- Error Alert -->
         {{if .Error}}
         <div class="form-error-alert" role="alert">
@@ -194,7 +205,7 @@
               </span>
               <span>Ingat saya di perangkat ini</span>
             </label>
-            <a href="#" class="forgot-link">
+            <a href="/forgot-password" class="forgot-link">
               Lupa kata sandi?
             </a>
           </div>

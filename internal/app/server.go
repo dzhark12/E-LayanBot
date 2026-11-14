@@ -15,6 +15,7 @@ import (
 
 	"elayan.local/desa/config"
 	"elayan.local/desa/internal/domain"
+	"elayan.local/desa/internal/mailer"
 	"elayan.local/desa/internal/storage"
 )
 
@@ -23,6 +24,7 @@ type Server struct {
 	cfg       config.Config
 	files     *storage.Local
 	templates *template.Template
+	mailer    *mailer.Mailer
 }
 
 type adminUser struct {
@@ -91,7 +93,8 @@ func New(db *sql.DB, cfg config.Config, files *storage.Local) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Server{db: db, cfg: cfg, files: files, templates: tmpl}, nil
+	m := mailer.New(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUsername, cfg.SMTPPassword, cfg.SMTPFrom, cfg.AppBaseURL)
+	return &Server{db: db, cfg: cfg, files: files, templates: tmpl, mailer: m}, nil
 }
 
 func (s *Server) Handler() http.Handler {
@@ -101,6 +104,10 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /healthz", s.health)
 	mux.HandleFunc("GET /login", s.loginPage)
 	mux.HandleFunc("POST /login", s.login)
+	mux.HandleFunc("GET /forgot-password", s.forgotPasswordPage)
+	mux.HandleFunc("POST /forgot-password", s.forgotPassword)
+	mux.HandleFunc("GET /reset-password", s.resetPasswordPage)
+	mux.HandleFunc("POST /reset-password", s.resetPassword)
 	mux.Handle("POST /logout", s.requireAdmin(http.HandlerFunc(s.logout)))
 	mux.Handle("GET /", s.requireAdmin(http.HandlerFunc(s.dashboard)))
 	mux.Handle("GET /admin/requests/version", s.requireAdmin(http.HandlerFunc(s.requestVersion)))
@@ -108,6 +115,8 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("POST /settings/letter", s.requireAdmin(http.HandlerFunc(s.saveLetterType)))
 	mux.Handle("POST /settings/faq", s.requireAdmin(http.HandlerFunc(s.saveFAQ)))
 	mux.Handle("POST /settings/faq/delete", s.requireAdmin(http.HandlerFunc(s.deleteFAQ)))
+	mux.Handle("POST /settings/operator/reset-password", s.requireAdmin(http.HandlerFunc(s.adminResetOperatorPassword)))
+	mux.Handle("POST /settings/operator/save", s.requireAdmin(http.HandlerFunc(s.saveOperator)))
 	mux.Handle("GET /requests/{id}", s.requireAdmin(http.HandlerFunc(s.requestDetail)))
 	mux.Handle("POST /requests/{id}/status", s.requireAdmin(http.HandlerFunc(s.updateStatus)))
 	mux.Handle("POST /requests/{id}/identity", s.requireAdmin(http.HandlerFunc(s.updateIdentity)))

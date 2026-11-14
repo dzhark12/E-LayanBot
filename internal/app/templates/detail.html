@@ -70,7 +70,7 @@
             <form method="post" action="/requests/{{.Request.ID}}/status" class="stack-form">
               <input type="hidden" name="csrf" value="{{.CSRF}}">
               <label for="status">Status baru</label><select id="status" name="status">{{range .Statuses}}<option value="{{.}}" {{if statusSelected . $.Request.Status}}selected{{end}}>{{.}}</option>{{end}}</select>
-              <label for="catatan">Catatan admin <small id="catatan-hint">(wajib untuk Ditolak dan Diperbaiki)</small></label><textarea id="catatan" name="catatan" rows="3" maxlength="500" placeholder="Tuliskan catatan atau keterangan perubahan status untuk warga..."></textarea>
+              <label for="catatan">Catatan admin <small id="catatan-hint">(wajib untuk Perlu Perbaikan dan Diperbaiki)</small></label><textarea id="catatan" name="catatan" rows="3" maxlength="500" placeholder="Tuliskan catatan atau keterangan perubahan status untuk warga..."></textarea>
               <button class="button button-secondary button-wide" type="submit">Simpan perubahan</button>
             </form>
           </section>

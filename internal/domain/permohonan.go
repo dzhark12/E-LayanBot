@@ -7,13 +7,13 @@ type Status string
 const (
 	Menunggu       Status = "Menunggu"
 	Dikerjakan     Status = "Dikerjakan"
-	PerluPerbaikan Status = "Perlu Perbaikan"
+	PerluPerbaikan Status = "PerluPerbaikan"
 	Diperbaiki     Status = "Diperbaiki"
 	Selesai        Status = "Selesai"
 	Ditolak        Status = "Ditolak"
 )
 
-var Statuses = []Status{Menunggu, Dikerjakan, Diperbaiki, Selesai, Ditolak}
+var Statuses = []Status{Menunggu, Dikerjakan, PerluPerbaikan, Selesai, Ditolak}
 
 type Identitas struct {
 	Nama         string `json:"nama"`

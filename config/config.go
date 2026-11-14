@@ -25,6 +25,14 @@ type Config struct {
 	GeminiModel   string
 	GeminiPerHour int
 	VillageName   string
+
+	AdminEmail   string
+	SMTPHost     string
+	SMTPPort     int
+	SMTPUsername string
+	SMTPPassword string
+	SMTPFrom     string
+	AppBaseURL   string
 }
 
 func Load() (Config, error) {
@@ -41,6 +49,12 @@ func Load() (Config, error) {
 		GeminiAPIKey:  strings.TrimSpace(os.Getenv("GEMINI_API_KEY")),
 		GeminiModel:   value("GEMINI_MODEL", "gemini-3.5-flash-lite"),
 		VillageName:   value("VILLAGE_NAME", "Sabah Balau"),
+		AdminEmail:   strings.TrimSpace(os.Getenv("ADMIN_EMAIL")),
+		SMTPHost:     strings.TrimSpace(os.Getenv("SMTP_HOST")),
+		SMTPUsername: strings.TrimSpace(os.Getenv("SMTP_USERNAME")),
+		SMTPPassword: os.Getenv("SMTP_PASSWORD"),
+		SMTPFrom:     value("SMTP_FROM", "E-LAYAN Desa Sabah Balau <no-reply@sabahbalau.desa.id>"),
+		AppBaseURL:   strings.TrimRight(value("APP_BASE_URL", "http://localhost:8080"), "/"),
 	}
 
 	for name, got := range map[string]string{
@@ -73,6 +87,14 @@ func Load() (Config, error) {
 	cfg.RetentionDays, err = strconv.Atoi(strings.TrimSpace(os.Getenv("ATTACHMENT_RETENTION_DAYS")))
 	if err != nil || cfg.RetentionDays < 1 || cfg.RetentionDays > 3650 {
 		return Config{}, errors.New("ATTACHMENT_RETENTION_DAYS must be between 1 and 3650 and approved by the village")
+	}
+	cfg.SMTPPort = 587
+	if raw := strings.TrimSpace(os.Getenv("SMTP_PORT")); raw != "" {
+		port, err := strconv.Atoi(raw)
+		if err != nil || port < 1 || port > 65535 {
+			return Config{}, errors.New("SMTP_PORT must be a valid port number between 1 and 65535")
+		}
+		cfg.SMTPPort = port
 	}
 	cfg.GeminiPerHour = 10
 	if raw := strings.TrimSpace(os.Getenv("GEMINI_MAX_PER_HOUR")); raw != "" {

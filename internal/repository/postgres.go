@@ -80,13 +80,17 @@ func Migrate(ctx context.Context, db *sql.DB) error {
 	return nil
 }
 
-func Seed(ctx context.Context, db *sql.DB, username, password string) error {
+func Seed(ctx context.Context, db *sql.DB, username, password, email string) error {
 	passwordHash, err := security.HashPassword(password)
 	if err != nil {
 		return err
 	}
-	if _, err := db.ExecContext(ctx, `INSERT INTO admin_user(username, password_hash, role) VALUES ($1, $2, 'admin') ON CONFLICT (username) DO NOTHING`, username, passwordHash); err != nil {
+	cleanEmail := strings.TrimSpace(email)
+	if _, err := db.ExecContext(ctx, `INSERT INTO admin_user(username, password_hash, role, email) VALUES ($1, $2, 'admin', NULLIF($3, '')) ON CONFLICT (username) DO NOTHING`, username, passwordHash, cleanEmail); err != nil {
 		return err
+	}
+	if cleanEmail != "" {
+		_, _ = db.ExecContext(ctx, `UPDATE admin_user SET email=$2 WHERE username=$1 AND (email IS NULL OR email='')`, username, cleanEmail)
 	}
 	for _, letter := range []struct {
 		code, name   string
