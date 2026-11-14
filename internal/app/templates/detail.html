@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="id">
 <head>
   <meta charset="utf-8">
@@ -39,7 +39,7 @@
 
         <div class="detail-side">
           <section class="panel identity-panel" aria-labelledby="identity-title">
-            {{if or (eq (printf "%s" .Request.Status) "Selesai") (eq (printf "%s" .Request.Status) "Ditolak") (eq (printf "%s" .Request.Status) "Dibatalkan")}}
+            {{if or (eq (printf "%s" .Request.Status) "Selesai") (eq (printf "%s" .Request.Status) "Ditolak")}}
             <div class="panel-heading"><div><h2 id="identity-title">Surat selesai</h2><p class="muted">Status permohonan sudah selesai.</p></div></div>
             <div class="identity-form">
               {{if .HasPDF}}<a class="button button-primary button-wide" href="/requests/{{.Request.ID}}/letter.pdf">Unduh PDF surat</a><a class="button button-secondary button-wide" href="/requests/{{.Request.ID}}/letter/regenerate">Generate ulang data surat</a>{{else}}<p class="muted">Template PDF belum tersedia untuk jenis surat ini.</p>{{end}}
@@ -67,7 +67,7 @@
             <form method="post" action="/requests/{{.Request.ID}}/status" class="stack-form">
               <input type="hidden" name="csrf" value="{{.CSRF}}">
               <label for="status">Status baru</label><select id="status" name="status">{{range .Statuses}}<option value="{{.}}" {{if statusSelected . $.Request.Status}}selected{{end}}>{{.}}</option>{{end}}</select>
-              <label for="catatan">Catatan admin <small id="catatan-hint">(wajib untuk Dibatalkan dan Diperbaiki)</small></label><textarea id="catatan" name="catatan" rows="3" maxlength="500" placeholder="Tuliskan catatan atau keterangan perubahan status untuk warga..."></textarea>
+              <label for="catatan">Catatan admin <small id="catatan-hint">(wajib untuk Ditolak dan Diperbaiki)</small></label><textarea id="catatan" name="catatan" rows="3" maxlength="500" placeholder="Tuliskan catatan atau keterangan perubahan status untuk warga..."></textarea>
               <button class="button button-secondary button-wide" type="submit">Simpan perubahan</button>
             </form>
           </section>
@@ -82,5 +82,4 @@
   </div>
 </body>
 </html>
-
 

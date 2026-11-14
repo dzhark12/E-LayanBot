@@ -1,4 +1,4 @@
-package service
+﻿package service
 
 import (
 	"fmt"
@@ -24,7 +24,6 @@ var NotifiedStatuses = []domain.Status{
 	domain.Menunggu,
 	domain.Dikerjakan,
 	domain.Selesai,
-	domain.Dibatalkan,
 	domain.Ditolak,
 	domain.Diperbaiki,
 	domain.PerluPerbaikan,
@@ -41,9 +40,9 @@ func Notifies(status domain.Status) bool {
 }
 
 // NoteRequired melaporkan apakah admin wajib mengisi catatan untuk status ini
-// (terutama Dibatalkan/Ditolak dan Diperbaiki/Perlu Perbaikan).
+// (terutama Ditolak dan Diperbaiki/Perlu Perbaikan).
 func NoteRequired(status domain.Status) bool {
-	return isDibatalkan(status) || isDiperbaiki(status)
+	return isDitolak(status) || isDiperbaiki(status)
 }
 
 func isMenunggu(s domain.Status) bool {
@@ -58,8 +57,8 @@ func isSelesai(s domain.Status) bool {
 	return s == domain.Selesai
 }
 
-func isDibatalkan(s domain.Status) bool {
-	return s == domain.Dibatalkan || s == domain.Ditolak
+func isDitolak(s domain.Status) bool {
+	return s == domain.Ditolak
 }
 
 func isDiperbaiki(s domain.Status) bool {
@@ -92,7 +91,7 @@ func buildStatusMessage(n notification) (string, bool) {
 	}
 	note := cleanNote(n.Note)
 	if note == "" {
-		if isDibatalkan(n.Status) {
+		if isDitolak(n.Status) {
 			note = "Tidak ada keterangan tambahan dari admin."
 		} else {
 			note = "Tidak ada catatan tambahan dari admin."
@@ -134,13 +133,13 @@ func buildStatusMessage(n notification) (string, bool) {
 			"Terima kasih telah menggunakan layanan E-Layan Desa Sabah Balau.",
 			name, letter, n.Code, note), true
 
-	case isDibatalkan(n.Status):
+	case isDitolak(n.Status):
 		return fmt.Sprintf("Halo, *%s*.\n\n"+
-			"Mohon maaf, pengajuan surat Anda telah dibatalkan oleh admin.\n\n"+
+			"Mohon maaf, pengajuan surat Anda telah ditolak oleh admin.\n\n"+
 			"Informasi Pengajuan:\n"+
 			"- Jenis Surat: %s\n"+
 			"- Nomor Pengajuan: %s\n"+
-			"- Status: *DIBATALKAN*\n\n"+
+			"- Status: *DITOLAK*\n\n"+
 			"Keterangan Admin:\n%s\n\n"+
 			"Silakan menghubungi perangkat desa apabila membutuhkan informasi lebih lanjut.",
 			name, letter, n.Code, note), true
