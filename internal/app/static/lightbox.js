@@ -37,20 +37,47 @@
   let dragStartY = 0;
   let dragTranslateX = 0;
   let dragTranslateY = 0;
+  let naturalWidth = 0;
+  let naturalHeight = 0;
 
   function show(i) {
     index = (i + links.length) % links.length;
     const link = links[index];
     img.classList.remove("zoomed", "rotated");
     img.style.transform = "";
+    img.style.width = "";
+    img.style.height = "";
     scale = 1;
     translateX = 0;
     translateY = 0;
     dragTranslateX = 0;
     dragTranslateY = 0;
+    naturalWidth = 0;
+    naturalHeight = 0;
     img.src = link.href;
     img.alt = link.querySelector("img")?.alt ?? "";
     caption.textContent = `${link.dataset.caption ?? ""} (${index + 1}/${links.length})`;
+  }
+
+  // update layout size so scroll container matches visual size (esp. when rotated)
+  function updateLayoutSize() {
+    if (!naturalWidth || !naturalHeight) return;
+    const isRotated = img.classList.contains("rotated");
+    const stageRect = stage.getBoundingClientRect();
+    const maxW = stageRect.width;
+    const maxH = stageRect.height;
+
+    // effective dimensions after rotation
+    const effW = isRotated ? naturalHeight : naturalWidth;
+    const effH = isRotated ? naturalWidth : naturalHeight;
+
+    // fit into stage (object-fit: contain behavior)
+    const fitScale = Math.min(maxW / effW, maxH / effH);
+    const layoutW = effW * fitScale;
+    const layoutH = effH * fitScale;
+
+    img.style.width = layoutW + "px";
+    img.style.height = layoutH + "px";
   }
 
   function applyTransform() {
@@ -60,9 +87,16 @@
     img.style.transform = [pan, rotate, zoom].filter(Boolean).join(" ");
   }
 
+  // wait for image load to get natural dimensions
+  img.addEventListener("load", () => {
+    naturalWidth = img.naturalWidth;
+    naturalHeight = img.naturalHeight;
+    updateLayoutSize();
+  });
+
   links.forEach((link, i) =>
     link.addEventListener("click", (e) => {
-      if (e.ctrlKey || e.metaKey || e.shiftKey) return; // tetap bisa dibuka di tab baru kalau memang mau
+      if (e.ctrlKey || e.metaKey || e.shiftKey) return;
       e.preventDefault();
       show(i);
       dialog.showModal();
@@ -82,6 +116,7 @@
       dragTranslateX = 0;
       dragTranslateY = 0;
       img.classList.remove("zoomed");
+      updateLayoutSize();
       applyTransform();
       return;
     }
@@ -92,7 +127,7 @@
   img.addEventListener("click", () => {
     if (hasDragged) {
       hasDragged = false;
-      return; // jangan toggle zoom kalau baru selesai drag
+      return;
     }
     if (img.classList.contains("zoomed")) {
       img.classList.remove("zoomed");
@@ -118,13 +153,12 @@
       
       const prevScale = scale;
       if (e.deltaY < 0) {
-        scale = Math.min(scale * 1.1, 5); // zoom in max 5x
+        scale = Math.min(scale * 1.1, 5);
       } else {
-        scale = Math.max(scale / 1.1, 1); // zoom out min 1x (kalo udah 1, reset pan)
+        scale = Math.max(scale / 1.1, 1);
       }
       
       if (scale > 1) {
-        // adjust translation to zoom towards mouse position
         const factor = scale / prevScale;
         translateX = translateX * factor - mouseX * (factor - 1);
         translateY = translateY * factor - mouseY * (factor - 1);
@@ -144,7 +178,7 @@
   // drag/pan saat zoom > 1
   img.addEventListener("mousedown", (e) => {
     if (scale <= 1) return;
-    if (e.button !== 0) return; // hanya left click
+    if (e.button !== 0) return;
     isDragging = true;
     hasDragged = false;
     dragStartX = e.clientX;
@@ -159,7 +193,6 @@
     if (!isDragging) return;
     const dx = e.clientX - dragStartX;
     const dy = e.clientY - dragStartY;
-    // hanya set hasDragged kalau benar-benar gerak (bukan klik)
     if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
       hasDragged = true;
     }
@@ -217,6 +250,7 @@
       dragTranslateX = 0;
       dragTranslateY = 0;
       img.classList.remove("zoomed");
+      updateLayoutSize();
       applyTransform();
     }
     if (e.key === "+" || e.key === "=") {
@@ -248,18 +282,23 @@
       img.classList.remove("zoomed");
       applyTransform();
     }
-    // pan dengan arrow keys saat zoom
     if (scale > 1) {
       const step = 50 / scale;
       if (e.key === "ArrowUp") { e.preventDefault(); translateY += step; applyTransform(); }
       if (e.key === "ArrowDown") { e.preventDefault(); translateY -= step; applyTransform(); }
-      // Note: ArrowLeft/Right already used for nav, so we don't use them for pan
     }
+  });
+
+  // update layout size on window resize (orientation change, etc)
+  window.addEventListener("resize", () => {
+    if (dialog.open) updateLayoutSize();
   });
 
   dialog.addEventListener("close", () => {
     img.removeAttribute("src");
     img.style.transform = "";
+    img.style.width = "";
+    img.style.height = "";
   });
   
   // set cursor style saat zoom
