@@ -1,5 +1,6 @@
 ﻿// Pratinjau foto lampiran: klik foto -> muncul di atas halaman, ditutup dengan tombol X, Esc, atau klik area gelap.
-// Tombol putar (rotate) -> putar 90° clockwise, berguna untuk foto vertikal (potrait) yang terlihat kecil.
+// Tombol putar (rotate) -> putar 90° clockwise per klik (0° → 90° → 180° → 270° → 0°).
+// Tombol mirror -> flip horizontal (cermin), berguna untuk foto yang terbalik.
 // Scroll/rodi mouse -> zoom in/out. Klik foto -> toggle zoom 100% / fit layar.
 // Saat zoom > 1x: drag/geser untuk pindah area (baca KTP, dll).
 (() => {
@@ -15,7 +16,10 @@
   dialog.innerHTML = `
     <div class="lightbox-bar">
       <span class="lightbox-caption"></span>
-      <button type="button" class="lightbox-btn lightbox-btn-text" data-act="rotate" aria-label="Putar 90°">rotate</button>
+      <div class="lightbox-tools">
+        <button type="button" class="lightbox-btn lightbox-btn-text" data-act="rotate" aria-label="Putar 90°">rotate</button>
+        <button type="button" class="lightbox-btn lightbox-btn-text" data-act="mirror" aria-label="Cermin horizontal">mirror</button>
+      </div>
       <button type="button" class="lightbox-btn" data-act="close" aria-label="Tutup">${icon('<path d="M18 6L6 18M6 6l12 12"/>')}</button>
     </div>
     <div class="lightbox-stage"><img alt=""></div>
@@ -39,11 +43,13 @@
   let dragTranslateY = 0;
   let naturalWidth = 0;
   let naturalHeight = 0;
+  let rotation = 0; // 0, 90, 180, 270
+  let mirrored = false; // flip horizontal
 
   function show(i) {
     index = (i + links.length) % links.length;
     const link = links[index];
-    img.classList.remove("zoomed", "rotated");
+    img.classList.remove("zoomed");
     img.style.transform = "";
     img.style.width = "";
     img.style.height = "";
@@ -52,6 +58,8 @@
     translateY = 0;
     dragTranslateX = 0;
     dragTranslateY = 0;
+    rotation = 0;
+    mirrored = false;
     naturalWidth = 0;
     naturalHeight = 0;
     img.src = link.href;
@@ -62,14 +70,14 @@
   // update layout size so scroll container matches visual size (esp. when rotated)
   function updateLayoutSize() {
     if (!naturalWidth || !naturalHeight) return;
-    const isRotated = img.classList.contains("rotated");
     const stageRect = stage.getBoundingClientRect();
     const maxW = stageRect.width;
     const maxH = stageRect.height;
 
-    // effective dimensions after rotation
-    const effW = isRotated ? naturalHeight : naturalWidth;
-    const effH = isRotated ? naturalWidth : naturalHeight;
+    // effective dimensions after rotation (90/270 swap w/h)
+    const isRotated90or270 = rotation === 90 || rotation === 270;
+    const effW = isRotated90or270 ? naturalHeight : naturalWidth;
+    const effH = isRotated90or270 ? naturalWidth : naturalHeight;
 
     // fit into stage (object-fit: contain behavior)
     const fitScale = Math.min(maxW / effW, maxH / effH);
@@ -81,10 +89,11 @@
   }
 
   function applyTransform() {
-    const rotate = img.classList.contains("rotated") ? "rotate(90deg)" : "";
+    const rotate = rotation !== 0 ? `rotate(${rotation}deg)` : "";
+    const mirror = mirrored ? "scaleX(-1)" : "";
     const zoom = scale !== 1 ? `scale(${scale})` : "";
     const pan = (translateX !== 0 || translateY !== 0) ? `translate(${translateX}px, ${translateY}px)` : "";
-    img.style.transform = [pan, rotate, zoom].filter(Boolean).join(" ");
+    img.style.transform = [pan, rotate, mirror, zoom].filter(Boolean).join(" ");
   }
 
   // wait for image load to get natural dimensions
@@ -109,7 +118,7 @@
     else if (act === "prev") show(index - 1);
     else if (act === "next") show(index + 1);
     else if (act === "rotate") {
-      img.classList.toggle("rotated");
+      rotation = (rotation + 90) % 360;
       scale = 1;
       translateX = 0;
       translateY = 0;
@@ -117,6 +126,11 @@
       dragTranslateY = 0;
       img.classList.remove("zoomed");
       updateLayoutSize();
+      applyTransform();
+      return;
+    }
+    else if (act === "mirror") {
+      mirrored = !mirrored;
       applyTransform();
       return;
     }
@@ -243,7 +257,7 @@
     if (e.key === "ArrowRight") show(index + 1);
     if (e.key === "r" || e.key === "R") {
       e.preventDefault();
-      img.classList.toggle("rotated");
+      rotation = (rotation + 90) % 360;
       scale = 1;
       translateX = 0;
       translateY = 0;
@@ -251,6 +265,11 @@
       dragTranslateY = 0;
       img.classList.remove("zoomed");
       updateLayoutSize();
+      applyTransform();
+    }
+    if (e.key === "m" || e.key === "M") {
+      e.preventDefault();
+      mirrored = !mirrored;
       applyTransform();
     }
     if (e.key === "+" || e.key === "=") {
@@ -306,6 +325,7 @@
   style.textContent = `
     .lightbox-stage img.zoomed { cursor: grab; }
     .lightbox-stage img.zoomed:active { cursor: grabbing; }
+    .lightbox-tools { display: flex; gap: 8px; }
   `;
   document.head.appendChild(style);
 })();
