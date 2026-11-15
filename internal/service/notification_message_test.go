@@ -97,7 +97,7 @@ func TestBuildStatusMessageDiperbaiki(t *testing.T) {
 			"Informasi Pengajuan:\n" +
 			"- Jenis Surat: Surat Keterangan Domisili\n" +
 			"- Nomor Pengajuan: DM00001\n" +
-			"- Status: *DIPERBAIKI*\n\n" +
+			"- Status: *PERLU PERBAIKAN*\n\n" +
 			"Catatan Perbaikan dari Admin:\n" +
 			"Foto kartu keluarga buram, mohon upload ulang.\n\n" +
 			"Mohon melakukan perbaikan sesuai catatan yang diberikan, kemudian ajukan ulang dari awal (dengan ketik MENU) persyaratan melalui kontak ini.\n\n" +
@@ -160,3 +160,4 @@ func TestNotifiesDanNoteRequired(t *testing.T) {
 		}
 	}
 }
+

@@ -150,7 +150,7 @@ func buildStatusMessage(n notification) (string, bool) {
 			"Informasi Pengajuan:\n"+
 			"- Jenis Surat: %s\n"+
 			"- Nomor Pengajuan: %s\n"+
-			"- Status: *DIPERBAIKI*\n\n"+
+			"- Status: *PERLU PERBAIKAN*\n\n"+
 			"Catatan Perbaikan dari Admin:\n%s\n\n"+
 			"Mohon melakukan perbaikan sesuai catatan yang diberikan, kemudian ajukan ulang dari awal (dengan ketik MENU) persyaratan melalui kontak ini.\n\n"+
 			"Terima kasih atas kerja samanya.",
@@ -159,3 +159,4 @@ func buildStatusMessage(n notification) (string, bool) {
 
 	return "", false
 }
+
