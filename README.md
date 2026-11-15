@@ -90,13 +90,10 @@ E-LayanBot/
 │       └── main.go
 ├── config/
 │   └── config.go
-├── docs/
-│   └── flowchart_bot.png
 ├── internal/
 │   ├── app/
 │   │   ├── assets.go
 │   │   ├── auth.go
-│   │   ├── bot.go
 │   │   ├── bot_api.go
 │   │   ├── dashboard.go
 │   │   ├── letter.go
@@ -107,25 +104,19 @@ E-LayanBot/
 │   │   ├── static/
 │   │   └── templates/
 │   ├── client/
-│   │   ├── backend_client.go
-│   │   └── storage_client.go
+│   │   └── backend_client.go
 │   ├── domain/
 │   ├── gemini/
 │   │   ├── assistant.go
 │   │   └── client.go
 │   ├── handler/
 │   │   ├── router.go
-│   │   ├── menu_handler.go
-│   │   ├── surat_handler.go
-│   │   ├── faq_handler.go
-│   │   └── status_handler.go
+│   │   └── menu_handler.go
 │   ├── id/
 │   │   └── uuid.go
 │   ├── messenger/
 │   │   ├── messenger.go
-│   │   ├── whatsmeow/
-│   │   │   └── adapter.go
-│   │   └── cloudapi/
+│   │   └── whatsmeow/
 │   │       └── adapter.go
 │   ├── pdf/
 │   │   ├── pdf.go
@@ -137,10 +128,7 @@ E-LayanBot/
 │   ├── security/
 │   │   └── password.go
 │   ├── service/
-│   │   ├── notifier_service.go
-│   │   ├── surat_service.go
-│   │   ├── faq_service.go
-│   │   └── status_service.go
+│   │   └── notifier_service.go
 │   └── storage/
 │       └── local.go
 ├── pkg/
@@ -164,7 +152,6 @@ E-LayanBot/
 |---|---|
 | `cmd/` | Entry point untuk service bot dan server. |
 | `config/` | Membaca konfigurasi aplikasi dari environment. |
-| `docs/` | Dokumentasi dan diagram sistem. |
 | `internal/app/` | Routing HTTP, API, autentikasi, dashboard, dan pengaturan. |
 | `internal/client/` | Klien komunikasi bot dengan backend dan layanan penyimpanan. |
 | `internal/domain/` | Model data FAQ, lampiran, permohonan, dan sesi bot. |
@@ -177,8 +164,6 @@ E-LayanBot/
 | `internal/service/` | Logika layanan, termasuk notifikasi perubahan status. |
 | `internal/storage/` | Penyimpanan lampiran secara privat. |
 | `pkg/` | Utilitas dan validasi media yang dapat digunakan lintas paket. |
-
-> Catatan: beberapa file masih berupa placeholder, yaitu `menu_handler.go`, `surat_handler.go`, `faq_handler.go`, dan `status_handler.go` pada `internal/handler/`, `storage_client.go`, `faq_service.go`, `surat_service.go`, `status_service.go`, serta adapter `cloudapi`. Logika percakapan saat ini berada di `internal/handler/router.go`.
 
 ## Persyaratan
 
@@ -381,12 +366,10 @@ Fokus tahap awal E-LAYAN adalah mempermudah pengajuan melalui WhatsApp, membantu
 - Jawaban asisten AI bergantung pada kualitas data FAQ dan perlu dipantau agar tetap akurat.
 - Integrasi WhatsApp menggunakan `whatsmeow` untuk kebutuhan pilot dan memerlukan pemantauan stabilitas sesi.
 - Backup terjadwal dan statistik evaluasi SDGs belum dikonfigurasi.
-- Beberapa modul masih berupa placeholder (lihat [Struktur Folder](#struktur-folder)).
 
 ### Pengembangan selanjutnya
 
 - Menyesuaikan persyaratan dan template PDF dengan format surat yang telah disahkan.
-- Menyelesaikan modul yang masih berupa placeholder jika diperlukan.
 - Menambahkan backup otomatis dan pengujian pemulihan data.
 - Menyiapkan domain, HTTPS, hosting, dan monitoring operasional.
 - Menetapkan akun petugas, kebijakan retensi, serta prosedur pengelolaan data warga.
