@@ -13,7 +13,7 @@ const (
 	Ditolak        Status = "Ditolak"
 )
 
-var Statuses = []Status{Menunggu, Dikerjakan, Diperbaiki, Selesai, Ditolak}
+var Statuses = []Status{Menunggu, Dikerjakan, PerluPerbaikan, Selesai, Ditolak}
 
 type Identitas struct {
 	Nama         string `json:"nama"`
@@ -49,3 +49,4 @@ type Permohonan struct {
 	Lampiran   []Lampiran
 	Riwayat    []StatusLog
 }
+
