@@ -11,7 +11,8 @@ FROM alpine:3.22
 RUN for i in 1 2 3 4 5 6; do apk add --no-cache ca-certificates && break || sleep 5; done
 RUN for i in 1 2 3 4 5 6; do apk add --no-cache texlive && break || sleep 5; done
 RUN for i in 1 2 3 4 5 6; do apk add --no-cache texmf-dist-fontsrecommended && break || sleep 5; done
-RUN for i in 1 2 3 4 5 6; do apk add --no-cache texmf-dist-latexextra && break || sleep 5; done
+# latexrecommended memuat xcolor, eso-pic, dan setspace yang dipakai template surat; latexextra tidak dipakai (hemat ~380 MB).
+RUN for i in 1 2 3 4 5 6; do apk add --no-cache texmf-dist-latexrecommended && break || sleep 5; done
 RUN mkdir -p /var/lib/elayan/private && chown -R 10001:10001 /var/lib/elayan
 WORKDIR /app
 COPY --from=build /out/elayandesa /app/elayandesa
