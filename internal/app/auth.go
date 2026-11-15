@@ -27,13 +27,6 @@ func (s *Server) loginPage(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
-<<<<<<< HEAD
-	data := map[string]string{"Error": ""}
-	if r.URL.Query().Get("notice") == "password-reset-success" {
-		data["Success"] = "Kata sandi Anda berhasil diperbarui. Silakan masuk menggunakan kata sandi baru."
-	}
-	s.render(w, "login.html", data)
-=======
 	data := map[string]any{"Error": ""}
 	if r.URL.Query().Get("reset") == "success" {
 		data["Notice"] = "Kata sandi berhasil direset. Silakan masuk dengan kata sandi baru."
@@ -142,7 +135,6 @@ func (s *Server) resetForgottenPassword(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	http.Redirect(w, r, "/login?reset=success", http.StatusSeeOther)
->>>>>>> 104a744aa7baf8b17dc213d3aa67c3623eff856b
 }
 
 func (s *Server) login(w http.ResponseWriter, r *http.Request) {

@@ -116,17 +116,6 @@
           {{if .Reset}}<h2>Reset kata sandi</h2><p class="muted">Masukkan kode pemulihan dan buat kata sandi baru.</p>{{else}}<h2>Masuk ke E-LAYAN</h2><p class="muted">Silakan masuk untuk mengelola permohonan surat warga.</p>{{end}}
         </div>
 
-        <!-- Success Alert -->
-        {{if .Success}}
-        <div class="form-success-alert" role="status">
-          <svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>
-          <div>
-            <p class="form-success-title">Kata Sandi Berhasil Diperbarui</p>
-            <p class="form-success-desc">{{.Success}}</p>
-          </div>
-        </div>
-        {{end}}
-
         <!-- Error Alert -->
         {{if .Error}}
         <div class="form-error-alert" role="alert">
