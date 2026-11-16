@@ -1,7 +1,9 @@
 -- FAQ seed kurasi E-LAYAN Desa Sabah Balau.
--- 70 entri total: 60 jawaban aman berbasis fungsi bot dan 10 entri
--- berstatus PERLU KONFIRMASI DESA (nonaktif sampai datanya disahkan).
--- Tidak mengandung nama, nomor pribadi, jadwal, biaya, atau SLA rekaan.
+-- 72 entri total, seluruhnya aktif. Entri 43-50, 69, dan 70 sebelumnya berstatus
+-- PERLU KONFIRMASI DESA dan kini diisi dengan data dari Sekretaris Desa
+-- (jam layanan, lokasi, kontak resmi, biaya, estimasi waktu, alur status).
+-- Entri 70 (fasilitas dan potensi desa) berasal dari ringkasan informasi publik;
+-- verifikasi kembali dengan desa sebelum dipakai luas.
 --
 -- Jalankan dari folder proyek dengan PowerShell:
 --   Get-Content db/seed/faq_dummy.sql -Raw | docker compose exec -T db sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
@@ -9,7 +11,6 @@
 -- Skrip mengganti FAQ seed lama yang judulnya cocok persis dan aman
 -- dijalankan ulang sebelum petugas mengedit seed ini melalui dashboard.
 -- FAQ lain yang tidak cocok dengan judul seed tidak dihapus.
--- Entri konfirmasi desa sengaja nonaktif agar tidak dijawab bot/AI.
 BEGIN;
 
 CREATE TEMP TABLE faq_seed (
@@ -64,14 +65,14 @@ INSERT INTO faq_seed (n, pertanyaan, kata_kunci, jawaban, kategori, aktif) VALUE
 (40, 'Bisakah saya meminta bot memberi nasihat kesehatan pribadi?', ARRAY['diagnosis kesehatan','keluhan kesehatan pribadi','obat apa'], 'Bot E-LAYAN bukan layanan tenaga kesehatan dan tidak dapat menilai kondisi pribadi. Jangan kirim data kesehatan pribadi ke chat ini; hubungi tenaga kesehatan atau fasilitas kesehatan.', 'Layanan Masyarakat', TRUE),
 (41, 'Apa yang harus dilakukan jika bot tidak memahami pertanyaan?', ARRAY['bot tidak paham','jawaban tidak sesuai','informasi belum tersedia'], 'Coba tulis pertanyaan singkat tentang layanan desa atau ketik MENU. Bot hanya dapat menjawab informasi yang tersedia dan tidak boleh menebak biaya, syarat, jadwal, atau keputusan.', 'Layanan Bot', TRUE),
 (42, 'Bagaimana jika saya ingin bicara dengan petugas?', ARRAY['bicara dengan petugas','hubungi petugas','kontak petugas desa'], 'Bot adalah asisten otomatis. Untuk berbicara dengan petugas, gunakan kanal resmi desa yang telah diumumkan. Jangan mengirim data pribadi sebelum yakin kanal tersebut resmi.', 'Layanan Masyarakat', TRUE),
-(43, '[KONFIRMASI DESA] Kapan jam pelayanan kantor desa?', ARRAY['jam pelayanan kantor','jam buka desa','jam kerja desa'], 'PERLU KONFIRMASI DESA: isi hari, jam, waktu istirahat, dan pengecualian hari libur sebelum FAQ diaktifkan.', 'PERLU KONFIRMASI DESA', FALSE),
-(44, '[KONFIRMASI DESA] Di mana alamat dan lokasi resmi kantor desa?', ARRAY['alamat kantor desa','lokasi kantor desa','peta kantor desa'], 'PERLU KONFIRMASI DESA: isi alamat lengkap dan tautan/pin peta resmi yang boleh dipublikasikan.', 'PERLU KONFIRMASI DESA', FALSE),
-(45, '[KONFIRMASI DESA] Apa kanal kontak resmi untuk warga?', ARRAY['nomor resmi desa','telepon kantor desa','kontak resmi desa','email resmi desa'], 'PERLU KONFIRMASI DESA: cantumkan hanya nomor atau kanal layanan resmi yang disetujui untuk publikasi; jangan gunakan nomor pribadi tanpa izin.', 'PERLU KONFIRMASI DESA', FALSE),
-(46, '[KONFIRMASI DESA] Apakah setiap jenis surat memiliki biaya?', ARRAY['biaya surat desa','tarif surat','biaya layanan'], 'PERLU KONFIRMASI DESA: tetapkan informasi biaya per jenis surat dan sumber kebijakan resminya. Jangan aktifkan jawaban contoh atau perkiraan.', 'PERLU KONFIRMASI DESA', FALSE),
-(47, '[KONFIRMASI DESA] Berapa lama proses tiap jenis surat?', ARRAY['estimasi surat','lama proses surat','target layanan'], 'PERLU KONFIRMASI DESA: tetapkan target waktu per jenis surat, kapan penghitungan dimulai, dan kondisi yang dapat memperpanjang proses.', 'PERLU KONFIRMASI DESA', FALSE),
-(48, '[KONFIRMASI DESA] Bagaimana warga menerima surat setelah status Selesai?', ARRAY['ambil surat selesai','surat dikirim','pengambilan surat'], 'PERLU KONFIRMASI DESA: jelaskan apakah surat diambil, dikirim, atau diserahkan dengan cara lain, termasuk dokumen verifikasi yang diperlukan.', 'PERLU KONFIRMASI DESA', FALSE),
-(49, '[KONFIRMASI DESA] Apa syarat final dan siapa yang boleh mengajukan tiap jenis surat?', ARRAY['syarat resmi surat','kelayakan domisili','surat diwakilkan'], 'PERLU KONFIRMASI DESA: validasi syarat, wilayah/kelayakan pemohon, dan aturan pengajuan oleh wakil untuk setiap jenis surat.', 'PERLU KONFIRMASI DESA', FALSE),
-(50, '[KONFIRMASI DESA] Ke mana warga mengurus koreksi, penolakan, pembatalan, atau permintaan data?', ARRAY['status perlu perbaikan','status ditolak','hapus data permohonan','batalkan permohonan terkirim'], 'PERLU KONFIRMASI DESA: tetapkan kanal dan prosedur untuk status Perlu Perbaikan/Ditolak, pembatalan setelah pengajuan terkirim, serta permintaan akses atau penghapusan data.', 'PERLU KONFIRMASI DESA', FALSE),
+(43, 'Kapan jam pelayanan kantor desa?', ARRAY['jam pelayanan kantor','jam buka desa','jam kerja desa','kantor desa buka','jam buka kantor desa'], 'Kantor Desa Sabah Balau melayani Senin sampai Jumat pukul 07.30-15.30 WIB. Sabtu dan Minggu tutup. Pada hari libur, jam pelayanan menyesuaikan. Pengajuan lewat bot bisa dilakukan kapan saja, tetapi diproses petugas pada jam layanan.', 'Informasi Desa', TRUE),
+(44, 'Di mana alamat dan lokasi resmi kantor desa?', ARRAY['alamat kantor desa','lokasi kantor desa','peta kantor desa','maps kantor desa'], 'Kantor Desa Sabah Balau beralamat di Jl. M. Azizy Sabah Balau No. 1, Kecamatan Tanjung Bintang, Kabupaten Lampung Selatan. Peta lokasi: https://maps.app.goo.gl/d9qWbHz9D9exC2qk6', 'Informasi Desa', TRUE),
+(45, 'Apa kanal kontak resmi untuk warga?', ARRAY['nomor resmi desa','telepon kantor desa','kontak resmi desa','kontak desa','nomor wa desa','hubungi desa','nomor sekdes'], 'Untuk menghubungi desa, temui Sekretaris Desa atau admin desa langsung di Kantor Desa Sabah Balau pada jam layanan. Lokasi: https://maps.app.goo.gl/d9qWbHz9D9exC2qk6. Jangan mengirim NIK atau foto dokumen lewat chat biasa.', 'Informasi Desa', TRUE),
+(46, 'Apakah setiap jenis surat memiliki biaya?', ARRAY['biaya surat desa','tarif surat','biaya layanan','surat gratis'], 'Pengurusan Surat Keterangan Domisili, Usaha, Tidak Mampu, dan Kematian tidak dipungut biaya. Jika ada permintaan pembayaran atas nama desa, pastikan dahulu melalui kanal resmi desa.', 'Layanan Surat', TRUE),
+(47, 'Berapa lama proses tiap jenis surat?', ARRAY['estimasi surat','lama proses surat','target layanan','berapa lama surat jadi'], 'Perkiraan proses surat sekitar 60 menit pada jam layanan, dan bisa lebih cepat bila perangkat desa ada di kantor. Waktu sebenarnya dapat berbeda sesuai kesibukan petugas.', 'Layanan Surat', TRUE),
+(48, 'Bagaimana warga menerima surat setelah status Selesai?', ARRAY['ambil surat selesai','surat dikirim','pengambilan surat','surat sudah selesai'], 'Status Selesai diberikan admin desa setelah surat ditandatangani Sekretaris Desa atau Kepala Desa, dan bot akan mengirim pemberitahuan otomatis. Untuk pengambilan surat, tanyakan ke kantor desa pada jam layanan.', 'Layanan Surat', TRUE),
+(49, 'Apa syarat tiap jenis surat dan bagaimana cara melengkapinya?', ARRAY['syarat resmi surat','syarat surat','dokumen yang difoto','foto apa saja untuk surat'], 'Ketik SURAT. Bot menanyakan keperluan Anda dan meminta foto persyaratan sesuai jenis surat, misalnya KTP, KK, dan surat pengantar RT. Surat kematian memerlukan KTP dan KK almarhum, surat pengantar RT, dan KTP pelapor. Kirim foto hanya saat bot memintanya.', 'Layanan Surat', TRUE),
+(50, 'Bagaimana saya mengetahui perkembangan status, perbaikan, atau penolakan surat?', ARRAY['status perlu perbaikan','status ditolak','perkembangan surat','pemberitahuan status'], 'Perubahan status diperbarui admin desa melalui dashboard, lalu bot mengirimkannya otomatis ke WhatsApp pemohon, beserta catatan bila surat perlu perbaikan atau ditolak. Anda juga bisa mengirim kode permohonan untuk mengecek status. Pertanyaan lain dapat disampaikan lewat kanal resmi desa.', 'Layanan Surat', TRUE),
 (51, 'Kalau status surat sudah Selesai, bagaimana cara menerima atau mengambilnya?', ARRAY['surat selesai ambil dimana','cara menerima surat selesai','pengambilan surat selesai','surat jadi diambil','ambil lewat desa','harus ambil di desa','cara ambil surat'], 'Cek status dengan mengirim kode permohonan dari nomor WhatsApp yang dipakai saat mengajukan. Status Selesai berarti status permohonan telah diperbarui di sistem, tetapi FAQ ini belum memuat apakah surat diambil, dikirim, atau diserahkan dengan cara lain. Untuk memastikan cara dan waktunya, tanyakan melalui kanal resmi pemerintah desa; jangan kirim kode atau dokumen ke pihak yang tidak dikenal.', 'Layanan Surat', TRUE),
 (52, 'Apakah surat yang diajukan lewat bot dikirim digital atau harus diambil?', ARRAY['surat digital','surat dikirim lewat wa','surat fisik','surat harus diambil'], 'Cara penyerahan surat belum ditetapkan dalam informasi yang tersedia. Setelah status berubah menjadi Selesai, konfirmasikan cara penerimaan melalui kanal resmi pemerintah desa.', 'Layanan Surat', TRUE),
 (53, 'Apa arti status Selesai pada permohonan surat?', ARRAY['arti status selesai','status selesai surat','surat selesai berarti apa'], 'Selesai adalah salah satu status yang dapat tampil untuk permohonan. Bot tidak dapat menyimpulkan dari status itu saja apakah surat perlu diambil atau akan dikirim; tanyakan cara penyerahannya melalui kanal resmi pemerintah desa.', 'Layanan Surat', TRUE),
@@ -90,8 +91,10 @@ INSERT INTO faq_seed (n, pertanyaan, kata_kunci, jawaban, kategori, aktif) VALUE
 (66, 'Saya butuh layanan desa selain jenis surat di menu, bagaimana?', ARRAY['layanan desa lain','urus layanan selain surat','layanan tidak ada di menu'], 'Bot hanya memproses jenis surat yang tampil saat Anda mengetik SURAT. Untuk layanan lain, tanyakan apakah tersedia melalui kanal resmi pemerintah desa; bot tidak dapat mengirim pengaduan atau mengurus layanan di luar menu.', 'Layanan Masyarakat', TRUE),
 (67, 'Bagaimana mengetahui apakah alamat saya termasuk wilayah desa ini?', ARRAY['wilayah desa saya','alamat masuk desa','batas wilayah desa','domisili wilayah desa'], 'Bot belum memiliki data untuk memastikan cakupan wilayah berdasarkan alamat. Jangan kirim alamat lengkap ke chat; tanyakan cakupan wilayah melalui kanal resmi pemerintah desa.', 'Informasi Desa', TRUE),
 (68, 'Di mana saya melihat informasi resmi tentang program atau kegiatan desa?', ARRAY['program desa','kegiatan desa','informasi kegiatan warga','agenda desa'], 'Jadwal dan rincian program atau kegiatan belum tersedia di FAQ ini. Gunakan pengumuman atau kanal resmi yang diterbitkan pemerintah desa; bot tidak akan menebak jadwal maupun kelayakan peserta.', 'Informasi Desa', TRUE),
-(69, '[KONFIRMASI DESA] Siapa perangkat desa dan apa tugas masing-masing?', ARRAY['nama perangkat desa','struktur pemerintahan desa','kepala desa siapa','perangkat desa'], 'PERLU KONFIRMASI DESA: masukkan nama/jabatan yang boleh dipublikasikan, uraian tugas, dan tanggal pembaruan sumber resmi sebelum FAQ diaktifkan.', 'PERLU KONFIRMASI DESA', FALSE),
-(70, '[KONFIRMASI DESA] Apa fasilitas umum, program, dan kegiatan warga yang tersedia?', ARRAY['fasilitas umum desa','program desa resmi','kegiatan desa kapan','layanan posyandu'], 'PERLU KONFIRMASI DESA: masukkan hanya daftar fasilitas/program yang aktif, jadwal dan persyaratan yang sudah diverifikasi, serta sumber dan tanggal pembaruannya.', 'PERLU KONFIRMASI DESA', FALSE);
+(69, 'Siapa saja perangkat desa Sabah Balau?', ARRAY['nama perangkat desa','struktur pemerintahan desa','kepala desa siapa','perangkat desa'], 'Perangkat desa yang tercatat saat ini adalah Kepala Desa PUJIANTO, SE.,MM. dan Sekretaris Desa ERPANDI, S.Ag. Surat ditandatangani oleh Kepala Desa atau Sekretaris Desa.', 'Informasi Desa', TRUE),
+(70, 'Apa fasilitas, potensi wisata, dan kegiatan warga di desa?', ARRAY['fasilitas umum desa','wisata desa','agropark','sumur belik','karang taruna','kegiatan desa'], 'Potensi desa antara lain PKK Agropark (wisata edukasi pertanian, pemancingan, berkuda, dan ATV), Sumur Belik Batu Alaska, dan Rumah Belanda peninggalan kolonial. Kantor desa memiliki gedung baru dan gedung pertemuan untuk kegiatan masyarakat. Warga aktif lewat Karang Taruna, Linmas, dan PKK, dengan kegiatan seperti jalan sehat, bantuan bedah rumah, dan program Smart Village.', 'Informasi Desa', TRUE),
+(71, 'Siapa kepala desa Sabah Balau?', ARRAY['kepala desa','kades','siapa kepala desa','nama kepala desa','pak kades'], 'Kepala Desa Sabah Balau adalah PUJIANTO, SE.,MM. Bot tidak memberikan nomor pribadi perangkat desa; kontak resmi desa tersedia lewat pertanyaan ''kontak desa''.', 'Informasi Desa', TRUE),
+(72, 'Siapa sekretaris desa Sabah Balau?', ARRAY['sekretaris desa','sekdes','siapa sekdes','nama sekretaris desa','pak sekdes'], 'Sekretaris Desa Sabah Balau adalah ERPANDI, S.Ag. Bot tidak memberikan nomor pribadi perangkat desa; kontak resmi desa tersedia lewat pertanyaan ''kontak desa''.', 'Informasi Desa', TRUE);
 
 -- Hapus hanya seed lama yang dikenal dan baris seed ini saat skrip diulang.
 DELETE FROM faq WHERE pertanyaan IN (
@@ -152,6 +155,14 @@ DELETE FROM faq WHERE pertanyaan IN (
   'Saya butuh layanan desa selain jenis surat di menu, bagaimana?',
   'Bagaimana mengetahui apakah alamat saya termasuk wilayah desa ini?',
   'Di mana saya melihat informasi resmi tentang program atau kegiatan desa?',
+  '[KONFIRMASI DESA] Kapan jam pelayanan kantor desa?',
+  '[KONFIRMASI DESA] Di mana alamat dan lokasi resmi kantor desa?',
+  '[KONFIRMASI DESA] Apa kanal kontak resmi untuk warga?',
+  '[KONFIRMASI DESA] Apakah setiap jenis surat memiliki biaya?',
+  '[KONFIRMASI DESA] Berapa lama proses tiap jenis surat?',
+  '[KONFIRMASI DESA] Bagaimana warga menerima surat setelah status Selesai?',
+  '[KONFIRMASI DESA] Apa syarat final dan siapa yang boleh mengajukan tiap jenis surat?',
+  '[KONFIRMASI DESA] Ke mana warga mengurus koreksi, penolakan, pembatalan, atau permintaan data?',
   '[KONFIRMASI DESA] Siapa perangkat desa dan apa tugas masing-masing?',
   '[KONFIRMASI DESA] Apa fasilitas umum, program, dan kegiatan warga yang tersedia?'
 ) OR pertanyaan IN (SELECT pertanyaan FROM faq_seed);
