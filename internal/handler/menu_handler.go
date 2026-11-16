@@ -13,7 +13,7 @@ const menuText = "Selamat datang di layanan *E-LAYAN Desa Sabah Balau* 👋\n\n"
 	"1. Ajukan surat → ketik *SURAT*\n" +
 	"2. Cek status → kirim kode permohonan (contoh: *DM01245*)\n" +
 	"3. Tanya informasi desa → tulis pertanyaan Anda (jam layanan, syarat, biaya, kontak)\n\n" +
-	"Ketik *BATAL* kapan saja untuk membatalkan pengajuan.\n" +
+	"Sedang mengisi pengajuan dan ingin kembali ke tanya jawab? Ketik *BATAL* untuk membatalkan pengajuan yang belum dikirim, lalu tulis pertanyaan Anda.\n" +
 	"Demi keamanan, jangan kirim NIK atau data pribadi lewat chat biasa; data hanya diminta lewat alur *SURAT*."
 
 const statusNotFoundText = "Kode tidak ditemukan. Pastikan kode ditulis lengkap (contoh: DM01245) " +

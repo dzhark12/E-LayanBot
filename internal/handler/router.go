@@ -194,7 +194,7 @@ func (r *Router) Handle(parent context.Context, message messenger.Message) {
 	if upper == "BATAL" {
 		r.removeStaged(state)
 		_ = repository.DeleteBotSession(ctx, r.db, message.JID)
-		r.reply(ctx, message.JID, "Pengajuan ditolak. \nKetik *MENU* untuk mulai lagi.")
+		r.reply(ctx, message.JID, "Anda sudah keluar dari alur pengajuan surat. Tulis pertanyaan Anda untuk tanya informasi desa, atau ketik *MENU* untuk melihat layanan.")
 		return
 	}
 	if code := utils.RequestCode(text); code != "" {
@@ -266,6 +266,7 @@ func (r *Router) showLetterTypes(ctx context.Context, jid string) {
 	}
 	var menu strings.Builder
 	menu.WriteString("Pilih jenis surat dengan mengetik nomor atau kodenya. \nContoh: ketik 1 atau DM untuk memilih Surat Keterangan Domisili.\n\n")
+	menu.WriteString("Ingin kembali ke tanya jawab? Ketik *BATAL* untuk membatalkan pengajuan ini, lalu tulis pertanyaan Anda.\n\n")
 	for i, item := range types {
 		fmt.Fprintf(&menu, "*%d. %s (%s)*\n", i+1, item.Name, item.Code)
 		if len(item.Requirements) > 0 {
@@ -445,8 +446,16 @@ func (r *Router) answerFAQ(ctx context.Context, jid, query string) {
 		r.reply(ctx, jid, "Kirim pertanyaan tentang jam layanan, persyaratan, alur pengurusan, atau kontak desa.")
 		return
 	}
-	// Gemini diprioritaskan agar bisa mencocokkan maksud dan bahasa santai.
-	// Model hanya diberi FAQ aktif; ia tidak mendapat state atau data permohonan.
+	answer, err := r.api.FAQ(ctx, query)
+	if err == nil {
+		r.reply(ctx, jid, answer)
+		return
+	}
+	if !errors.Is(err, client.ErrNotFound) {
+		r.reply(ctx, jid, "Informasi belum dapat dimuat. \nCoba lagi sebentar.")
+		return
+	}
+	// Gemini membantu mencocokkan pertanyaan yang tidak ditemukan lewat kata kunci.
 	if r.ai.Enabled() {
 		entries, err := repository.ListActiveFAQ(ctx, r.db, 100)
 		if err != nil {
@@ -462,20 +471,7 @@ func (r *Router) answerFAQ(ctx context.Context, jid, query string) {
 		r.reply(ctx, jid, r.ai.Answer(ctx, jid, query, facts))
 		return
 	}
-	// Tanpa Gemini, pencocokan FAQ deterministik tetap tersedia.
-	answer, err := r.api.FAQ(ctx, query)
-	if err == nil {
-		r.reply(ctx, jid, answer)
-		return
-	}
-	if !errors.Is(err, client.ErrNotFound) {
-		r.reply(ctx, jid, "Informasi belum dapat dimuat. \nCoba lagi sebentar.")
-		return
-	}
-	if !r.ai.Enabled() {
-		r.reply(ctx, jid, "Informasi itu belum tersedia di layanan ini. Bot hanya menjawab informasi desa yang sudah disiapkan perangkat desa.\nKetik *MENU* untuk melihat layanan.")
-		return
-	}
+	r.reply(ctx, jid, "Informasi itu belum tersedia di layanan ini. Bot hanya menjawab informasi desa yang sudah disiapkan perangkat desa.\nKetik *MENU* untuk melihat layanan.")
 }
 
 func isHelpQuestion(text string) bool {
@@ -486,8 +482,12 @@ func isHelpQuestion(text string) bool {
 	if strings.Contains(text, "?") {
 		return true
 	}
+	if strings.HasSuffix(text, " di mana") || strings.HasSuffix(text, " dimana") {
+		return true
+	}
 	for _, prefix := range []string{
-		"apa ", "apa itu", "bagaimana ", "gimana ", "kenapa ", "mengapa ",
+		"apa ", "apa itu", "siapa ", "bagaimana ", "gimana ", "kenapa ", "mengapa ",
+		"di mana ", "dimana ",
 		"syarat ", "berapa ", "boleh ", "bisakah ", "bisa ", "cara ",
 		"maksud ", "arti ", "kalau ", "kalo ", "untuk apa", "tolong jelaskan",
 		"mau tanya", "izin tanya", "nanya",
