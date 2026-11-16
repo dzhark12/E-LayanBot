@@ -1,4 +1,4 @@
--- Menghapus hanya 70 FAQ dari db/seed/faq_dummy.sql yang telah dikurasi.
+-- Menghapus hanya 71 FAQ dari db/seed/faq_dummy.sql yang telah dikurasi.
 -- FAQ yang judulnya diubah atau dibuat petugas tidak ikut terhapus.
 -- Jalankan dari folder proyek dengan PowerShell:
 --   Get-Content db/seed/faq_dummy_hapus.sql -Raw | docker compose exec -T db sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
@@ -73,7 +73,8 @@ DELETE FROM faq WHERE pertanyaan IN (
   'Saya butuh layanan desa selain jenis surat di menu, bagaimana?',
   'Bagaimana mengetahui apakah alamat saya termasuk wilayah desa ini?',
   'Di mana saya melihat informasi resmi tentang program atau kegiatan desa?',
-  '[KONFIRMASI DESA] Siapa perangkat desa dan apa tugas masing-masing?',
+  '[KONFIRMASI DESA] Siapa kepala desa?',
+  '[KONFIRMASI DESA] Siapa sekretaris desa?',
   '[KONFIRMASI DESA] Apa fasilitas umum, program, dan kegiatan warga yang tersedia?'
 );
 

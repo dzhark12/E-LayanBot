@@ -1,5 +1,5 @@
 -- FAQ seed kurasi E-LAYAN Desa Sabah Balau.
--- 70 entri total: 60 jawaban aman berbasis fungsi bot dan 10 entri
+-- 71 entri total: 60 jawaban aman berbasis fungsi bot dan 11 entri
 -- berstatus PERLU KONFIRMASI DESA (nonaktif sampai datanya disahkan).
 -- Tidak mengandung nama, nomor pribadi, jadwal, biaya, atau SLA rekaan.
 --
@@ -90,8 +90,9 @@ INSERT INTO faq_seed (n, pertanyaan, kata_kunci, jawaban, kategori, aktif) VALUE
 (66, 'Saya butuh layanan desa selain jenis surat di menu, bagaimana?', ARRAY['layanan desa lain','urus layanan selain surat','layanan tidak ada di menu'], 'Bot hanya memproses jenis surat yang tampil saat Anda mengetik SURAT. Untuk layanan lain, tanyakan apakah tersedia melalui kanal resmi pemerintah desa; bot tidak dapat mengirim pengaduan atau mengurus layanan di luar menu.', 'Layanan Masyarakat', TRUE),
 (67, 'Bagaimana mengetahui apakah alamat saya termasuk wilayah desa ini?', ARRAY['wilayah desa saya','alamat masuk desa','batas wilayah desa','domisili wilayah desa'], 'Bot belum memiliki data untuk memastikan cakupan wilayah berdasarkan alamat. Jangan kirim alamat lengkap ke chat; tanyakan cakupan wilayah melalui kanal resmi pemerintah desa.', 'Informasi Desa', TRUE),
 (68, 'Di mana saya melihat informasi resmi tentang program atau kegiatan desa?', ARRAY['program desa','kegiatan desa','informasi kegiatan warga','agenda desa'], 'Jadwal dan rincian program atau kegiatan belum tersedia di FAQ ini. Gunakan pengumuman atau kanal resmi yang diterbitkan pemerintah desa; bot tidak akan menebak jadwal maupun kelayakan peserta.', 'Informasi Desa', TRUE),
-(69, '[KONFIRMASI DESA] Siapa perangkat desa dan apa tugas masing-masing?', ARRAY['nama perangkat desa','struktur pemerintahan desa','kepala desa siapa','perangkat desa'], 'PERLU KONFIRMASI DESA: masukkan nama/jabatan yang boleh dipublikasikan, uraian tugas, dan tanggal pembaruan sumber resmi sebelum FAQ diaktifkan.', 'PERLU KONFIRMASI DESA', FALSE),
-(70, '[KONFIRMASI DESA] Apa fasilitas umum, program, dan kegiatan warga yang tersedia?', ARRAY['fasilitas umum desa','program desa resmi','kegiatan desa kapan','layanan posyandu'], 'PERLU KONFIRMASI DESA: masukkan hanya daftar fasilitas/program yang aktif, jadwal dan persyaratan yang sudah diverifikasi, serta sumber dan tanggal pembaruannya.', 'PERLU KONFIRMASI DESA', FALSE);
+(69, '[KONFIRMASI DESA] Siapa kepala desa?', ARRAY['siapa kepala desa','nama kepala desa','kepala desa sabah balau','kepala desa siapa','kades'], 'PERLU KONFIRMASI DESA: masukkan nama Kepala Desa Sabah Balau dan tanggal pembaruan sumber resmi sebelum FAQ diaktifkan.', 'PERLU KONFIRMASI DESA', FALSE),
+(70, '[KONFIRMASI DESA] Siapa sekretaris desa?', ARRAY['siapa sekretaris desa','nama sekretaris desa','sekretaris desa sabah balau','sekretaris desa siapa','sekdes'], 'PERLU KONFIRMASI DESA: masukkan nama Sekretaris Desa Sabah Balau dan tanggal pembaruan sumber resmi sebelum FAQ diaktifkan.', 'PERLU KONFIRMASI DESA', FALSE),
+(71, '[KONFIRMASI DESA] Apa fasilitas umum, program, dan kegiatan warga yang tersedia?', ARRAY['fasilitas umum desa','program desa resmi','kegiatan desa kapan','layanan posyandu'], 'PERLU KONFIRMASI DESA: masukkan hanya daftar fasilitas/program yang aktif, jadwal dan persyaratan yang sudah diverifikasi, serta sumber dan tanggal pembaruannya.', 'PERLU KONFIRMASI DESA', FALSE);
 
 -- Hapus hanya seed lama yang dikenal dan baris seed ini saat skrip diulang.
 DELETE FROM faq WHERE pertanyaan IN (
