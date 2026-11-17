@@ -106,6 +106,64 @@
 .dashboard-page .stats-disclosure .stat-card{min-height:75px;padding:12px 16px;border-radius:12px}
 .dashboard-page .stats-disclosure .stat-card strong{font-size:18px}
 
+.rating-summary {
+  text-align: left;
+  color: var(--ink);
+}
+.rating-summary h2 {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+.rating-panel {
+  display: grid;
+  grid-template-columns: minmax(130px, 1fr) minmax(0, 3fr);
+  align-items: center;
+  gap: 24px;
+  padding: 18px 20px;
+}
+.rating-overview p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.rating-score strong {
+  color: var(--ink);
+  font-size: 34px;
+  line-height: 1.1;
+}
+.rating-stars {
+  display: flex;
+  gap: 3px;
+  margin: 5px 0 2px;
+  color: var(--muted);
+  font-size: 19px;
+}
+.rating-stars .filled { color: var(--amber); }
+.rating-breakdown {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rating-row {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) minmax(24px, auto);
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.rating-row span:last-child { text-align: right; }
+.rating-row meter { width: 100%; height: 8px; }
+.rating-row meter::-webkit-meter-bar { background: var(--line); border: 0; }
+.rating-row meter::-webkit-meter-optimum-value { background: #c3852d; border-radius: 999px; }
+.rating-row meter::-moz-meter-bar { background: #c3852d; border-radius: 999px; }
+@media (max-width: 560px) {
+  .rating-panel { grid-template-columns: 1fr; gap: 14px; padding: 15px; }
+}
+
 /* Data layanan dan FAQ - dua tampilan berdasarkan URL #letters atau #faq */
 .settings-page .management-panel{margin:0;overflow:hidden}
 .settings-page .list-toolbar{min-height:86px;padding:24px;display:flex;justify-content:space-between;align-items:center;gap:14px}
