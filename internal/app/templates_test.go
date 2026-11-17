@@ -91,6 +91,29 @@ func TestDashboardTabCountsIgnoreFilter(t *testing.T) {
 	}
 }
 
+func TestDashboardRatingDistribution(t *testing.T) {
+	s := testServer(t)
+	rec := httptest.NewRecorder()
+	s.render(rec, "dashboard.html", dashboardPage{
+		RatingAvg: 4.5, RatingCount: 2, RatingStars: 5,
+		RatingDistribution: [5]int{1, 1, 0, 0, 0},
+	})
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, body: %s", rec.Code, rec.Body.String())
+	}
+	for _, want := range []string{
+		`<strong>4.5</strong> / 5`,
+		`dari 2 penilaian`,
+		`max="2" value="1" aria-label="5 bintang, 1 penilaian"`,
+		`max="2" value="1" aria-label="4 bintang, 1 penilaian"`,
+		`max="2" value="0" aria-label="1 bintang, 0 penilaian"`,
+	} {
+		if !strings.Contains(rec.Body.String(), want) {
+			t.Errorf("ringkasan penilaian tidak memuat %q", want)
+		}
+	}
+}
+
 func TestSettingsFAQDeleteForm(t *testing.T) {
 	s := testServer(t)
 	page := settingsPage{

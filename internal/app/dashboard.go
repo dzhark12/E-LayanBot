@@ -1,4 +1,4 @@
-﻿package app
+package app
 
 import (
 	"context"
@@ -98,8 +98,10 @@ type dashboardPage struct {
 	RequestCount int64
 	Notice       string
 
-	RatingAvg   float64 
-	RatingCount int   
+	RatingAvg          float64
+	RatingCount        int
+	RatingStars        int
+	RatingDistribution [5]int
 }
 
 type detailPage struct {
@@ -192,10 +194,20 @@ func (s *Server) dashboard(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Data permohonan belum dapat dimuat.", http.StatusServiceUnavailable)
 		return
 	}
-	if err := s.db.QueryRowContext(ctx, `SELECT COALESCE(AVG(nilai),0)::float8, count(nilai) FROM penilaian WHERE nilai IS NOT NULL`).Scan(&page.RatingAvg, &page.RatingCount); err != nil {
+	if err := s.db.QueryRowContext(ctx, `
+		SELECT COALESCE(AVG(nilai), 0)::float8, count(*),
+		       count(*) FILTER (WHERE nilai = 5), count(*) FILTER (WHERE nilai = 4),
+		       count(*) FILTER (WHERE nilai = 3), count(*) FILTER (WHERE nilai = 2),
+		       count(*) FILTER (WHERE nilai = 1)
+		FROM penilaian WHERE nilai IS NOT NULL`).Scan(
+		&page.RatingAvg, &page.RatingCount,
+		&page.RatingDistribution[0], &page.RatingDistribution[1], &page.RatingDistribution[2],
+		&page.RatingDistribution[3], &page.RatingDistribution[4],
+	); err != nil {
 		http.Error(w, "Data permohonan belum dapat dimuat.", http.StatusServiceUnavailable)
 		return
 	}
+	page.RatingStars = int(page.RatingAvg + 0.5)
 	countQuery := `SELECT count(*) FROM permohonan p JOIN jenis_surat j ON j.id=p.jenis_id WHERE ($1='' OR p.status=$1 OR p.status=$2) AND ($3='' OR p.kode_unik ILIKE '%'||$3||'%' OR j.nama ILIKE '%'||$3||'%' OR p.ringkasan ILIKE '%'||$3||'%')`
 	if err := s.db.QueryRowContext(ctx, countQuery, statusFilter, statusAlt, page.Query).Scan(&page.Total); err != nil {
 		http.Error(w, "Data permohonan belum dapat dimuat.", http.StatusServiceUnavailable)

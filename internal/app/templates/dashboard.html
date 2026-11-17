@@ -77,7 +77,30 @@
           <article class="stat-card"><span class="stat-icon stat-wait" aria-hidden="true">◷</span><div><p>Menunggu</p><strong>{{.Menunggu}}</strong><small>Perlu ditinjau</small></div></article>
           <article class="stat-card"><span class="stat-icon stat-work" aria-hidden="true">↗</span><div><p>Dikerjakan</p><strong>{{.Dikerjakan}}</strong><small>Sedang diproses</small></div></article>
           <article class="stat-card"><span class="stat-icon stat-done" aria-hidden="true">✓</span><div><p>Selesai</p><strong>{{.Selesai}}</strong><small>Sudah ditangani</small></div></article>
-          <article class="stat-card"><span class="stat-icon stat-done" aria-hidden="true">★</span><div><p>Penilaian warga</p><strong>{{if .RatingCount}}{{printf "%.1f" .RatingAvg}}/5{{else}}-{{end}}</strong><small>{{.RatingCount}} penilaian</small></div></article>
+        </section>
+        <section class="rating-summary" aria-labelledby="rating-heading">
+          <h2 id="rating-heading">Kepuasan warga</h2>
+          <div class="panel rating-panel">
+            <div class="rating-overview">
+              {{if .RatingCount}}
+              <p class="rating-score"><strong>{{printf "%.1f" .RatingAvg}}</strong> / 5</p>
+              <div class="rating-stars" aria-hidden="true">{{range $index, $_ := .RatingDistribution}}{{if lt $index $.RatingStars}}<span class="filled">★</span>{{else}}<span>☆</span>{{end}}{{end}}</div>
+              <p>dari {{.RatingCount}} penilaian</p>
+              {{else}}
+              <p>Belum ada penilaian</p>
+              {{end}}
+            </div>
+            <ul class="rating-breakdown">
+              {{range $index, $count := .RatingDistribution}}
+              {{$stars := sub 5 $index}}
+              <li class="rating-row">
+                <span aria-hidden="true">{{$stars}} ★</span>
+                <meter min="0" max="{{if $.RatingCount}}{{$.RatingCount}}{{else}}1{{end}}" value="{{$count}}" aria-label="{{$stars}} bintang, {{$count}} penilaian"></meter>
+                <span aria-hidden="true">{{$count}}</span>
+              </li>
+              {{end}}
+            </ul>
+          </div>
         </section>
       </details>
 
