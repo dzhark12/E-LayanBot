@@ -25,24 +25,55 @@
     const filters = [...view.querySelectorAll('[data-filter]')];
     const count = view.querySelector('[data-visible-count]');
     const noResults = view.querySelector('[data-no-results]');
+    const pagination = view.querySelector('[data-table-pagination]');
+    const pageSize = 10;
+    let currentPage = 1;
     let activeFilter = 'all';
     const redraw = () => {
       const q = (search?.value || '').trim().toLocaleLowerCase('id');
-      let visible = 0;
-      rows.forEach(row => {
+      const matchingRows = rows.filter(row => {
         const isActive = row.dataset.active === 'true';
         const matchedStatus = activeFilter === 'all' || (activeFilter === 'active' ? isActive : !isActive);
-        const shown = matchedStatus && (row.dataset.search || '').toLocaleLowerCase('id').includes(q);
-        row.hidden = !shown;
-        if (shown) visible++;
+        return matchedStatus && (row.dataset.search || '').toLocaleLowerCase('id').includes(q);
       });
-      if (count) count.textContent = String(visible);
-      if (noResults) noResults.hidden = visible !== 0;
+      const pageCount = Math.ceil(matchingRows.length / pageSize);
+      currentPage = Math.min(Math.max(currentPage, 1), Math.max(pageCount, 1));
+      const start = (currentPage - 1) * pageSize;
+      const pageRows = new Set(matchingRows.slice(start, start + pageSize));
+      rows.forEach(row => { row.hidden = !pageRows.has(row); });
+      if (count) count.textContent = String(matchingRows.length);
+      if (noResults) noResults.hidden = matchingRows.length !== 0;
+      if (!pagination) return;
+
+      pagination.replaceChildren();
+      pagination.hidden = pageCount <= 1;
+      if (pageCount <= 1) return;
+      const addButton = (label, page, ariaLabel, disabled = false, current = false) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'faq-page-button';
+        button.textContent = label;
+        button.disabled = disabled;
+        if (current) button.setAttribute('aria-current', 'page');
+        else button.setAttribute('aria-label', ariaLabel || `Halaman ${page}`);
+        button.addEventListener('click', () => {
+          currentPage = page;
+          redraw();
+          pagination.querySelector('[aria-current="page"]')?.focus();
+        });
+        pagination.append(button);
+      };
+      addButton('Sebelumnya', currentPage - 1, 'Halaman sebelumnya', currentPage === 1);
+      for (let page = 1; page <= pageCount; page++) {
+        addButton(String(page), page, `Halaman ${page}`, false, page === currentPage);
+      }
+      addButton('Berikutnya', currentPage + 1, 'Halaman berikutnya', currentPage === pageCount);
     };
-    search?.addEventListener('input', redraw);
+    search?.addEventListener('input', () => { currentPage = 1; redraw(); });
     view.querySelector('[data-search-trigger]')?.addEventListener('click', () => search?.focus());
     filters.forEach(button => button.addEventListener('click', () => {
       activeFilter = button.dataset.filter;
+      currentPage = 1;
       filters.forEach(b => {
         const selected = b === button;
         b.classList.toggle('selected', selected);
