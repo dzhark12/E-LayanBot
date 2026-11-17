@@ -1,4 +1,4 @@
-﻿package domain
+package domain
 
 import "time"
 
@@ -16,14 +16,14 @@ const (
 var Statuses = []Status{Menunggu, Dikerjakan, PerluPerbaikan, Selesai, Ditolak}
 
 type Identitas struct {
-	Nama         string `json:"nama"`
-	TempatLahir  string `json:"tempatLahir"`
-	TanggalLahir string `json:"tanggalLahir"`
-	JenisKelamin string `json:"jenisKelamin"`
-	Agama        string `json:"agama"`
-	NIK          string `json:"nik"`
-	Pekerjaan    string `json:"pekerjaan"`
-	Alamat       string `json:"alamat"`
+	Nama         string            `json:"nama"`
+	TempatLahir  string            `json:"tempatLahir"`
+	TanggalLahir string            `json:"tanggalLahir"`
+	JenisKelamin string            `json:"jenisKelamin"`
+	Agama        string            `json:"agama"`
+	NIK          string            `json:"nik"`
+	Pekerjaan    string            `json:"pekerjaan"`
+	Alamat       string            `json:"alamat"`
 	Tambahan     map[string]string `json:"tambahan,omitempty"`
 }
 
@@ -49,4 +49,3 @@ type Permohonan struct {
 	Lampiran   []Lampiran
 	Riwayat    []StatusLog
 }
-

@@ -84,3 +84,12 @@ func TestIsThanks(t *testing.T) {
 		}
 	}
 }
+
+func TestRepairInstructionsKeepAdminNoteAndCompletionStep(t *testing.T) {
+	got := repairInstructions("TM00009", "kurang surat RT")
+	for _, want := range []string{"TM00009", "kurang surat RT", "caption KTP, KK, RT, atau LAINNYA", "ketik *SELESAI*"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("repair instructions do not include %q: %q", want, got)
+		}
+	}
+}

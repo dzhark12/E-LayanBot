@@ -57,6 +57,11 @@ type StatusResult struct {
 	Status string `json:"status"`
 }
 
+type RepairRequest struct {
+	Code string `json:"code"`
+	Note string `json:"note"`
+}
+
 func NewBackend(baseURL, token string, files *storage.Local) (*Backend, error) {
 	parsed, err := url.Parse(strings.TrimRight(baseURL, "/"))
 	if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Host == "" || parsed.User != nil || parsed.RawQuery != "" || parsed.Fragment != "" {
@@ -113,39 +118,8 @@ func (b *Backend) CreateSubmission(ctx context.Context, input Submission) (Submi
 			return SubmissionResult{}, err
 		}
 	}
-	for _, attachment := range input.Attachments {
-		if attachment.Size < 1 || attachment.Size > 10<<20 || attachment.MIME != "image/jpeg" && attachment.MIME != "image/png" || attachment.Kind != "KTP" && attachment.Kind != "KK" && attachment.Kind != "RT" && attachment.Kind != "LAINNYA" {
-			return SubmissionResult{}, errors.New("invalid attachment metadata")
-		}
-		file, err := b.files.Open(attachment.Key)
-		if err != nil {
-			return SubmissionResult{}, err
-		}
-		filename := "lampiran.jpg"
-		if attachment.MIME == "image/png" {
-			filename = "lampiran.png"
-		}
-		part, partErr := form.CreateFormFile("attachments", filename)
-		if partErr == nil {
-			var written int64
-			written, partErr = io.Copy(part, io.LimitReader(file, (10<<20)+1))
-			if partErr == nil && (written < 1 || written > 10<<20 || written != attachment.Size) {
-				partErr = errors.New("invalid staged attachment size")
-			}
-		}
-		closeErr := file.Close()
-		if partErr != nil {
-			return SubmissionResult{}, partErr
-		}
-		if closeErr != nil {
-			return SubmissionResult{}, closeErr
-		}
-		if err := form.WriteField("attachment_types", attachment.Kind); err != nil {
-			return SubmissionResult{}, err
-		}
-		if body.Len() > 52<<20 {
-			return SubmissionResult{}, errors.New("submission exceeds size limit")
-		}
+	if err := b.writeAttachments(form, &body, input.Attachments); err != nil {
+		return SubmissionResult{}, err
 	}
 	if err := form.Close(); err != nil {
 		return SubmissionResult{}, err
@@ -168,6 +142,105 @@ func (b *Backend) CreateSubmission(ctx context.Context, input Submission) (Submi
 		return SubmissionResult{}, err
 	}
 	return result, nil
+}
+
+func (b *Backend) ActiveRepairs(ctx context.Context, waJID string) ([]RepairRequest, error) {
+	body, err := json.Marshal(map[string]string{"waJid": waJID})
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, b.baseURL+"/api/v1/repairs/active", bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := b.do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("active repairs API returned %d", resp.StatusCode)
+	}
+	var result []RepairRequest
+	if err := json.NewDecoder(io.LimitReader(resp.Body, 64<<10)).Decode(&result); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (b *Backend) CompleteRepair(ctx context.Context, code, waJID, repairRequestID string, attachments []Attachment) error {
+	if len(attachments) == 0 || len(attachments) > 5 {
+		return errors.New("invalid repair attachment count")
+	}
+	var body bytes.Buffer
+	form := multipart.NewWriter(&body)
+	for _, field := range [][2]string{
+		{"wa_jid", waJID},
+		{"repair_request_id", repairRequestID},
+	} {
+		if err := form.WriteField(field[0], field[1]); err != nil {
+			return err
+		}
+	}
+	if err := b.writeAttachments(form, &body, attachments); err != nil {
+		return err
+	}
+	if err := form.Close(); err != nil {
+		return err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, b.baseURL+"/api/v1/repairs/"+url.PathEscape(code)+"/complete", &body)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", form.FormDataContentType())
+	resp, err := b.do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("complete repair API returned %d", resp.StatusCode)
+	}
+	return nil
+}
+
+func (b *Backend) writeAttachments(form *multipart.Writer, body *bytes.Buffer, attachments []Attachment) error {
+	for _, attachment := range attachments {
+		if attachment.Size < 1 || attachment.Size > 10<<20 || attachment.MIME != "image/jpeg" && attachment.MIME != "image/png" || attachment.Kind != "KTP" && attachment.Kind != "KK" && attachment.Kind != "RT" && attachment.Kind != "LAINNYA" {
+			return errors.New("invalid attachment metadata")
+		}
+		file, err := b.files.Open(attachment.Key)
+		if err != nil {
+			return err
+		}
+		filename := "lampiran.jpg"
+		if attachment.MIME == "image/png" {
+			filename = "lampiran.png"
+		}
+		part, partErr := form.CreateFormFile("attachments", filename)
+		if partErr == nil {
+			var written int64
+			written, partErr = io.Copy(part, io.LimitReader(file, (10<<20)+1))
+			if partErr == nil && (written < 1 || written > 10<<20 || written != attachment.Size) {
+				partErr = errors.New("invalid staged attachment size")
+			}
+		}
+		closeErr := file.Close()
+		if partErr != nil {
+			return partErr
+		}
+		if closeErr != nil {
+			return closeErr
+		}
+		if err := form.WriteField("attachment_types", attachment.Kind); err != nil {
+			return err
+		}
+		if body.Len() > 52<<20 {
+			return errors.New("submission exceeds size limit")
+		}
+	}
+	return nil
 }
 
 func (b *Backend) CheckStatus(ctx context.Context, code, waJID string) (StatusResult, error) {
