@@ -17,7 +17,7 @@ import (
 )
 
 func main() {
-	logger := log.New(os.Stdout, "elayandesa ", log.LstdFlags|log.LUTC)
+	logger := log.New(os.Stdout, "elayandesa", log.LstdFlags|log.LUTC)
 	cfg, err := config.Load()
 	if err != nil {
 		logger.Fatalf("configuration error: %v", err)

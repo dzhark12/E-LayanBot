@@ -67,6 +67,7 @@ func TestBuildStatusMessageSelesai(t *testing.T) {
 		"Catatan Admin:\n" +
 		"Surat dapat diambil di kantor desa membawa KTP asli.\n\n" +
 		"Silakan mengambil surat di balai desa.\n\n" +
+		"Bagaimana penilaian Anda terhadap layanan kami? Balas dengan angka *1* sampai *5* (1 = sangat kurang, 5 = sangat baik).\n\n"+
 		"Terima kasih telah menggunakan layanan E-Layan Desa Sabah Balau."
 	if !ok || got != want {
 		t.Fatalf("ok=%v\n got: %q\nwant: %q", ok, got, want)

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"log"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -228,6 +229,21 @@ func (r *Router) Handle(parent context.Context, message messenger.Message) {
 		r.handlePhoto(ctx, message, session, state, text)
 		return
 	}
+
+	// Prioritaskan perintah rating sebelum memproses alur surat.
+	if score, ok := parseRatingCommand(text); ok {
+    	if !r.saveRating(ctx, message, score) {
+        	r.reply(ctx, message.JID,
+            	"Saat ini tidak ada penilaian yang menunggu. Terima kasih.")
+    	}
+    	return
+	}
+	
+	if message.Media == nil && session.Flow != "surat" {
+		if score, ok := parseRating(text); ok && r.saveRating(ctx, message, score) {
+			return
+		}
+	}
 	if session.Flow == "surat" {
 		// Pertanyaan bantuan di tengah alur dijawab tanpa mengubah langkah
 		// permohonan. Gemini hanya menerima teks pertanyaan yang lolos filter PII;
@@ -438,6 +454,54 @@ func (r *Router) checkStatus(ctx context.Context, message messenger.Message, cod
 		return
 	}
 	r.reply(ctx, message.JID, fmt.Sprintf("Status pengajuan %s: %s.", result.Code, result.Status))
+}
+
+// parseRating menerima balasan berisi satu angka 1 sampai 5.
+func parseRating(text string) (int, bool) {
+	text = strings.TrimSpace(text)
+	if len(text) == 1 && text[0] >= '1' && text[0] <= '5' {
+		return int(text[0] - '0'), true
+	}
+	return 0, false
+}
+// parseRatingCommand membaca format NILAI 1 sampai NILAI 5.
+func parseRatingCommand(text string) (int, bool) {
+    parts := strings.Fields(strings.ToUpper(text))
+
+    if len(parts) != 2 || parts[0] != "NILAI" {
+        return 0, false
+    }
+
+    score, err := strconv.Atoi(parts[1])
+
+    if err != nil || score < 1 || score > 5 {
+        return 0, false
+    }
+
+    return score, true
+}
+
+// saveRating menyimpan nilai ke penilaian terbaru milik nomor ini yang masih
+// menunggu (maksimal 7 hari). Mengembalikan false bila tidak ada yang menunggu,
+// sehingga pesan diproses seperti biasa.
+func (r *Router) saveRating(ctx context.Context, message messenger.Message, score int) bool {
+	result, err := r.db.ExecContext(ctx, `
+		UPDATE penilaian SET nilai=$2, dinilai_pada=now()
+		WHERE permohonan_id = (
+			SELECT pn.permohonan_id FROM penilaian pn
+			JOIN permohonan p ON p.id = pn.permohonan_id
+			WHERE pn.nilai IS NULL AND p.wa_jid = $1 AND pn.diminta_pada > now() - interval '7 days'
+			ORDER BY pn.diminta_pada DESC LIMIT 1
+		) AND nilai IS NULL`, phoneKey(message.PhoneJID), score)
+	if err != nil {
+		r.logger.Printf("rating could not be saved: %v", err)
+		return false
+	}
+	if n, _ := result.RowsAffected(); n == 0 {
+		return false
+	}
+	r.reply(ctx, message.JID, ratingThanksText)
+	return true
 }
 
 func (r *Router) answerFAQ(ctx context.Context, jid, query string) {
