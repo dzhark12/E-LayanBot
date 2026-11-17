@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"log"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -227,6 +228,15 @@ func (r *Router) Handle(parent context.Context, message messenger.Message) {
 	if message.Media != nil {
 		r.handlePhoto(ctx, message, session, state, text)
 		return
+	}
+
+	// Prioritaskan perintah rating sebelum memproses alur surat.
+	if score, ok := parseRatingCommand(text); ok {
+    	if !r.saveRating(ctx, message, score) {
+        	r.reply(ctx, message.JID,
+            	"Saat ini tidak ada penilaian yang menunggu. Terima kasih.")
+    	}
+    	return
 	}
 	
 	if message.Media == nil && session.Flow != "surat" {
@@ -452,6 +462,22 @@ func parseRating(text string) (int, bool) {
 		return int(text[0] - '0'), true
 	}
 	return 0, false
+}
+// parseRatingCommand membaca format NILAI 1 sampai NILAI 5.
+func parseRatingCommand(text string) (int, bool) {
+    parts := strings.Fields(strings.ToUpper(text))
+
+    if len(parts) != 2 || parts[0] != "NILAI" {
+        return 0, false
+    }
+
+    score, err := strconv.Atoi(parts[1])
+
+    if err != nil || score < 1 || score > 5 {
+        return 0, false
+    }
+
+    return score, true
 }
 
 // saveRating menyimpan nilai ke penilaian terbaru milik nomor ini yang masih
