@@ -29,6 +29,7 @@ const identityText = "Saya *asisten otomatis E-LAYAN Desa Sabah Balau* 🤖, buk
 	"Ketik *MENU* untuk melihat layanan."
 
 const thanksText = "Sama-sama 🙏 Jika ada yang ingin ditanyakan lagi, ketik *MENU*."
+const ratingThanksText = "Terima kasih atas penilaian Anda 🙏 Masukan ini membantu kami meningkatkan layanan Desa Sabah Balau. Ketik *MENU* jika ada yang ingin diurus lagi."
 
 // identityFact ikut dikirim ke asisten AI agar variasi pertanyaan tentang
 // bot ("kamu bisa ngobrol?", "yang balas siapa?") tetap dijawab konsisten.

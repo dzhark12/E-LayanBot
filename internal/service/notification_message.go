@@ -130,6 +130,7 @@ func buildStatusMessage(n notification) (string, bool) {
 			"- Status: *SELESAI*\n\n"+
 			"Catatan Admin:\n%s\n\n"+
 			"Silakan mengambil surat di balai desa.\n\n"+
+			"Bagaimana penilaian Anda terhadap layanan kami? Balas dengan angka *1* sampai *5* (1 = sangat kurang, 5 = sangat baik).\n\n"+
 			"Terima kasih telah menggunakan layanan E-Layan Desa Sabah Balau.",
 			name, letter, n.Code, note), true
 

@@ -97,6 +97,9 @@ type dashboardPage struct {
 	// "Semua" dan sebagai versi data untuk penyegaran otomatis dashboard.
 	RequestCount int64
 	Notice       string
+
+	RatingAvg   float64 
+	RatingCount int   
 }
 
 type detailPage struct {
@@ -186,6 +189,10 @@ func (s *Server) dashboard(w http.ResponseWriter, r *http.Request) {
 	// Hitungan per status untuk tab filter; selalu tanpa filter pencarian agar
 	// angka tiap tab tidak berubah saat petugas berpindah tab atau mencari.
 	if err := s.statusCounts(ctx, &page); err != nil {
+		http.Error(w, "Data permohonan belum dapat dimuat.", http.StatusServiceUnavailable)
+		return
+	}
+	if err := s.db.QueryRowContext(ctx, `SELECT COALESCE(AVG(nilai),0)::float8, count(nilai) FROM penilaian WHERE nilai IS NOT NULL`).Scan(&page.RatingAvg, &page.RatingCount); err != nil {
 		http.Error(w, "Data permohonan belum dapat dimuat.", http.StatusServiceUnavailable)
 		return
 	}
@@ -523,6 +530,11 @@ func (s *Server) updateStatus(w http.ResponseWriter, r *http.Request) {
 		var identity domain.Identitas
 		if json.Unmarshal(identityRaw, &identity) != nil || !letterFieldsComplete(kode, identity) {
 			http.Redirect(w, r, "/requests/"+r.PathValue("id")+"?notice=letter-fields-required", http.StatusSeeOther)
+			return
+		}
+		if _, err := tx.ExecContext(ctx, `INSERT INTO penilaian(permohonan_id) VALUES ($1) ON CONFLICT (permohonan_id) DO NOTHING`, r.PathValue("id")); err != nil {
+			log.Printf("updateStatus gagal pada langkah %q: %v", "siapkan penilaian", err)
+			http.Error(w, "Status belum dapat diperbarui.", http.StatusServiceUnavailable)
 			return
 		}
 	}
