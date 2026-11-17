@@ -1,6 +1,6 @@
 const dashboard = document.querySelector("[data-request-version]");
 if (dashboard) {
-  const current = Number(dashboard.dataset.requestVersion);
+  const current = dashboard.dataset.requestVersion;
   setInterval(async () => {
     try {
       const response = await fetch("/admin/requests/version", { cache: "no-store" });
