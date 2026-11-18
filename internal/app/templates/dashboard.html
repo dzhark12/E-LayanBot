@@ -67,7 +67,13 @@
         {{end}}
         <div class="table-footer">
           <span><svg class="ui-icon" aria-hidden="true"><use href="/static/ui-icons.svg#info"/></svg> Menampilkan <strong>{{len .Requests}}</strong> dari <strong>{{.Total}}</strong> permohonan surat warga</span>
-          {{if gt .Pages 1}}<nav class="pagination" aria-label="Navigasi halaman">{{if gt .Page 1}}<a href="/?status={{urlquery .Status}}&amp;q={{urlquery .Query}}&amp;page={{sub .Page 1}}">← Sebelumnya</a>{{end}}<span>Halaman {{.Page}} dari {{.Pages}}</span>{{if lt .Page .Pages}}<a href="/?status={{urlquery .Status}}&amp;q={{urlquery .Query}}&amp;page={{add .Page 1}}">Berikutnya →</a>{{end}}</nav>{{end}}
+          {{if gt .Pages 1}}<nav class="pagination" aria-label="Navigasi halaman permohonan">
+            {{if gt .Page 1}}<a aria-label="Halaman sebelumnya" href="/?status={{urlquery .Status}}&amp;q={{urlquery .Query}}&amp;page={{sub .Page 1}}#request-list-title">‹ <span>Sebelumnya</span></a>{{else}}<span class="pagination-disabled" aria-disabled="true">‹ <span>Sebelumnya</span></span>{{end}}
+            {{range .PageItems}}
+              {{if .Ellipsis}}<span class="pagination-ellipsis" aria-hidden="true">…</span>{{else if eq .Number $.Page}}<span aria-current="page" aria-label="Halaman {{.Number}}">{{.Number}}</span>{{else}}<a aria-label="Halaman {{.Number}}" href="/?status={{urlquery $.Status}}&amp;q={{urlquery $.Query}}&amp;page={{.Number}}#request-list-title">{{.Number}}</a>{{end}}
+            {{end}}
+            {{if lt .Page .Pages}}<a aria-label="Halaman berikutnya" href="/?status={{urlquery .Status}}&amp;q={{urlquery .Query}}&amp;page={{add .Page 1}}#request-list-title"><span>Berikutnya</span> ›</a>{{else}}<span class="pagination-disabled" aria-disabled="true"><span>Berikutnya</span> ›</span>{{end}}
+          </nav>{{end}}
         </div>
       </section>
       <details class="stats-disclosure">

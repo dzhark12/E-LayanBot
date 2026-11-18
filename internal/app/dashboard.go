@@ -86,6 +86,7 @@ type dashboardPage struct {
 	Query          string
 	Page           int
 	Pages          int
+	PageItems      []pageItem
 	Total          int
 	Menunggu       int
 	Dikerjakan     int
@@ -102,6 +103,56 @@ type dashboardPage struct {
 	RatingCount        int
 	RatingStars        int
 	RatingDistribution [5]int
+}
+
+type pageItem struct {
+	Number   int
+	Ellipsis bool
+}
+
+func paginationItems(current, total int) []pageItem {
+	if total <= 1 {
+		return nil
+	}
+	if total <= 7 {
+		items := make([]pageItem, total)
+		for i := range items {
+			items[i].Number = i + 1
+		}
+		return items
+	}
+
+	if current < 1 {
+		current = 1
+	} else if current > total {
+		current = total
+	}
+
+	start, end := current-1, current+1
+	if start < 2 {
+		start = 2
+	}
+	if end > total-1 {
+		end = total - 1
+	}
+	if current <= 3 {
+		end = 4
+	}
+	if current >= total-2 {
+		start = total - 3
+	}
+
+	items := []pageItem{{Number: 1}}
+	if start > 2 {
+		items = append(items, pageItem{Ellipsis: true})
+	}
+	for page := start; page <= end; page++ {
+		items = append(items, pageItem{Number: page})
+	}
+	if end < total-1 {
+		items = append(items, pageItem{Ellipsis: true})
+	}
+	return append(items, pageItem{Number: total})
 }
 
 type detailPage struct {
@@ -224,6 +275,7 @@ func (s *Server) dashboard(w http.ResponseWriter, r *http.Request) {
 	if page.Page > page.Pages {
 		page.Page = page.Pages
 	}
+	page.PageItems = paginationItems(page.Page, page.Pages)
 	rows, err := s.db.QueryContext(ctx, `SELECT p.id::text, p.kode_unik, j.kode, j.nama, p.ringkasan, p.status, p.dibuat_pada, p.diubah_pada FROM permohonan p JOIN jenis_surat j ON j.id=p.jenis_id WHERE ($1='' OR p.status=$1 OR p.status=$2) AND ($3='' OR p.kode_unik ILIKE '%'||$3||'%' OR j.nama ILIKE '%'||$3||'%' OR p.ringkasan ILIKE '%'||$3||'%') ORDER BY p.dibuat_pada DESC LIMIT $4 OFFSET $5`, statusFilter, statusAlt, page.Query, dashboardPageSize, (page.Page-1)*dashboardPageSize)
 	if err != nil {
 		http.Error(w, "Data permohonan belum dapat dimuat.", http.StatusServiceUnavailable)

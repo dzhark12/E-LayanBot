@@ -94,6 +94,55 @@ func TestDashboardTabCountsIgnoreFilter(t *testing.T) {
 	}
 }
 
+func TestPaginationItemsUseBoundedPageWindow(t *testing.T) {
+	tests := []struct {
+		name    string
+		current int
+		total   int
+		want    []pageItem
+	}{
+		{name: "small page count", current: 2, total: 5, want: []pageItem{{Number: 1}, {Number: 2}, {Number: 3}, {Number: 4}, {Number: 5}}},
+		{name: "first page", current: 1, total: 10, want: []pageItem{{Number: 1}, {Number: 2}, {Number: 3}, {Number: 4}, {Ellipsis: true}, {Number: 10}}},
+		{name: "middle page", current: 5, total: 10, want: []pageItem{{Number: 1}, {Ellipsis: true}, {Number: 4}, {Number: 5}, {Number: 6}, {Ellipsis: true}, {Number: 10}}},
+		{name: "last page", current: 10, total: 10, want: []pageItem{{Number: 1}, {Ellipsis: true}, {Number: 7}, {Number: 8}, {Number: 9}, {Number: 10}}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := paginationItems(tt.current, tt.total)
+			if len(got) != len(tt.want) {
+				t.Fatalf("paginationItems() returned %d items, want %d: %#v", len(got), len(tt.want), got)
+			}
+			for i := range got {
+				if got[i] != tt.want[i] {
+					t.Errorf("paginationItems()[%d] = %#v, want %#v", i, got[i], tt.want[i])
+				}
+			}
+		})
+	}
+}
+
+func TestDashboardPaginationRendersNumberedNavigation(t *testing.T) {
+	s := testServer(t)
+	page := dashboardPage{
+		Page: 2, Pages: 10, Query: "domisili", Status: "Menunggu",
+		PageItems: paginationItems(2, 10),
+	}
+	rec := httptest.NewRecorder()
+	s.render(rec, "dashboard.html", page)
+	body := rec.Body.String()
+	for _, want := range []string{
+		`aria-label="Navigasi halaman permohonan"`,
+		`href="/?status=Menunggu&amp;q=domisili&amp;page=1#request-list-title"`,
+		`aria-current="page" aria-label="Halaman 2">2</span>`,
+		`href="/?status=Menunggu&amp;q=domisili&amp;page=3#request-list-title"`,
+		`class="pagination-ellipsis" aria-hidden="true">…</span>`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("navigasi permohonan tidak memuat %q", want)
+		}
+	}
+}
+
 func TestDashboardRatingDistribution(t *testing.T) {
 	s := testServer(t)
 	rec := httptest.NewRecorder()
