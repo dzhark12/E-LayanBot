@@ -55,19 +55,49 @@
         button.textContent = label;
         button.disabled = disabled;
         if (current) button.setAttribute('aria-current', 'page');
-        else button.setAttribute('aria-label', ariaLabel || `Halaman ${page}`);
+        button.setAttribute('aria-label', ariaLabel || `Halaman ${page}`);
         button.addEventListener('click', () => {
           currentPage = page;
           redraw();
           pagination.querySelector('[aria-current="page"]')?.focus();
+          view.querySelector('.page-header')?.scrollIntoView({
+            behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+            block: 'start',
+          });
         });
         pagination.append(button);
       };
-      addButton('Sebelumnya', currentPage - 1, 'Halaman sebelumnya', currentPage === 1);
-      for (let page = 1; page <= pageCount; page++) {
-        addButton(String(page), page, `Halaman ${page}`, false, page === currentPage);
+      const addEllipsis = () => {
+        const ellipsis = document.createElement('span');
+        ellipsis.className = 'faq-page-ellipsis';
+        ellipsis.setAttribute('aria-hidden', 'true');
+        ellipsis.textContent = '…';
+        pagination.append(ellipsis);
+      };
+      const pageItems = [];
+      if (pageCount <= 7) {
+        for (let page = 1; page <= pageCount; page++) pageItems.push(page);
+      } else {
+        let start = Math.max(2, currentPage - 1);
+        let end = Math.min(pageCount - 1, currentPage + 1);
+        if (currentPage <= 3) end = 4;
+        if (currentPage >= pageCount - 2) start = pageCount - 3;
+        pageItems.push(1);
+        if (start > 2) pageItems.push('ellipsis');
+        for (let page = start; page <= end; page++) pageItems.push(page);
+        if (end < pageCount - 1) pageItems.push('ellipsis');
+        pageItems.push(pageCount);
       }
-      addButton('Berikutnya', currentPage + 1, 'Halaman berikutnya', currentPage === pageCount);
+
+      addButton('‹ Sebelumnya', currentPage - 1, 'Halaman sebelumnya', currentPage === 1);
+      pageItems.forEach(page => {
+        if (page === 'ellipsis') {
+          addEllipsis();
+          return;
+        }
+        addButton(String(page), page, `Halaman ${page}`, false, page === currentPage);
+      });
+      addButton('Berikutnya ›', currentPage + 1, 'Halaman berikutnya', currentPage === pageCount);
     };
     search?.addEventListener('input', () => { currentPage = 1; redraw(); });
     view.querySelector('[data-search-trigger]')?.addEventListener('click', () => search?.focus());
