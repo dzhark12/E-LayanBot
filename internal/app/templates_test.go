@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"elayan.local/desa/config"
+	"elayan.local/desa/internal/domain"
 )
 
 func testServer(t *testing.T) *Server {
@@ -68,7 +69,8 @@ func TestDashboardTabCountsIgnoreFilter(t *testing.T) {
 		Status: "Menunggu", Query: "domisili", Page: 1, Pages: 1,
 		Total:    2, // hasil filter
 		Menunggu: 2, Dikerjakan: 3, Selesai: 4, PerluPerbaikan: 5, Ditolak: 6,
-		RequestCount: 20, // seluruh permohonan
+		RequestCount:   20, // seluruh permohonan
+		RequestVersion: "20:2026-11-18 00:00:00+00",
 	}
 	rec := httptest.NewRecorder()
 	s.render(rec, "dashboard.html", page)
@@ -78,8 +80,9 @@ func TestDashboardTabCountsIgnoreFilter(t *testing.T) {
 	body := rec.Body.String()
 	for _, want := range []string{
 		`>Semua <span class="tab-count">20</span>`,
-		`>Perlu perbaikan <span class="tab-count">5</span>`,
+		`>Diperbaiki <span class="tab-count">5</span>`,
 		`>Ditolak <span class="tab-count">6</span>`,
+		`data-request-version="20:`,
 		`placeholder="Cari kode, jenis surat, atau ringkasan..."`,
 	} {
 		if !strings.Contains(body, want) {
@@ -88,6 +91,55 @@ func TestDashboardTabCountsIgnoreFilter(t *testing.T) {
 	}
 	if strings.Contains(body, "Cari NIK") {
 		t.Error("placeholder masih menjanjikan pencarian NIK")
+	}
+}
+
+func TestPaginationItemsUseBoundedPageWindow(t *testing.T) {
+	tests := []struct {
+		name    string
+		current int
+		total   int
+		want    []pageItem
+	}{
+		{name: "small page count", current: 2, total: 5, want: []pageItem{{Number: 1}, {Number: 2}, {Number: 3}, {Number: 4}, {Number: 5}}},
+		{name: "first page", current: 1, total: 10, want: []pageItem{{Number: 1}, {Number: 2}, {Number: 3}, {Number: 4}, {Ellipsis: true}, {Number: 10}}},
+		{name: "middle page", current: 5, total: 10, want: []pageItem{{Number: 1}, {Ellipsis: true}, {Number: 4}, {Number: 5}, {Number: 6}, {Ellipsis: true}, {Number: 10}}},
+		{name: "last page", current: 10, total: 10, want: []pageItem{{Number: 1}, {Ellipsis: true}, {Number: 7}, {Number: 8}, {Number: 9}, {Number: 10}}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := paginationItems(tt.current, tt.total)
+			if len(got) != len(tt.want) {
+				t.Fatalf("paginationItems() returned %d items, want %d: %#v", len(got), len(tt.want), got)
+			}
+			for i := range got {
+				if got[i] != tt.want[i] {
+					t.Errorf("paginationItems()[%d] = %#v, want %#v", i, got[i], tt.want[i])
+				}
+			}
+		})
+	}
+}
+
+func TestDashboardPaginationRendersNumberedNavigation(t *testing.T) {
+	s := testServer(t)
+	page := dashboardPage{
+		Page: 2, Pages: 10, Query: "domisili", Status: "Menunggu",
+		PageItems: paginationItems(2, 10),
+	}
+	rec := httptest.NewRecorder()
+	s.render(rec, "dashboard.html", page)
+	body := rec.Body.String()
+	for _, want := range []string{
+		`aria-label="Navigasi halaman permohonan"`,
+		`href="/?status=Menunggu&amp;q=domisili&amp;page=1#request-list-title"`,
+		`aria-current="page" aria-label="Halaman 2">2</span>`,
+		`href="/?status=Menunggu&amp;q=domisili&amp;page=3#request-list-title"`,
+		`class="pagination-ellipsis" aria-hidden="true">…</span>`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("navigasi permohonan tidak memuat %q", want)
+		}
 	}
 }
 
@@ -111,6 +163,34 @@ func TestDashboardRatingDistribution(t *testing.T) {
 		if !strings.Contains(rec.Body.String(), want) {
 			t.Errorf("ringkasan penilaian tidak memuat %q", want)
 		}
+	}
+}
+
+func TestRepairStatusTransitions(t *testing.T) {
+	if !canTransition(domain.Diperbaiki, domain.PerluPerbaikan) {
+		t.Error("admin should be able to request another repair after reviewing a submission")
+	}
+	if canTransition(domain.PerluPerbaikan, domain.Diperbaiki) {
+		t.Error("admin should not mark a repair as submitted on behalf of the resident")
+	}
+	if !canTransition(domain.Diperbaiki, domain.Dikerjakan) {
+		t.Error("admin should be able to continue processing after the repair is reviewed")
+	}
+}
+
+func TestRepairReviewStatusIsVisibleButNotAnAdminAction(t *testing.T) {
+	s := testServer(t)
+	rec := httptest.NewRecorder()
+	s.render(rec, "detail.html", detailPage{
+		Request:  domain.Permohonan{ID: "request-id", Kode: "TM00009", Status: domain.Diperbaiki},
+		Statuses: domain.Statuses,
+	})
+	body := rec.Body.String()
+	if !strings.Contains(body, `<option value="Diperbaiki" selected>Diperbaiki · menunggu pemeriksaan</option>`) {
+		t.Error("detail page should show the repair submission as awaiting admin review")
+	}
+	if strings.Count(body, `value="Diperbaiki"`) != 1 {
+		t.Error("Diperbaiki should not be offered as a status that admin can set")
 	}
 }
 

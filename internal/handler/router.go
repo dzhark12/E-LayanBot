@@ -1,4 +1,4 @@
-﻿package handler
+package handler
 
 import (
 	"context"
@@ -69,11 +69,14 @@ type Router struct {
 }
 
 type conversation struct {
-	RequestID    string              `json:"requestId"`
-	LetterCode   string              `json:"letterCode"`
-	Requirements []string            `json:"requirements,omitempty"`
-	Summary      string              `json:"summary"`
-	Attachments  []client.Attachment `json:"attachments"`
+	RequestID       string              `json:"requestId"`
+	LetterCode      string              `json:"letterCode"`
+	Requirements    []string            `json:"requirements,omitempty"`
+	Summary         string              `json:"summary"`
+	RepairCode      string              `json:"repairCode,omitempty"`
+	RepairRequestID string              `json:"repairRequestId,omitempty"`
+	RepairNote      string              `json:"repairNote,omitempty"`
+	Attachments     []client.Attachment `json:"attachments"`
 }
 
 func NewRouter(db *sql.DB, wa messenger.Messenger, api *client.Backend, files *storage.Local, retentionDays int, logger *log.Logger, ai *gemini.Assistant) *Router {
@@ -195,7 +198,28 @@ func (r *Router) Handle(parent context.Context, message messenger.Message) {
 	if upper == "BATAL" {
 		r.removeStaged(state)
 		_ = repository.DeleteBotSession(ctx, r.db, message.JID)
+		if session.Flow == "perbaikan" {
+			r.reply(ctx, message.JID, "Anda keluar dari alur perbaikan. Pengajuan tetap tersimpan; jika ingin melanjutkan, ketik *PERBAIKI* diikuti kode pengajuan.")
+			return
+		}
 		r.reply(ctx, message.JID, "Anda sudah keluar dari alur pengajuan surat. Tulis pertanyaan Anda untuk tanya informasi desa, atau ketik *MENU* untuk melihat layanan.")
+		return
+	}
+	if session.Flow == "perbaikan" {
+		r.handleRepairFlow(ctx, message, session, state, upper)
+		return
+	}
+	if upper == "PERBAIKI" || strings.HasPrefix(upper, "PERBAIKI ") {
+		if session.Flow != "" {
+			r.removeStaged(state)
+			_ = repository.DeleteBotSession(ctx, r.db, message.JID)
+		}
+		parts := strings.Fields(upper)
+		if len(parts) != 2 || len(parts[1]) != 7 || utils.RequestCode(parts[1]) != parts[1] {
+			r.reply(ctx, message.JID, "Format perintah tidak sesuai. Ketik *PERBAIKI* diikuti kode pengajuan, contoh: *PERBAIKI TM00009*.")
+			return
+		}
+		r.beginRepair(ctx, message, state, parts[1])
 		return
 	}
 	if code := utils.RequestCode(text); code != "" {
@@ -225,6 +249,11 @@ func (r *Router) Handle(parent context.Context, message messenger.Message) {
 		return
 	}
 
+	if session.Flow != "surat" && (message.Media != nil || upper == "SELESAI") {
+		if r.beginRepair(ctx, message, state, "") {
+			return
+		}
+	}
 	if message.Media != nil {
 		r.handlePhoto(ctx, message, session, state, text)
 		return
@@ -232,13 +261,13 @@ func (r *Router) Handle(parent context.Context, message messenger.Message) {
 
 	// Prioritaskan perintah rating sebelum memproses alur surat.
 	if score, ok := parseRatingCommand(text); ok {
-    	if !r.saveRating(ctx, message, score) {
-        	r.reply(ctx, message.JID,
-            	"Saat ini tidak ada penilaian yang menunggu. Terima kasih.")
-    	}
-    	return
+		if !r.saveRating(ctx, message, score) {
+			r.reply(ctx, message.JID,
+				"Saat ini tidak ada penilaian yang menunggu. Terima kasih.")
+		}
+		return
 	}
-	
+
 	if message.Media == nil && session.Flow != "surat" {
 		if score, ok := parseRating(text); ok && r.saveRating(ctx, message, score) {
 			return
@@ -373,7 +402,7 @@ func (r *Router) handleLetterFlow(ctx context.Context, message messenger.Message
 }
 
 func (r *Router) handlePhoto(ctx context.Context, message messenger.Message, session domain.SesiBot, state conversation, caption string) {
-	if session.Flow != "surat" || session.Step != "lampiran" {
+	if (session.Flow != "surat" && session.Flow != "perbaikan") || session.Step != "lampiran" {
 		r.reply(ctx, message.JID, "Untuk mengirim foto, mulai pengajuan dengan mengetik *SURAT* terlebih dahulu.")
 		return
 	}
@@ -383,6 +412,10 @@ func (r *Router) handlePhoto(ctx context.Context, message messenger.Message, ses
 		return
 	}
 	if len(state.Attachments) >= 5 {
+		if session.Flow == "perbaikan" {
+			r.reply(ctx, message.JID, "Batas 5 foto perbaikan sudah tercapai. \nKetik *SELESAI* untuk mengirim perbaikan.")
+			return
+		}
 		r.reply(ctx, message.JID, "Batas 5 foto sudah tercapai. \nKetik *SELESAI* untuk mengirim pengajuan.")
 		return
 	}
@@ -417,6 +450,103 @@ func (r *Router) handlePhoto(ctx context.Context, message messenger.Message, ses
 		return
 	}
 	r.reply(ctx, message.JID, fmt.Sprintf("Foto %d diterima. \nKirim foto berikutnya atau ketik *SELESAI*.", len(state.Attachments)))
+}
+
+func (r *Router) beginRepair(ctx context.Context, message messenger.Message, state conversation, code string) bool {
+	repairs, err := r.api.ActiveRepairs(ctx, message.PhoneJID)
+	if err != nil {
+		r.reply(ctx, message.JID, "Daftar perbaikan belum dapat diperiksa. Coba lagi sebentar.")
+		return true
+	}
+	if len(repairs) == 0 {
+		if message.Media == nil {
+			r.reply(ctx, message.JID, "Tidak ada pengajuan yang sedang menunggu perbaikan. Periksa kembali kode pengajuan atau ketik *MENU*.")
+			return true
+		}
+		return false
+	}
+
+	var selected *client.RepairRequest
+	if code != "" {
+		for i := range repairs {
+			if repairs[i].Code == code {
+				selected = &repairs[i]
+				break
+			}
+		}
+		if selected == nil {
+			r.reply(ctx, message.JID, "Kode tersebut tidak memiliki perbaikan yang sedang menunggu. Periksa kode pengajuan dan coba lagi.")
+			return true
+		}
+	} else if len(repairs) == 1 {
+		selected = &repairs[0]
+	} else {
+		var choices strings.Builder
+		choices.WriteString("Ada beberapa pengajuan yang menunggu perbaikan. Pilih pengajuan dengan mengetik *PERBAIKI* diikuti kodenya:\n")
+		for _, repair := range repairs {
+			fmt.Fprintf(&choices, "\n- %s", repair.Code)
+		}
+		r.reply(ctx, message.JID, choices.String())
+		return true
+	}
+
+	requestID, err := id.UUID()
+	if err != nil {
+		r.reply(ctx, message.JID, "Perbaikan belum dapat dimulai. Coba lagi sebentar.")
+		return true
+	}
+	session := domain.SesiBot{JID: message.JID, Flow: "perbaikan", Step: "lampiran"}
+	state = conversation{
+		RepairCode: selected.Code, RepairRequestID: requestID, RepairNote: selected.Note,
+	}
+	if err := r.save(ctx, session, state); err != nil {
+		r.reply(ctx, message.JID, "Perbaikan belum dapat dimulai. Coba lagi sebentar.")
+		return true
+	}
+	if message.Media != nil {
+		r.handlePhoto(ctx, message, session, state, message.Text)
+		return true
+	}
+	if strings.EqualFold(strings.TrimSpace(message.Text), "SELESAI") {
+		r.handleRepairFlow(ctx, message, session, state, "SELESAI")
+		return true
+	}
+	r.reply(ctx, message.JID, repairInstructions(selected.Code, selected.Note))
+	return true
+}
+
+func repairInstructions(code, note string) string {
+	note = strings.TrimSpace(note)
+	if note == "" {
+		note = "Silakan lengkapi foto persyaratan yang diminta admin."
+	}
+	return fmt.Sprintf("Pengajuan %s memerlukan perbaikan:\n%s\n\nKirim foto yang diminta dengan caption KTP, KK, RT, atau LAINNYA. Setelah semua foto terkirim, ketik *SELESAI*. Jika belum siap, kirim nanti atau ketik *BATAL* untuk keluar dari alur perbaikan.", code, note)
+}
+
+func (r *Router) handleRepairFlow(ctx context.Context, message messenger.Message, session domain.SesiBot, state conversation, upper string) {
+	if message.Media != nil {
+		r.handlePhoto(ctx, message, session, state, message.Text)
+		return
+	}
+	if upper != "SELESAI" {
+		r.reply(ctx, message.JID, repairInstructions(state.RepairCode, state.RepairNote))
+		return
+	}
+	if len(state.Attachments) == 0 {
+		r.reply(ctx, message.JID, "Kirim minimal satu foto perbaikan sebelum mengetik SELESAI.")
+		return
+	}
+	if err := r.api.CompleteRepair(ctx, state.RepairCode, message.PhoneJID, state.RepairRequestID, state.Attachments); err != nil {
+		r.reply(ctx, message.JID, "Perbaikan belum mendapat konfirmasi dari server. Foto sementara tersimpan 24 jam; ketik *SELESAI* lagi untuk mencoba ulang.")
+		return
+	}
+	if err := r.reply(ctx, message.JID, fmt.Sprintf("Perbaikan pengajuan %s sudah dikirim ke dashboard admin dan menunggu pemeriksaan. Jika masih ada yang kurang, admin akan mengirim catatan perbaikan kembali.", state.RepairCode)); err != nil {
+		return
+	}
+	r.removeStaged(state)
+	if err := repository.DeleteBotSession(ctx, r.db, message.JID); err != nil {
+		r.logger.Printf("bot session cleanup failed: %v", err)
+	}
 }
 
 func (r *Router) submit(ctx context.Context, message messenger.Message, state conversation) {
@@ -464,21 +594,22 @@ func parseRating(text string) (int, bool) {
 	}
 	return 0, false
 }
+
 // parseRatingCommand membaca format NILAI 1 sampai NILAI 5.
 func parseRatingCommand(text string) (int, bool) {
-    parts := strings.Fields(strings.ToUpper(text))
+	parts := strings.Fields(strings.ToUpper(text))
 
-    if len(parts) != 2 || parts[0] != "NILAI" {
-        return 0, false
-    }
+	if len(parts) != 2 || parts[0] != "NILAI" {
+		return 0, false
+	}
 
-    score, err := strconv.Atoi(parts[1])
+	score, err := strconv.Atoi(parts[1])
 
-    if err != nil || score < 1 || score > 5 {
-        return 0, false
-    }
+	if err != nil || score < 1 || score > 5 {
+		return 0, false
+	}
 
-    return score, true
+	return score, true
 }
 
 // saveRating menyimpan nilai ke penilaian terbaru milik nomor ini yang masih

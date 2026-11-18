@@ -1,4 +1,4 @@
-﻿package service
+package service
 
 import (
 	"fmt"
@@ -25,7 +25,6 @@ var NotifiedStatuses = []domain.Status{
 	domain.Dikerjakan,
 	domain.Selesai,
 	domain.Ditolak,
-	domain.Diperbaiki,
 	domain.PerluPerbaikan,
 }
 
@@ -39,10 +38,9 @@ func Notifies(status domain.Status) bool {
 	return false
 }
 
-// NoteRequired melaporkan apakah admin wajib mengisi catatan untuk status ini
-// (terutama Ditolak dan Diperbaiki/Perlu Perbaikan).
+// NoteRequired melaporkan apakah admin wajib mengisi catatan untuk status ini.
 func NoteRequired(status domain.Status) bool {
-	return isDitolak(status) || isDiperbaiki(status)
+	return isDitolak(status) || status == domain.PerluPerbaikan
 }
 
 func isMenunggu(s domain.Status) bool {
@@ -59,10 +57,6 @@ func isSelesai(s domain.Status) bool {
 
 func isDitolak(s domain.Status) bool {
 	return s == domain.Ditolak
-}
-
-func isDiperbaiki(s domain.Status) bool {
-	return s == domain.Diperbaiki || s == domain.PerluPerbaikan
 }
 
 // waInline membersihkan teks satu baris agar tidak merusak format WhatsApp.
@@ -147,7 +141,7 @@ func buildStatusMessage(n notification) (string, bool) {
 			"Silakan menghubungi perangkat desa apabila membutuhkan informasi lebih lanjut.",
 			name, letter, n.Code, note), true
 
-	case isDiperbaiki(n.Status):
+	case n.Status == domain.PerluPerbaikan:
 		return fmt.Sprintf("Halo, *%s*.\n\n"+
 			"Pengajuan surat Anda memerlukan perbaikan sebelum dapat diproses lebih lanjut.\n\n"+
 			"Informasi Pengajuan:\n"+
@@ -155,11 +149,11 @@ func buildStatusMessage(n notification) (string, bool) {
 			"- Nomor Pengajuan: %s\n"+
 			"- Status: *PERLU PERBAIKAN*\n\n"+
 			"Catatan Perbaikan dari Admin:\n%s\n\n"+
-			"Mohon melakukan perbaikan sesuai catatan yang diberikan, kemudian ajukan ulang dari awal (dengan ketik MENU) persyaratan melalui kontak ini.\n\n"+
-			"Terima kasih atas kerja samanya.",
-			name, letter, n.Code, note), true
+			"Silakan kirim foto yang diminta dengan caption KTP, KK, RT, atau LAINNYA. Jika sudah, ketik *SELESAI*. Berkas sebelumnya tetap tersimpan.\n\n"+
+			"Jika ada beberapa pengajuan, ketik *PERBAIKI %s* untuk memilih pengajuan ini.\n\n"+
+			"Terima kasih.",
+			name, letter, n.Code, note, n.Code), true
 	}
 
 	return "", false
 }
-

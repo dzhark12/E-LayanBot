@@ -97,33 +97,37 @@
 .admin-page .table-footer>span:first-child{display:flex;align-items:center;gap:4px}
 .admin-page .table-footer .ui-icon{width:17px;height:17px;color:#1e5b3a;margin-right:5px}
 .admin-page .table-footer strong{color:#1f2937}
-.admin-page .pagination{display:flex;align-items:center;gap:12px;border:0;padding:0;font-size:11px}
-.dashboard-page .stats-disclosure{margin:0;position:relative;top:-16px;text-align:right;color:#1e5b3a;font-size:11px}
-.dashboard-page .stats-disclosure summary{display:inline-block;padding:2px 6px;cursor:pointer;list-style:none;color:#667085}
-.dashboard-page .stats-disclosure summary:hover{color:#1e5b3a}
+.admin-page .pagination{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;border:0;padding:0;font-size:11px}
+.admin-page .table-footer{flex-wrap:wrap}
+.admin-page .pagination a,.admin-page .pagination>span[aria-current="page"],.admin-page .pagination>.pagination-disabled{display:inline-flex;min-width:36px;min-height:36px;align-items:center;justify-content:center;gap:5px;padding:7px 10px;border:1px solid #dce4dd;border-radius:6px;background:#fff;color:#425047;text-decoration:none;font-size:11px;font-weight:650}
+.admin-page .pagination>a:first-child,.admin-page .pagination>a:last-child,.admin-page .pagination>.pagination-disabled:first-child,.admin-page .pagination>.pagination-disabled:last-child{min-width:auto}
+.admin-page .pagination a:hover{border-color:#9ab2a0;background:#f4f8f4;color:#1d513c}
+.admin-page .pagination>span[aria-current="page"]{border-color:#1d513c;background:#1d513c;color:#fff}
+.admin-page .pagination>.pagination-disabled{color:#a0aaa2}
+.admin-page .pagination>.pagination-ellipsis{display:inline-flex;width:30px;min-height:36px;align-items:center;justify-content:center;color:#69776d}
+.admin-page .pagination a:focus-visible{outline:3px solid #b8d2be;outline-offset:2px}
+@media(max-width:520px){.admin-page .pagination{gap:4px;padding:12px 8px}.admin-page .pagination>a:not(:first-child):not(:last-child),.admin-page .pagination>span[aria-current="page"]{min-width:34px;padding:7px 8px}}
+.dashboard-page .stats-disclosure{margin-top:18px;color:#1e5b3a;font-size:11px;text-align:right}
+.dashboard-page .stats-disclosure summary{display:inline;cursor:pointer;list-style:none;color:#1e5b3a;font-weight:700;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
+.dashboard-page .stats-disclosure summary:hover{color:#164936}
+.dashboard-page .stats-disclosure summary:focus-visible{outline:3px solid #d9eadf;outline-offset:2px}
 .dashboard-page .stats-disclosure summary::-webkit-details-marker{display:none}
 .dashboard-page .stats-disclosure .stats-grid{text-align:left;margin:12px 0 20px;gap:12px}
-.dashboard-page .stats-disclosure .stat-card{min-height:75px;padding:12px 16px;border-radius:12px}
-.dashboard-page .stats-disclosure .stat-card strong{font-size:18px}
-
-/* Ringkasan bekerja sebagai satu baris status, bukan tiga kartu terpisah. */
-.dashboard-page .dashboard-stats{display:grid;grid-template-columns:1.15fr 1fr 1fr;gap:0;margin:-12px 0 26px;border-top:1px solid var(--figma-border);border-bottom:1px solid var(--figma-border)}
-.dashboard-page .dashboard-stats .stat-card{display:flex;min-height:82px;align-items:center;justify-content:space-between;gap:14px;padding:14px 20px;border:0;border-radius:0;background:transparent;color:inherit;text-align:left;text-decoration:none;box-shadow:none}
-.dashboard-page .dashboard-stats .stat-card+ .stat-card{border-left:1px solid var(--figma-border)}
-.dashboard-page .dashboard-stats .stat-card-priority{background:#f0f6f2}
-.dashboard-page .dashboard-stats .stat-card p{margin:0 0 2px;color:#526158;font-size:12px;font-weight:600}
-.dashboard-page .dashboard-stats .stat-card strong{display:inline-block;margin:0 8px 0 0;color:#183f2d;font-size:24px;line-height:1.15;font-variant-numeric:tabular-nums}
-.dashboard-page .dashboard-stats .stat-card small{display:inline;color:#65736a;font-size:11px}
-.dashboard-page .dashboard-stats .stat-link{display:inline-flex;align-items:center;gap:4px;color:#17563c;font-size:11px;font-weight:700;white-space:nowrap}
-.dashboard-page .dashboard-stats .stat-link .ui-icon{width:14px;height:14px}
+.dashboard-page .stats-disclosure .stat-card{justify-content:space-between;min-height:108px;padding:18px 20px;border-radius:12px;color:var(--ink);text-align:left;text-decoration:none;transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease}
+.dashboard-page .stats-disclosure .stat-card:hover{border-color:#afc8b8;box-shadow:0 8px 18px rgba(23,86,60,.08);transform:translateY(-1px)}
+.dashboard-page .stats-disclosure .stat-card:focus-visible{outline:3px solid #d9eadf;outline-offset:2px}
+.dashboard-page .stats-disclosure .stat-card p{margin:0;color:#526158;font-size:12px;font-weight:600}
+.dashboard-page .stats-disclosure .stat-card strong{margin:2px 0;color:#183f2d;font-size:24px;line-height:1.15;font-variant-numeric:tabular-nums}
+.dashboard-page .stats-disclosure .stat-card small{font-size:11px}
+.dashboard-page .stats-disclosure .stat-card-priority{background:#f0f6f2}
+.dashboard-page .stats-disclosure .stat-link{display:inline-flex;align-items:center;gap:4px;color:#17563c;font-size:11px;font-weight:700;white-space:nowrap}
+.dashboard-page .stats-disclosure .stat-link .ui-icon{width:14px;height:14px}
 .dashboard-page .request-table th{font-size:11px;letter-spacing:.025em}
 .dashboard-page .request-table td{font-size:13px;line-height:20px}
 .dashboard-page .request-table td small{font-size:11px;line-height:16px}
 .dashboard-page .letter-name strong{font-size:12px;line-height:18px}
 .dashboard-page .summary-text{line-height:19px;max-height:39px}
-.dashboard-page .stats-disclosure{position:static;top:auto;margin-top:18px;text-align:left}
-@media(max-width:800px){.dashboard-page .dashboard-stats{margin:0 0 20px}}
-@media(max-width:560px){.dashboard-page .dashboard-stats{grid-template-columns:1fr}.dashboard-page .dashboard-stats .stat-card{min-height:65px;padding:11px 14px}.dashboard-page .dashboard-stats .stat-card+ .stat-card{border-top:1px solid var(--figma-border);border-left:0}.dashboard-page .dashboard-stats .stat-card strong{font-size:21px}}
+@media(max-width:560px){.dashboard-page .stats-disclosure .dashboard-stats{grid-template-columns:1fr}.dashboard-page .stats-disclosure .stat-card{min-height:82px;padding:14px}.dashboard-page .stats-disclosure .stat-card strong{font-size:21px}}
 
 .rating-summary {
   text-align: left;

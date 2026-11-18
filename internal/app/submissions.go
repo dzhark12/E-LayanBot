@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"elayan.local/desa/internal/domain"
 	"elayan.local/desa/internal/id"
 	"elayan.local/desa/internal/pdf"
 	"elayan.local/desa/pkg/validator"
@@ -256,6 +257,208 @@ func (s *Server) lookupStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"code": code, "status": status})
+}
+
+type repairRequestResponse struct {
+	Code string `json:"code"`
+	Note string `json:"note"`
+}
+
+func (s *Server) listActiveRepairs(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, 4<<10)
+	var input struct {
+		WAJID string `json:"waJid"`
+	}
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&input); err != nil || decoder.Decode(new(any)) != io.EOF || !waJIDPattern.MatchString(strings.TrimSpace(input.WAJID)) {
+		writeAPIError(w, http.StatusBadRequest, "INVALID_REQUEST", "permintaan tidak valid")
+		return
+	}
+	input.WAJID = normalizeWAJID(strings.TrimSpace(input.WAJID))
+	phoneHash := s.requestHash([]byte("wa:" + strings.TrimSuffix(input.WAJID, "@s.whatsapp.net")))
+
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT p.kode_unik, COALESCE((
+			SELECT sl.catatan FROM status_log sl
+			WHERE sl.permohonan_id=p.id AND sl.status_baru='Perlu Perbaikan'
+			ORDER BY sl.waktu DESC LIMIT 1
+		), '')
+		FROM permohonan p
+		WHERE p.wa_number_hash=$1 AND p.status='Perlu Perbaikan'
+		ORDER BY p.diubah_pada DESC
+		LIMIT 10`, phoneHash)
+	if err != nil {
+		writeAPIError(w, http.StatusServiceUnavailable, "UNAVAILABLE", "daftar perbaikan belum dapat dimuat")
+		return
+	}
+	defer rows.Close()
+	repairs := make([]repairRequestResponse, 0)
+	for rows.Next() {
+		var repair repairRequestResponse
+		if err := rows.Scan(&repair.Code, &repair.Note); err != nil {
+			writeAPIError(w, http.StatusServiceUnavailable, "UNAVAILABLE", "daftar perbaikan belum dapat dimuat")
+			return
+		}
+		repairs = append(repairs, repair)
+	}
+	if err := rows.Err(); err != nil {
+		writeAPIError(w, http.StatusServiceUnavailable, "UNAVAILABLE", "daftar perbaikan belum dapat dimuat")
+		return
+	}
+	writeJSON(w, http.StatusOK, repairs)
+}
+
+func (s *Server) completeRepair(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, 52<<20)
+	if err := r.ParseMultipartForm(2 << 20); err != nil {
+		writeAPIError(w, http.StatusBadRequest, "INVALID_REQUEST", "form perbaikan tidak valid atau terlalu besar")
+		return
+	}
+	if r.MultipartForm != nil {
+		defer r.MultipartForm.RemoveAll()
+	}
+	code := strings.ToUpper(strings.TrimSpace(r.PathValue("code")))
+	waJID := strings.TrimSpace(r.FormValue("wa_jid"))
+	repairRequestID := strings.ToLower(strings.TrimSpace(r.FormValue("repair_request_id")))
+	if !requestCodePattern.MatchString(code) || !waJIDPattern.MatchString(waJID) || !uuidPattern.MatchString(repairRequestID) {
+		writeAPIError(w, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "kode pengajuan atau nomor WhatsApp tidak valid")
+		return
+	}
+	waJID = normalizeWAJID(waJID)
+	phoneHash := s.requestHash([]byte("wa:" + strings.TrimSuffix(waJID, "@s.whatsapp.net")))
+	files := r.MultipartForm.File["attachments"]
+	kinds := r.MultipartForm.Value["attachment_types"]
+	if len(files) == 0 || len(files) > 5 || len(files) != len(kinds) {
+		writeAPIError(w, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "kirim 1 sampai 5 foto perbaikan dan jenis lampiran yang sesuai")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
+	defer cancel()
+	attachments := make([]uploadedFile, 0, len(files))
+	cleanup := func() {
+		for _, file := range attachments {
+			if file.key != "" {
+				_ = s.files.Remove(file.key)
+			}
+		}
+	}
+	for i, header := range files {
+		kind := strings.ToUpper(strings.TrimSpace(kinds[i]))
+		if kind != "KTP" && kind != "KK" && kind != "RT" && kind != "LAINNYA" {
+			cleanup()
+			writeAPIError(w, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "jenis lampiran tidak valid")
+			return
+		}
+		file, err := header.Open()
+		if err != nil {
+			cleanup()
+			writeAPIError(w, http.StatusBadRequest, "INVALID_FILE", "foto tidak dapat dibaca")
+			return
+		}
+		data, readErr := io.ReadAll(io.LimitReader(file, s.cfg.MaxAttachment+1))
+		closeErr := file.Close()
+		if readErr != nil || closeErr != nil || int64(len(data)) > s.cfg.MaxAttachment {
+			cleanup()
+			writeAPIError(w, http.StatusRequestEntityTooLarge, "FILE_TOO_LARGE", "ukuran tiap foto maksimal 10 MB")
+			return
+		}
+		mime, extension, err := imageType(data)
+		if err != nil {
+			cleanup()
+			writeAPIError(w, http.StatusUnprocessableEntity, "INVALID_FILE", "lampiran harus berupa foto JPEG atau PNG yang valid")
+			return
+		}
+		fileID, err := id.UUID()
+		if err != nil {
+			cleanup()
+			writeAPIError(w, http.StatusInternalServerError, "UNAVAILABLE", "perbaikan belum dapat disimpan")
+			return
+		}
+		storageID, err := id.UUID()
+		if err != nil {
+			cleanup()
+			writeAPIError(w, http.StatusInternalServerError, "UNAVAILABLE", "perbaikan belum dapat disimpan")
+			return
+		}
+		key := storageID + extension
+		if err := s.files.Create(key, data); err != nil {
+			cleanup()
+			writeAPIError(w, http.StatusInternalServerError, "UNAVAILABLE", "lampiran belum dapat disimpan")
+			return
+		}
+		attachments = append(attachments, uploadedFile{id: fileID, kind: kind, key: key, mime: mime, data: data})
+	}
+	cleanupFiles := true
+	defer func() {
+		if cleanupFiles {
+			cleanup()
+		}
+	}()
+
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		writeAPIError(w, http.StatusServiceUnavailable, "UNAVAILABLE", "perbaikan belum dapat disimpan")
+		return
+	}
+	defer tx.Rollback()
+	var requestID, status string
+	var storedPhoneHash []byte
+	err = tx.QueryRowContext(ctx, `SELECT id::text,status,wa_number_hash FROM permohonan WHERE kode_unik=$1 FOR UPDATE`, code).Scan(&requestID, &status, &storedPhoneHash)
+	if err == sql.ErrNoRows || err == nil && subtle.ConstantTimeCompare(storedPhoneHash, phoneHash) != 1 {
+		writeAPIError(w, http.StatusNotFound, "NOT_FOUND", "pengajuan tidak ditemukan")
+		return
+	}
+	if err != nil {
+		writeAPIError(w, http.StatusServiceUnavailable, "UNAVAILABLE", "perbaikan belum dapat disimpan")
+		return
+	}
+	var completedRequestID string
+	err = tx.QueryRowContext(ctx, `SELECT permohonan_id::text FROM status_log WHERE bot_repair_request_id=$1`, repairRequestID).Scan(&completedRequestID)
+	if err == nil {
+		if completedRequestID != requestID {
+			writeAPIError(w, http.StatusConflict, "REQUEST_CONFLICT", "perbaikan tidak dapat diproses")
+			return
+		}
+		if err := tx.Commit(); err != nil {
+			writeAPIError(w, http.StatusServiceUnavailable, "UNAVAILABLE", "perbaikan belum dapat dikonfirmasi")
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]string{"code": code, "status": string(domain.Diperbaiki)})
+		return
+	}
+	if err != sql.ErrNoRows {
+		writeAPIError(w, http.StatusServiceUnavailable, "UNAVAILABLE", "perbaikan belum dapat disimpan")
+		return
+	}
+	if status != string(domain.PerluPerbaikan) {
+		writeAPIError(w, http.StatusConflict, "REPAIR_NOT_PENDING", "pengajuan tidak sedang menunggu perbaikan")
+		return
+	}
+	for _, file := range attachments {
+		if _, err := tx.ExecContext(ctx, `INSERT INTO lampiran(id,permohonan_id,jenis,storage_key,mime,ukuran) VALUES ($1,$2,$3,$4,$5,$6)`, file.id, requestID, file.kind, file.key, file.mime, len(file.data)); err != nil {
+			writeAPIError(w, http.StatusServiceUnavailable, "UNAVAILABLE", "lampiran belum dapat disimpan")
+			return
+		}
+	}
+	if _, err := tx.ExecContext(ctx, `UPDATE permohonan SET status=$1,diubah_pada=now() WHERE id=$2`, domain.Diperbaiki, requestID); err != nil {
+		writeAPIError(w, http.StatusServiceUnavailable, "UNAVAILABLE", "status perbaikan belum dapat diperbarui")
+		return
+	}
+	if _, err := tx.ExecContext(ctx, `INSERT INTO status_log(permohonan_id,status_lama,status_baru,aktor,catatan,bot_repair_request_id) VALUES ($1,$2,$3,'Bot WhatsApp','Perbaikan dikirim oleh pemohon',$4)`, requestID, domain.PerluPerbaikan, domain.Diperbaiki, repairRequestID); err != nil {
+		writeAPIError(w, http.StatusServiceUnavailable, "UNAVAILABLE", "riwayat perbaikan belum dapat disimpan")
+		return
+	}
+	if err := tx.Commit(); err != nil {
+		cleanupFiles = false
+		writeAPIError(w, http.StatusServiceUnavailable, "UNAVAILABLE", "perbaikan belum dapat dikonfirmasi")
+		return
+	}
+	cleanupFiles = false
+	writeJSON(w, http.StatusOK, map[string]string{"code": code, "status": string(domain.Diperbaiki)})
 }
 
 func normalizeWAJID(jid string) string {

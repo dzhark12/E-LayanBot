@@ -26,8 +26,9 @@ var uuidPattern = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a
 var nikPattern = regexp.MustCompile(`^[0-9]{16}$`)
 
 const (
-	SignerKades  = "Kepala Desa"
-	SignerSekdes = "Sekretaris Desa"
+	SignerKades       = "Kepala Desa"
+	SignerSekdes      = "Sekretaris Desa"
+	dashboardPageSize = 10
 )
 
 type letterField struct {
@@ -85,6 +86,7 @@ type dashboardPage struct {
 	Query          string
 	Page           int
 	Pages          int
+	PageItems      []pageItem
 	Total          int
 	Menunggu       int
 	Dikerjakan     int
@@ -92,16 +94,65 @@ type dashboardPage struct {
 	PerluPerbaikan int
 	Ditolak        int
 
-	// RequestCount = jumlah seluruh permohonan tanpa filter; dipakai untuk tab
-
-	// "Semua" dan sebagai versi data untuk penyegaran otomatis dashboard.
-	RequestCount int64
-	Notice       string
+	// RequestCount = jumlah seluruh permohonan tanpa filter; dipakai untuk tab "Semua".
+	RequestCount   int64
+	RequestVersion string
+	Notice         string
 
 	RatingAvg          float64
 	RatingCount        int
 	RatingStars        int
 	RatingDistribution [5]int
+}
+
+type pageItem struct {
+	Number   int
+	Ellipsis bool
+}
+
+func paginationItems(current, total int) []pageItem {
+	if total <= 1 {
+		return nil
+	}
+	if total <= 7 {
+		items := make([]pageItem, total)
+		for i := range items {
+			items[i].Number = i + 1
+		}
+		return items
+	}
+
+	if current < 1 {
+		current = 1
+	} else if current > total {
+		current = total
+	}
+
+	start, end := current-1, current+1
+	if start < 2 {
+		start = 2
+	}
+	if end > total-1 {
+		end = total - 1
+	}
+	if current <= 3 {
+		end = 4
+	}
+	if current >= total-2 {
+		start = total - 3
+	}
+
+	items := []pageItem{{Number: 1}}
+	if start > 2 {
+		items = append(items, pageItem{Ellipsis: true})
+	}
+	for page := start; page <= end; page++ {
+		items = append(items, pageItem{Number: page})
+	}
+	if end < total-1 {
+		items = append(items, pageItem{Ellipsis: true})
+	}
+	return append(items, pageItem{Number: total})
 }
 
 type detailPage struct {
@@ -194,6 +245,10 @@ func (s *Server) dashboard(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Data permohonan belum dapat dimuat.", http.StatusServiceUnavailable)
 		return
 	}
+	if err := s.db.QueryRowContext(ctx, `SELECT count(*)::text || ':' || COALESCE(max(diubah_pada)::text, '') FROM permohonan`).Scan(&page.RequestVersion); err != nil {
+		http.Error(w, "Data permohonan belum dapat dimuat.", http.StatusServiceUnavailable)
+		return
+	}
 	if err := s.db.QueryRowContext(ctx, `
 		SELECT COALESCE(AVG(nilai), 0)::float8, count(*),
 		       count(*) FILTER (WHERE nilai = 5), count(*) FILTER (WHERE nilai = 4),
@@ -213,20 +268,21 @@ func (s *Server) dashboard(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Data permohonan belum dapat dimuat.", http.StatusServiceUnavailable)
 		return
 	}
-	page.Pages = (page.Total + 24) / 25
+	page.Pages = (page.Total + dashboardPageSize - 1) / dashboardPageSize
 	if page.Pages == 0 {
 		page.Pages = 1
 	}
 	if page.Page > page.Pages {
 		page.Page = page.Pages
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT p.id::text, p.kode_unik, j.kode, j.nama, p.ringkasan, p.status, p.dibuat_pada, p.diubah_pada FROM permohonan p JOIN jenis_surat j ON j.id=p.jenis_id WHERE ($1='' OR p.status=$1 OR p.status=$2) AND ($3='' OR p.kode_unik ILIKE '%'||$3||'%' OR j.nama ILIKE '%'||$3||'%' OR p.ringkasan ILIKE '%'||$3||'%') ORDER BY p.dibuat_pada DESC LIMIT 25 OFFSET $4`, statusFilter, statusAlt, page.Query, (page.Page-1)*25)
+	page.PageItems = paginationItems(page.Page, page.Pages)
+	rows, err := s.db.QueryContext(ctx, `SELECT p.id::text, p.kode_unik, j.kode, j.nama, p.ringkasan, p.status, p.dibuat_pada, p.diubah_pada FROM permohonan p JOIN jenis_surat j ON j.id=p.jenis_id WHERE ($1='' OR p.status=$1 OR p.status=$2) AND ($3='' OR p.kode_unik ILIKE '%'||$3||'%' OR j.nama ILIKE '%'||$3||'%' OR p.ringkasan ILIKE '%'||$3||'%') ORDER BY p.dibuat_pada DESC LIMIT $4 OFFSET $5`, statusFilter, statusAlt, page.Query, dashboardPageSize, (page.Page-1)*dashboardPageSize)
 	if err != nil {
 		http.Error(w, "Data permohonan belum dapat dimuat.", http.StatusServiceUnavailable)
 		return
 	}
 	defer rows.Close()
-	page.Requests = make([]domain.Permohonan, 0, 25)
+	page.Requests = make([]domain.Permohonan, 0, dashboardPageSize)
 	for rows.Next() {
 
 		var request domain.Permohonan
@@ -271,8 +327,8 @@ func (s *Server) statusCounts(ctx context.Context, page *dashboardPage) error {
 			page.Dikerjakan = count
 		case domain.Selesai:
 			page.Selesai = count
-		case domain.PerluPerbaikan:
-			page.PerluPerbaikan = count
+		case domain.PerluPerbaikan, domain.Diperbaiki:
+			page.PerluPerbaikan += count
 		case domain.Ditolak:
 			page.Ditolak = count
 		}
@@ -284,14 +340,14 @@ func (s *Server) requestVersion(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
 	defer cancel()
 
-	var count int64
-	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM permohonan`).Scan(&count); err != nil {
+	var version string
+	if err := s.db.QueryRowContext(ctx, `SELECT count(*)::text || ':' || COALESCE(max(diubah_pada)::text, '') FROM permohonan`).Scan(&version); err != nil {
 		http.Error(w, "Data permohonan belum dapat dimuat.", http.StatusServiceUnavailable)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
-	_ = json.NewEncoder(w).Encode(map[string]int64{"version": count})
+	_ = json.NewEncoder(w).Encode(map[string]string{"version": version})
 }
 
 func (s *Server) requestDetail(w http.ResponseWriter, r *http.Request) {
@@ -519,9 +575,7 @@ func (s *Server) updateStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Jangan mengirim notifikasi apabila admin hanya membuka atau menyimpan ulang status yang sama tanpa perubahan.
-	if oldStatus == string(newStatus) ||
-		((oldStatus == string(domain.PerluPerbaikan) || oldStatus == string(domain.Diperbaiki)) && (newStatus == domain.PerluPerbaikan || newStatus == domain.Diperbaiki)) ||
-		(oldStatus == string(domain.Ditolak) && newStatus == domain.Ditolak) {
+	if oldStatus == string(newStatus) {
 		http.Redirect(w, r, "/requests/"+r.PathValue("id")+"?notice=status-saved", http.StatusSeeOther)
 		return
 	}
@@ -595,7 +649,7 @@ func canTransition(from, to domain.Status) bool {
 	if from == to {
 		return false
 	}
-	if (from == domain.Diperbaiki || from == domain.PerluPerbaikan) && (to == domain.Diperbaiki || to == domain.PerluPerbaikan) {
+	if to == domain.Diperbaiki {
 		return false
 	}
 	if from == domain.Ditolak && to == domain.Ditolak {

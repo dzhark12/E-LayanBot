@@ -25,14 +25,9 @@
       </div>
     </aside>
 
-    <main class="main-content" data-request-version="{{.RequestCount}}">
+    <main class="main-content" data-request-version="{{.RequestVersion}}">
       <header class="page-header"><div><h1>Permohonan Surat</h1><p class="muted">Pantau dan proses permohonan yang dikirim warga secara mandiri melalui layanan bot WhatsApp Sabah Balau.</p></div></header>
 
-      <section class="stats-grid dashboard-stats" aria-label="Ringkasan permohonan">
-        <a class="stat-card stat-card-priority" href="/?status=Menunggu" aria-label="{{.Menunggu}} permohonan menunggu, lihat daftar"><div><p>Menunggu ditinjau</p><strong>{{.Menunggu}}</strong><small>Perlu tindakan</small></div><span class="stat-link">Lihat daftar <svg class="ui-icon" aria-hidden="true"><use href="/static/ui-icons.svg#arrow"/></svg></span></a>
-        <div class="stat-card"><div><p>Sedang dikerjakan</p><strong>{{.Dikerjakan}}</strong><small>Dalam proses</small></div></div>
-        <div class="stat-card"><div><p>Selesai</p><strong>{{.Selesai}}</strong><small>Sudah ditangani</small></div></div>
-      </section>
       <section class="panel request-panel" aria-labelledby="request-list-title">
         <div class="panel-heading"><div><h2 id="request-list-title">Daftar Permohonan</h2><p class="muted">Pantau seluruh permohonan masuk dan proses layanan surat warga.</p></div>
           <form class="search-form" method="get" action="/">
@@ -47,7 +42,7 @@
           <a href="/?status=Menunggu&amp;q={{urlquery .Query}}" {{if eq .Status "Menunggu"}}aria-current="page" class="selected"{{end}}>Menunggu <span class="tab-count">{{.Menunggu}}</span></a>
           <a href="/?status=Dikerjakan&amp;q={{urlquery .Query}}" {{if eq .Status "Dikerjakan"}}aria-current="page" class="selected"{{end}}>Dikerjakan <span class="tab-count">{{.Dikerjakan}}</span></a>
           <a href="/?status=Selesai&amp;q={{urlquery .Query}}" {{if eq .Status "Selesai"}}aria-current="page" class="selected"{{end}}>Selesai <span class="tab-count">{{.Selesai}}</span></a>
-          <a href="/?status=Perlu%20Perbaikan&amp;q={{urlquery .Query}}" {{if eq .Status "Perlu Perbaikan"}}aria-current="page" class="selected"{{end}}>Perlu perbaikan <span class="tab-count">{{.PerluPerbaikan}}</span></a>
+          <a href="/?status=Diperbaiki&amp;q={{urlquery .Query}}" {{if or (eq .Status "Diperbaiki") (eq .Status "Perlu Perbaikan")}}aria-current="page" class="selected"{{end}}>Diperbaiki <span class="tab-count">{{.PerluPerbaikan}}</span></a>
           <a href="/?status=Ditolak&amp;q={{urlquery .Query}}" {{if eq .Status "Ditolak"}}aria-current="page" class="selected"{{end}}>Ditolak <span class="tab-count">{{.Ditolak}}</span></a>
         </nav>
         {{if .Requests}}
@@ -72,11 +67,22 @@
         {{end}}
         <div class="table-footer">
           <span><svg class="ui-icon" aria-hidden="true"><use href="/static/ui-icons.svg#info"/></svg> Menampilkan <strong>{{len .Requests}}</strong> dari <strong>{{.Total}}</strong> permohonan surat warga</span>
-          {{if gt .Pages 1}}<nav class="pagination" aria-label="Navigasi halaman">{{if gt .Page 1}}<a href="/?status={{urlquery .Status}}&amp;q={{urlquery .Query}}&amp;page={{sub .Page 1}}">← Sebelumnya</a>{{end}}<span>Halaman {{.Page}} dari {{.Pages}}</span>{{if lt .Page .Pages}}<a href="/?status={{urlquery .Status}}&amp;q={{urlquery .Query}}&amp;page={{add .Page 1}}">Berikutnya →</a>{{end}}</nav>{{end}}
+          {{if gt .Pages 1}}<nav class="pagination" aria-label="Navigasi halaman permohonan">
+            {{if gt .Page 1}}<a aria-label="Halaman sebelumnya" href="/?status={{urlquery .Status}}&amp;q={{urlquery .Query}}&amp;page={{sub .Page 1}}#request-list-title">‹ <span>Sebelumnya</span></a>{{else}}<span class="pagination-disabled" aria-disabled="true">‹ <span>Sebelumnya</span></span>{{end}}
+            {{range .PageItems}}
+              {{if .Ellipsis}}<span class="pagination-ellipsis" aria-hidden="true">…</span>{{else if eq .Number $.Page}}<span aria-current="page" aria-label="Halaman {{.Number}}">{{.Number}}</span>{{else}}<a aria-label="Halaman {{.Number}}" href="/?status={{urlquery $.Status}}&amp;q={{urlquery $.Query}}&amp;page={{.Number}}#request-list-title">{{.Number}}</a>{{end}}
+            {{end}}
+            {{if lt .Page .Pages}}<a aria-label="Halaman berikutnya" href="/?status={{urlquery .Status}}&amp;q={{urlquery .Query}}&amp;page={{add .Page 1}}#request-list-title"><span>Berikutnya</span> ›</a>{{else}}<span class="pagination-disabled" aria-disabled="true"><span>Berikutnya</span> ›</span>{{end}}
+          </nav>{{end}}
         </div>
       </section>
       <details class="stats-disclosure">
-        <summary>Ringkasan kepuasan warga</summary>
+        <summary>Ringkasan kepuasan warga &amp; status layanan</summary>
+        <section class="stats-grid dashboard-stats" aria-label="Ringkasan status permohonan">
+          <a class="stat-card stat-card-priority" href="/?status=Menunggu" aria-label="{{.Menunggu}} permohonan menunggu, lihat daftar"><div><p>Menunggu ditinjau</p><strong>{{.Menunggu}}</strong><small>Perlu tindakan</small></div><span class="stat-link">Lihat daftar <svg class="ui-icon" aria-hidden="true"><use href="/static/ui-icons.svg#arrow"/></svg></span></a>
+          <a class="stat-card" href="/?status=Dikerjakan" aria-label="{{.Dikerjakan}} permohonan sedang dikerjakan, lihat daftar"><div><p>Sedang dikerjakan</p><strong>{{.Dikerjakan}}</strong><small>Dalam proses</small></div><span class="stat-link">Lihat daftar <svg class="ui-icon" aria-hidden="true"><use href="/static/ui-icons.svg#arrow"/></svg></span></a>
+          <a class="stat-card" href="/?status=Selesai" aria-label="{{.Selesai}} permohonan selesai, lihat daftar"><div><p>Selesai</p><strong>{{.Selesai}}</strong><small>Sudah ditangani</small></div><span class="stat-link">Lihat daftar <svg class="ui-icon" aria-hidden="true"><use href="/static/ui-icons.svg#arrow"/></svg></span></a>
+        </section>
         <section class="rating-summary" aria-labelledby="rating-heading">
           <h2 id="rating-heading">Kepuasan warga</h2>
           <div class="panel rating-panel">
