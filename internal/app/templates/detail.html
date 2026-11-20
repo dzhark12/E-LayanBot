@@ -67,9 +67,18 @@
 
           <section class="panel status-panel" aria-labelledby="status-title">
             <div class="panel-heading"><div><h2 id="status-title">Perbarui status</h2><p class="muted">Setiap perubahan tercatat di riwayat.</p></div></div>
-            {{if eq (printf "%s" .Request.Status) "Diperbaiki"}}<p class="muted">Warga sudah mengirimkan perbaikan. Periksa foto tambahan, lalu pilih Dikerjakan jika lengkap atau Perlu Perbaikan jika masih ada kekurangan.</p>{{end}}
             <form method="post" action="/requests/{{.Request.ID}}/status" class="stack-form">
               <input type="hidden" name="csrf" value="{{.CSRF}}">
+              {{if eq (printf "%s" .Request.Status) "Diperbaiki"}}
+              <div class="repair-review-guide">
+                <p><strong>Foto perbaikan sudah dikirim oleh pemohon.</strong></p>
+                <p>Periksa foto tambahan, lalu pilih status sesuai hasil pemeriksaan.</p>
+                <ul>
+                  <li><strong>Dikerjakan</strong> jika dokumen sudah lengkap.</li>
+                  <li><strong>Perlu Perbaikan</strong> jika masih ada kekurangan. Tulis catatan untuk pemohon.</li>
+                </ul>
+              </div>
+              {{end}}
               <label for="status">Status baru</label><select id="status" name="status">{{if eq (printf "%s" .Request.Status) "Diperbaiki"}}<option value="Diperbaiki" selected>Diperbaiki · menunggu pemeriksaan</option>{{end}}{{range .Statuses}}<option value="{{.}}" {{if statusSelected . $.Request.Status}}selected{{end}}>{{statusLabel (printf "%s" .)}}</option>{{end}}</select>
               <label for="catatan">Catatan admin <small id="catatan-hint">(wajib untuk Ditolak dan Perlu Perbaikan)</small></label><textarea id="catatan" name="catatan" rows="3" maxlength="500" placeholder="Tuliskan catatan atau keterangan perubahan status untuk warga..."></textarea>
               <button class="button button-secondary button-wide" type="submit">Simpan perubahan</button>

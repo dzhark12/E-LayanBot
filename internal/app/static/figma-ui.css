@@ -273,6 +273,11 @@
 .detail-page .attachment-card a{background:#f4f6f5}
 .detail-page .summary-box{margin:0 24px 24px;padding:16px;background:#f8faf9;border-color:#e5e7eb}
 .detail-page .identity-form,.detail-page .status-panel .stack-form{padding:0 24px 24px;gap:9px}
+.detail-page .repair-review-guide{margin:0 0 8px;color:var(--muted);font-size:13px;line-height:1.6}
+.detail-page .repair-review-guide p{margin:0 0 6px}
+.detail-page .repair-review-guide strong{color:var(--ink)}
+.detail-page .repair-review-guide ul{margin:0;padding-left:20px}
+.detail-page .repair-review-guide li+li{margin-top:4px}
 .detail-page .identity-form label,.detail-page .stack-form label{font-size:12px;font-weight:600;color:#374151}
 .detail-page .identity-form input,.detail-page .identity-form textarea,.detail-page .identity-form select,.detail-page .status-panel .stack-form input,.detail-page .status-panel .stack-form textarea,.detail-page .status-panel .stack-form select{font:inherit;font-size:12px;padding:10px 12px;min-height:40px;border-color:#e5e7eb;border-radius:8px}
 .detail-page .history-panel{margin-top:20px}
