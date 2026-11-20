@@ -545,7 +545,7 @@ func (s *Server) updateStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Catatan admin wajib diisi apabila status membutuhkan keterangan (Ditolak dan Diperbaiki)
+	// Catatan admin wajib diisi untuk Ditolak dan Perlu Perbaikan.
 	if service.NoteRequired(newStatus) && note == "" {
 		http.Redirect(w, r, "/requests/"+r.PathValue("id")+"?notice=note-required", http.StatusSeeOther)
 		return

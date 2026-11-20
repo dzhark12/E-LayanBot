@@ -42,7 +42,7 @@
           <a href="/?status=Menunggu&amp;q={{urlquery .Query}}" {{if eq .Status "Menunggu"}}aria-current="page" class="selected"{{end}}>Menunggu <span class="tab-count">{{.Menunggu}}</span></a>
           <a href="/?status=Dikerjakan&amp;q={{urlquery .Query}}" {{if eq .Status "Dikerjakan"}}aria-current="page" class="selected"{{end}}>Dikerjakan <span class="tab-count">{{.Dikerjakan}}</span></a>
           <a href="/?status=Selesai&amp;q={{urlquery .Query}}" {{if eq .Status "Selesai"}}aria-current="page" class="selected"{{end}}>Selesai <span class="tab-count">{{.Selesai}}</span></a>
-          <a href="/?status=Diperbaiki&amp;q={{urlquery .Query}}" {{if or (eq .Status "Diperbaiki") (eq .Status "Perlu Perbaikan")}}aria-current="page" class="selected"{{end}}>Diperbaiki <span class="tab-count">{{.PerluPerbaikan}}</span></a>
+          <a href="/?status=Perlu%20Perbaikan&amp;q={{urlquery .Query}}" {{if or (eq .Status "Diperbaiki") (eq .Status "Perlu Perbaikan")}}aria-current="page" class="selected"{{end}}>Perlu perbaikan <span class="tab-count">{{.PerluPerbaikan}}</span></a>
           <a href="/?status=Ditolak&amp;q={{urlquery .Query}}" {{if eq .Status "Ditolak"}}aria-current="page" class="selected"{{end}}>Ditolak <span class="tab-count">{{.Ditolak}}</span></a>
         </nav>
         {{if .Requests}}

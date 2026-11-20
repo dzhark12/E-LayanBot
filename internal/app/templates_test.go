@@ -80,7 +80,7 @@ func TestDashboardTabCountsIgnoreFilter(t *testing.T) {
 	body := rec.Body.String()
 	for _, want := range []string{
 		`>Semua <span class="tab-count">20</span>`,
-		`>Diperbaiki <span class="tab-count">5</span>`,
+		`>Perlu perbaikan <span class="tab-count">5</span>`,
 		`>Ditolak <span class="tab-count">6</span>`,
 		`data-request-version="20:`,
 		`placeholder="Cari kode, jenis surat, atau ringkasan..."`,

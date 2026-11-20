@@ -39,9 +39,6 @@ const adminContextKey contextKey = "elayan-admin"
 func New(db *sql.DB, cfg config.Config, files *storage.Local) (*Server, error) {
 	tmpl, err := template.New("pages").Funcs(template.FuncMap{
 		"statusLabel": func(status string) string {
-			if status == "Perlu Perbaikan" {
-				return "Diperbaiki"
-			}
 			return status
 		},
 		"date": func(t time.Time) string {
